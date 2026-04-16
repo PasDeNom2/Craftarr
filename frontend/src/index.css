@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #09090B;
+    color: #F0F0F0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+  select option {
+    background-color: #1C1C21;
+    color: #F0F0F0;
+  }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* White fill — primary action, one per view max */
+  .btn-primary {
+    @apply btn bg-[#F0F0F0] text-black;
+  }
+  .btn-primary:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  /* Ghost with subtle border */
+  .btn-secondary {
+    @apply btn bg-transparent text-[#F0F0F0];
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #1C1C21;
+  }
+
+  /* Danger — same as secondary, turns red on hover */
+  .btn-danger {
+    @apply btn bg-transparent text-[#F0F0F0];
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-danger:hover:not(:disabled) {
+    border-color: #F87171;
+    color: #F87171;
+    background-color: transparent;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-[#6B6B76];
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: #F0F0F0;
+    background-color: #1C1C21;
+  }
+
+  /* ── Card ── */
+  .card {
+    @apply rounded-xl p-5;
+    background-color: #131316;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ── Input ── */
+  .input {
+    @apply w-full rounded-lg px-3 py-2 text-sm;
+    background-color: #1C1C21;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #F0F0F0;
+    transition: border-color 0.2s;
+  }
+  .input::placeholder { color: #4A4A55; }
+  .input:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.22);
+  }
+  .input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Label ── */
+  .label {
+    @apply block text-xs font-medium mb-1 uppercase tracking-wide;
+    letter-spacing: 0.08em;
+    color: #6B6B76;
+  }
+
+  /* ── Badge ── */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+}
+
+/* ── Console log colour coding ── */
+.log-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.log-line.info  { color: #F0F0F0; }
+.log-line.warn  { color: #FBBF24; }
+.log-line.error { color: #F87171; }
+.log-line.debug { color: #4A4A55; }
+.log-line.server { color: #F0F0F0; }
+.log-line.join  { color: #4ADE80; }
+.log-line.leave { color: #6B6B76; }
+
+/* ── Pulsing status dot ── */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.45); }
+  70%  { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+}
+.pulse-dot { animation: pulse-ring 2s ease-out infinite; }
+
+/* ── Skeleton loader ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #131316 25%, #1C1C21 50%, #131316 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Card fade-in on load ── */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-in { animation: card-in 0.25s cubic-bezier(0.16,1,0.3,1) both; }
