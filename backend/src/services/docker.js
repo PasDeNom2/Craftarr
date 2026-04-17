@@ -129,7 +129,22 @@ function resolveMinecraftImage(mcVersion) {
   return 'itzg/minecraft-server:java21';
 }
 
-async function createServerContainer(server) {
+/**
+ * Vérifie que l'image Docker est disponible localement.
+ * Si elle est absente, la télécharge depuis Docker Hub avec progression dans les logs.
+ */
+async function ensureImage(imageName, onProgress) {
+  const images = await docker.listImages({ filters: { reference: [imageName] } });
+  if (images.length > 0) {
+    console.log(`[Docker] Image ${imageName} déjà présente localement`);
+    return;
+  }
+  console.log(`[Docker] Image ${imageName} absente — téléchargement en cours...`);
+  await pullImage(imageName, onProgress);
+  console.log(`[Docker] Image ${imageName} téléchargée avec succès`);
+}
+
+async function createServerContainer(server, onProgress) {
   await ensureNetwork();
 
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
@@ -140,6 +155,7 @@ async function createServerContainer(server) {
 
   const image = resolveMinecraftImage(server.mc_version);
   console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'} : ${image}`);
+  await ensureImage(image, onProgress);
 
   const container = await docker.createContainer({
     name: containerName,

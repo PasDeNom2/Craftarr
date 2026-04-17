@@ -62,8 +62,12 @@ async function installServer(server) {
 
     const updatedServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
 
-    progress(server.id, 'container', 'Création du container Docker', 82);
-    const { containerId, containerName } = await dockerService.createServerContainer(updatedServer);
+    progress(server.id, 'container', 'Téléchargement de l\'image Java (première fois uniquement)...', 82);
+    const { containerId, containerName } = await dockerService.createServerContainer(updatedServer, (event) => {
+      if (event.status && event.progress) {
+        progress(server.id, 'container', `Image Docker : ${event.status} ${event.progress}`, 82);
+      }
+    });
 
     progress(server.id, 'start', 'Démarrage du serveur Minecraft', 92);
     await dockerService.startContainer(containerId);
