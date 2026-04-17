@@ -17,22 +17,22 @@ const THEMES = [
   {
     id: 'blue',
     label: 'Blue',
-    bg: '#07101E',
-    card: '#0D1828',
+    bg: '#0D1B35',
+    card: '#162444',
     accent: '#60A5FA',
   },
   {
     id: 'red',
     label: 'Red',
-    bg: '#110808',
-    card: '#1A0C0C',
+    bg: '#200B0B',
+    card: '#301010',
     accent: '#F87171',
   },
   {
     id: 'daltonien',
     label: 'Daltonien',
-    bg: '#09090B',
-    card: '#131316',
+    bg: '#0E0E10',
+    card: '#1A1A1F',
     accent: '#F59E0B',
   },
 ];

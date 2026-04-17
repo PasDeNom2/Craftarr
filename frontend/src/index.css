@@ -14,30 +14,30 @@
 }
 
 [data-theme="blue"] {
-  --bg:          #07101E;
-  --bg-card:     #0D1828;
-  --bg-hover:    #142238;
-  --bg-sidebar:  #060E1A;
+  --bg:          #0D1B35;
+  --bg-card:     #162444;
+  --bg-hover:    #1E3058;
+  --bg-sidebar:  #0A1528;
   --accent:      #60A5FA;
   --accent-rgb:  96, 165, 250;
   --accent-hover:#3b82f6;
 }
 
 [data-theme="red"] {
-  --bg:          #110808;
-  --bg-card:     #1A0C0C;
-  --bg-hover:    #251212;
-  --bg-sidebar:  #0D0606;
+  --bg:          #200B0B;
+  --bg-card:     #301010;
+  --bg-hover:    #421616;
+  --bg-sidebar:  #180808;
   --accent:      #F87171;
   --accent-rgb:  248, 113, 113;
   --accent-hover:#ef4444;
 }
 
 [data-theme="daltonien"] {
-  --bg:          #09090B;
-  --bg-card:     #131316;
-  --bg-hover:    #1C1C21;
-  --bg-sidebar:  #0D0D10;
+  --bg:          #0E0E10;
+  --bg-card:     #1A1A1F;
+  --bg-hover:    #252530;
+  --bg-sidebar:  #0A0A0D;
   --accent:      #F59E0B;
   --accent-rgb:  245, 158, 11;
   --accent-hover:#d97706;
