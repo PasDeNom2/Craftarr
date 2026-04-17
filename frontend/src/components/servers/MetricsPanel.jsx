@@ -11,7 +11,7 @@ function StatCard({ label, value, unit, sub, valueColor = '#F0F0F0' }) {
   return (
     <div
       className="rounded-xl p-4 space-y-3"
-      style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       <p className="text-[11px] text-[#6B6B76] uppercase tracking-[0.1em] font-medium">{label}</p>
       <p className="font-semibold tabular-nums leading-none" style={{ fontSize: '26px', color: valueColor }}>
@@ -25,7 +25,7 @@ function StatCard({ label, value, unit, sub, valueColor = '#F0F0F0' }) {
 
 const CHART_TOOLTIP = {
   contentStyle: {
-    background: '#131316',
+    background: 'var(--bg-card)',
     border: '1px solid rgba(255,255,255,0.08)',
     fontSize: 11,
     borderRadius: 8,
@@ -36,7 +36,7 @@ const CHART_TOOLTIP = {
 
 function MiniChart({ data, dataKey, stroke, gradientId, label, formatter, domain }) {
   return (
-    <div className="rounded-xl p-4" style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded-xl p-4" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.06)' }}>
       <p className="text-[11px] text-[#6B6B76] uppercase tracking-[0.1em] font-medium mb-3">{label}</p>
       <ResponsiveContainer width="100%" height={120}>
         <AreaChart data={data} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
@@ -86,7 +86,7 @@ export default function MetricsPanel({ server }) {
   useServerSocket(server.id, server.container_id, { metrics: handleMetrics });
 
   const tps = current?.tps?.tps1;
-  const tpsColor = tps == null ? '#6B6B76' : tps >= 18 ? '#4ADE80' : tps >= 12 ? '#FBBF24' : '#F87171';
+  const tpsColor = tps == null ? '#6B6B76' : tps >= 18 ? 'var(--accent)' : tps >= 12 ? '#FBBF24' : '#F87171';
   const cpuVal = current?.cpu ?? 0;
   const cpuColor = cpuVal > 80 ? '#F87171' : cpuVal > 50 ? '#FBBF24' : '#F0F0F0';
   const isRunning = server.status === 'running';
@@ -99,7 +99,7 @@ export default function MetricsPanel({ server }) {
           label="Joueurs"
           value={current?.players?.online ?? (isRunning ? '—' : '—')}
           unit={`/ ${current?.players?.max ?? server.max_players}`}
-          valueColor="#4ADE80"
+          valueColor="var(--accent)"
         />
         <StatCard
           label="RAM"
@@ -136,7 +136,7 @@ export default function MetricsPanel({ server }) {
           <MiniChart
             data={history}
             dataKey="cpu"
-            stroke="#4ADE80"
+            stroke="var(--accent)"
             gradientId="cpuGrad"
             label="CPU (%)"
             formatter={(v) => [`${v?.toFixed(1)}%`, 'CPU']}

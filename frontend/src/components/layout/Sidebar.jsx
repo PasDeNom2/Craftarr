@@ -15,12 +15,12 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 
-const STATUS_DOT = {
-  running:    'bg-[#4ADE80]',
-  stopped:    'bg-[#6B6B76]',
-  installing: 'bg-[#FBBF24]',
-  updating:   'bg-[#FBBF24]',
-  error:      'bg-[#F87171]',
+const STATUS_DOT_COLOR = {
+  running:    'var(--accent)',
+  stopped:    '#6B6B76',
+  installing: '#FBBF24',
+  updating:   '#FBBF24',
+  error:      '#F87171',
 };
 
 function NavItem({ to, icon: Icon, label, collapsed }) {
@@ -74,7 +74,8 @@ export default function Sidebar() {
         flexShrink: 0,
         borderRight: '1px solid rgba(255,255,255,0.06)',
       }}
-      className="bg-[#0D0D10] flex flex-col overflow-hidden"
+      className="flex flex-col overflow-hidden"
+      style={{ background: 'var(--bg-sidebar)' }}
     >
       {/* Logo */}
       <div
@@ -88,7 +89,7 @@ export default function Sidebar() {
         </div>
         {!collapsed && (
           <span className="font-semibold text-[#F0F0F0] text-sm tracking-tight" style={{ opacity: 1, transition: 'opacity 0.2s' }}>
-            MCManager
+            Craftarr
           </span>
         )}
       </div>
@@ -106,7 +107,7 @@ export default function Sidebar() {
               <Server size={18} strokeWidth={1.5} className="shrink-0" />
               <span className="flex-1 text-left">{t('nav.servers')}</span>
               {runningCount > 0 && (
-                <span className="text-[10px] font-semibold text-[#4ADE80] bg-[#4ADE80]/10 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ color: 'var(--accent)', background: 'rgba(var(--accent-rgb),0.1)' }}>
                   {runningCount}
                 </span>
               )}
@@ -134,7 +135,10 @@ export default function Sidebar() {
                           {isActive && (
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#F0F0F0] rounded-r-full" />
                           )}
-                          <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', STATUS_DOT[server.status] || STATUS_DOT.stopped, server.status === 'running' && 'pulse-dot')} />
+                          <span
+                            className={clsx('w-1.5 h-1.5 rounded-full shrink-0', server.status === 'running' && 'pulse-dot')}
+                            style={{ background: STATUS_DOT_COLOR[server.status] || STATUS_DOT_COLOR.stopped }}
+                          />
                           <span className="truncate flex-1">{server.name}</span>
                         </>
                       )}

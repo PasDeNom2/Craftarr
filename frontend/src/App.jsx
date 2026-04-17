@@ -29,7 +29,7 @@ function AuthGate({ children }) {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#09090B] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="w-5 h-5 border border-[#4A4A55] border-t-transparent rounded-full animate-spin"
           style={{ borderTopColor: 'transparent' }} />
       </div>

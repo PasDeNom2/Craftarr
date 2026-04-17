@@ -205,7 +205,8 @@
     "saveError": "Erreur lors de la sauvegarde",
     "curseforgeDesc": "Obtenez votre clé sur console.curseforge.com — requise pour accéder au catalogue CurseForge",
     "modrinthDesc": "Améliore le rate limit pour les recherches Modrinth. Disponible sur modrinth.com/settings/pats",
-    "modrinthOptional": "Modrinth API Key (optionnelle)"
+    "modrinthOptional": "Modrinth API Key (optionnelle)",
+    "appearance": "Apparence"
   },
   "sources": {
     "title": "Sources",

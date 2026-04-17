@@ -35,6 +35,19 @@ export const useMetricsStore = create((set) => ({
   })),
 }));
 
+export const useThemeStore = create((set) => {
+  const saved = localStorage.getItem('craftarr_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  return {
+    theme: saved,
+    setTheme: (theme) => {
+      localStorage.setItem('craftarr_theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+      set({ theme });
+    },
+  };
+});
+
 export const useLogsStore = create((set) => ({
   logs: {},  // { [serverId]: string[] }
   appendLog: (serverId, line) => set(state => {

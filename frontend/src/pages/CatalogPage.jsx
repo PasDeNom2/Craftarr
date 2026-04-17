@@ -168,18 +168,18 @@ function StatCard({ icon: Icon, label, value, sub, accent }) {
       <div
         className="w-8 h-8 rounded-lg flex items-center justify-center"
         style={{
-          background: accent ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)',
-          border: accent ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(255,255,255,0.06)',
+          background: accent ? 'rgba(var(--accent-rgb),0.1)' : 'rgba(255,255,255,0.04)',
+          border: accent ? '1px solid rgba(var(--accent-rgb),0.2)' : '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <Icon size={15} strokeWidth={1.5} style={{ color: accent ? '#4ADE80' : '#6B6B76' }} />
+        <Icon size={15} strokeWidth={1.5} style={{ color: accent ? 'var(--accent)' : '#6B6B76' }} />
       </div>
       <div>
         <p className="text-[#6B6B76] text-xs uppercase tracking-[0.08em] font-medium">{label}</p>
         <p className="text-[28px] font-semibold text-[#F0F0F0] tracking-tight leading-none mt-1">{value}</p>
       </div>
       {sub && (
-        <p className="text-xs" style={{ color: accent ? '#4ADE80' : '#6B6B76' }}>{sub}</p>
+        <p className="text-xs" style={{ color: accent ? 'var(--accent)' : '#6B6B76' }}>{sub}</p>
       )}
     </div>
   );
