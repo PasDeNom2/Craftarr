@@ -443,8 +443,8 @@ router.post('/:id/icon', authMiddleware, (req, res, next) => {
   }
 });
 
-// GET /api/servers/:id/icon — Renvoie l'icône serveur actuelle
-router.get('/:id/icon', authMiddleware, (req, res) => {
+// GET /api/servers/:id/icon — Renvoie l'icône serveur actuelle (pas d'auth : utilisé comme src d'img)
+router.get('/:id/icon', (req, res) => {
   const db = getDb();
   const server = db.prepare('SELECT id FROM servers WHERE id = ?').get(req.params.id);
   if (!server) return res.status(404).end();

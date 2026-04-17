@@ -84,9 +84,25 @@ updater.setIo(io);
 setupLogsSocket(io);
 
 // ─── Démarrage ──────────────────────────────────────────────
+const { getDb } = require('./config/database');
+const dockerService = require('./services/docker');
+
+async function reconcileServerStates() {
+  const db = getDb();
+  const activeServers = db.prepare("SELECT id, container_id FROM servers WHERE status IN ('starting', 'running') AND container_id IS NOT NULL").all();
+  for (const server of activeServers) {
+    const state = await dockerService.getContainerStatus(server.container_id);
+    if (state === 'removed') {
+      db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
+      console.log(`[Craftarr] Serveur ${server.id.slice(0, 8)} — container disparu, statut mis en erreur`);
+    }
+  }
+}
+
 server.listen(PORT, async () => {
   console.log(`[Craftarr] Backend démarré sur le port ${PORT}`);
   await ensureAdminUser();
+  await reconcileServerStates();
   metrics.startPolling();
   updater.scheduleUpdater();
 });

@@ -78,7 +78,13 @@ function startLogStream(io, serverId, attempt = 0) {
     err => {
       console.error(`[Logs] Erreur stream ${serverId.slice(0, 8)}:`, err.message);
       activeStreams.delete(serverId);
-      // Si le container redémarre on peut relancer le stream automatiquement
+      // Si le container n'existe plus, mettre le serveur en erreur
+      if (err.message && err.message.includes('no such container')) {
+        const db = getDb();
+        db.prepare("UPDATE servers SET status = 'error' WHERE id = ? AND status IN ('starting', 'running')")
+          .run(serverId);
+        io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'error' });
+      }
     }
   );
 

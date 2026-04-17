@@ -248,6 +248,9 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
       // Ignorer les mods client-only listés dans server-setup-config.yaml
       if (file.modId && ignoredProjectIds.has(String(file.modId))) { skipped++; return; }
 
+      // Ignorer les mods explicitement marqués "Client" uniquement par CurseForge
+      if (isClientOnlyMod(file)) { skipped++; return; }
+
       const dest = path.join(modsDir, file.fileName);
       if (fs.existsSync(dest)) { downloaded++; return; }
 
@@ -292,6 +295,34 @@ function readIgnoredProjects(serverDir) {
     console.warn('[Installer] Impossible de lire server-setup-config.yaml:', err.message);
   }
   return ids;
+}
+
+/**
+ * Retourne true si un fichier CurseForge est client-only (ne doit pas être installé sur un serveur).
+ * Critères :
+ *   1. gameVersions contient "Client" mais pas "Server" (tag explicite CurseForge)
+ *   2. Slug ou fileName correspond à une liste connue de mods client-only
+ */
+const CLIENT_ONLY_SLUGS = new Set([
+  'drippyloadingscreen', 'fancymenu', 'optifine', 'betterfps-render-distance',
+  'blur-fabric', 'betterf3', 'dynamic-fps', 'fps-reducer',
+  'entityculling', 'smoothboot-fabric', 'replaymod',
+  'itemphysic', 'controlling-for-create',
+]);
+
+function isClientOnlyMod(file) {
+  // Vérification via les gameVersions de l'API CurseForge
+  const versions = file.gameVersions || [];
+  if (versions.includes('Client') && !versions.includes('Server')) return true;
+
+  // Fallback sur le slug (modId string) ou le nom de fichier
+  const slug = (file.slug || '').toLowerCase();
+  const fileName = (file.fileName || '').toLowerCase();
+  if (slug && CLIENT_ONLY_SLUGS.has(slug)) return true;
+  for (const s of CLIENT_ONLY_SLUGS) {
+    if (fileName.startsWith(s)) return true;
+  }
+  return false;
 }
 
 async function fetchModFilesBulk(apiKey, fileIds) {
