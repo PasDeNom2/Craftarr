@@ -76,6 +76,9 @@ function buildEnvVars(server) {
 
   if (server.seed) env.push(`SEED=${server.seed}`);
   if (server.whitelist_enabled) env.push('WHITELIST=true');
+  env.push(`DIFFICULTY=${server.difficulty || 'normal'}`);
+  env.push(`VIEW_DISTANCE=${server.view_distance || 10}`);
+  env.push(`SPAWN_PROTECTION=${server.spawn_protection ?? 16}`);
   // CurseForge API key pour ServerStarter et mc-image-helper
   const cfKey = process.env.CURSEFORGE_API_KEY;
   if (cfKey) env.push(`CF_API_KEY=${cfKey}`);

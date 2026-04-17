@@ -31,7 +31,7 @@ const TABS = [
 ];
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
-const CONTAINER_ENV_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd']);
+const CONTAINER_ENV_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);
 
 // ─── UpdateModal ──────────────────────────────────────────────────────────────
 function UpdateModal({ server, onClose }) {
@@ -201,6 +201,10 @@ function EditTab({ server, onInstallMods }) {
     auto_update: server.auto_update,
     update_interval_hours: server.update_interval_hours || 6,
     motd: server.motd || '',
+    seed: server.seed || '',
+    difficulty: server.difficulty || 'normal',
+    view_distance: server.view_distance || 10,
+    spawn_protection: server.spawn_protection ?? 16,
   });
   const [iconPreview, setIconPreview] = useState(null);
   const [iconFile, setIconFile] = useState(null);
@@ -377,6 +381,45 @@ function EditTab({ server, onInstallMods }) {
             style={{ accentColor: '#4ADE80' }} />
           <span className="text-sm text-[#6B6B76]">Whitelist activée</span>
         </label>
+      </div>
+
+      <div className="space-y-3">
+        <SectionTitle>Gameplay</SectionTitle>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Difficulté</label>
+            <select className="input" value={form.difficulty} onChange={e => set('difficulty', e.target.value)}>
+              <option value="peaceful">Pacifique</option>
+              <option value="easy">Facile</option>
+              <option value="normal">Normal</option>
+              <option value="hard">Difficile</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Distance de vue</label>
+            <div className="flex items-center gap-2">
+              <input type="range" min="4" max="32" step="1" value={form.view_distance}
+                onChange={e => set('view_distance', +e.target.value)} className="flex-1"
+                style={{ accentColor: 'var(--accent)' }} />
+              <span className="text-sm font-mono text-[#F0F0F0] w-8 text-right">{form.view_distance}</span>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Seed du monde</label>
+            <input className="input font-mono" value={form.seed}
+              onChange={e => set('seed', e.target.value)}
+              placeholder="Aléatoire" />
+            <p className="text-[11px] text-[#4A4A55] mt-1">Laissez vide pour un monde aléatoire</p>
+          </div>
+          <div>
+            <label className="label">Protection spawn (blocs)</label>
+            <input className="input" type="number" min="0" max="255" value={form.spawn_protection}
+              onChange={e => set('spawn_protection', +e.target.value)} />
+            <p className="text-[11px] text-[#4A4A55] mt-1">0 = désactivée</p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-3">

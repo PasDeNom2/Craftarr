@@ -1,5 +1,6 @@
 const { getDb } = require('../config/database');
 const dockerService = require('../services/docker');
+const metrics = require('../services/metrics');
 
 // serverId -> cleanup fn (peut être un timer ou un vrai stream)
 const activeStreams = new Map();
@@ -14,6 +15,9 @@ function setupLogsSocket(io) {
       if (!activeStreams.has(serverId)) {
         startLogStream(io, serverId);
       }
+
+      // Push immédiat des métriques sans attendre le prochain tick du polling
+      metrics.pushImmediate(socket, serverId);
     });
 
     socket.on('logs:unsubscribe', ({ serverId }) => {

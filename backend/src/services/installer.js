@@ -143,8 +143,11 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
   const loaderType = detectLoader(refFile.gameVersions);
   const resolvedMcVersion = extractMcVer(refFile.gameVersions) || mcVersion;
 
-  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ? WHERE id = ?')
-    .run(resolvedMcVersion, loaderType, server.id);
+  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
+    .run(resolvedMcVersion, loaderType,
+      clientFile.displayName || clientFile.fileName,
+      String(clientFile.id),
+      server.id);
 
   const packLabel = isUsingServerPack ? 'server pack' : 'pack client (manifest)';
   progress(server.id, 'download', `Téléchargement du ${packLabel}`, 25);
@@ -347,8 +350,11 @@ async function installGenericModpack(server, serverDir) {
     fs.unlinkSync(mrpackPath);
   }
 
-  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ? WHERE id = ?')
-    .run(mcVersion, loaderType, downloadUrl, server.id);
+  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
+    .run(mcVersion, loaderType, downloadUrl,
+      selectedVersion.versionNumber,
+      selectedVersion.id,
+      server.id);
 }
 
 /**
