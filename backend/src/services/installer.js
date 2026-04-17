@@ -62,8 +62,12 @@ async function installServer(server) {
 
     const updatedServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
 
-    progress(server.id, 'container', 'Création du container Docker', 82);
-    const { containerId, containerName } = await dockerService.createServerContainer(updatedServer);
+    progress(server.id, 'container', 'Téléchargement de l\'image Java (première fois uniquement)...', 82);
+    const { containerId, containerName } = await dockerService.createServerContainer(updatedServer, (event) => {
+      if (event.status && event.progress) {
+        progress(server.id, 'container', `Image Docker : ${event.status} ${event.progress}`, 82);
+      }
+    });
 
     progress(server.id, 'start', 'Démarrage du serveur Minecraft', 92);
     await dockerService.startContainer(containerId);
@@ -139,8 +143,11 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
   const loaderType = detectLoader(refFile.gameVersions);
   const resolvedMcVersion = extractMcVer(refFile.gameVersions) || mcVersion;
 
-  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ? WHERE id = ?')
-    .run(resolvedMcVersion, loaderType, server.id);
+  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
+    .run(resolvedMcVersion, loaderType,
+      clientFile.displayName || clientFile.fileName,
+      String(clientFile.id),
+      server.id);
 
   const packLabel = isUsingServerPack ? 'server pack' : 'pack client (manifest)';
   progress(server.id, 'download', `Téléchargement du ${packLabel}`, 25);
@@ -241,6 +248,9 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
       // Ignorer les mods client-only listés dans server-setup-config.yaml
       if (file.modId && ignoredProjectIds.has(String(file.modId))) { skipped++; return; }
 
+      // Ignorer les mods explicitement marqués "Client" uniquement par CurseForge
+      if (isClientOnlyMod(file)) { skipped++; return; }
+
       const dest = path.join(modsDir, file.fileName);
       if (fs.existsSync(dest)) { downloaded++; return; }
 
@@ -285,6 +295,34 @@ function readIgnoredProjects(serverDir) {
     console.warn('[Installer] Impossible de lire server-setup-config.yaml:', err.message);
   }
   return ids;
+}
+
+/**
+ * Retourne true si un fichier CurseForge est client-only (ne doit pas être installé sur un serveur).
+ * Critères :
+ *   1. gameVersions contient "Client" mais pas "Server" (tag explicite CurseForge)
+ *   2. Slug ou fileName correspond à une liste connue de mods client-only
+ */
+const CLIENT_ONLY_SLUGS = new Set([
+  'drippyloadingscreen', 'fancymenu', 'optifine', 'betterfps-render-distance',
+  'blur-fabric', 'betterf3', 'dynamic-fps', 'fps-reducer',
+  'entityculling', 'smoothboot-fabric', 'replaymod',
+  'itemphysic', 'controlling-for-create',
+]);
+
+function isClientOnlyMod(file) {
+  // Vérification via les gameVersions de l'API CurseForge
+  const versions = file.gameVersions || [];
+  if (versions.includes('Client') && !versions.includes('Server')) return true;
+
+  // Fallback sur le slug (modId string) ou le nom de fichier
+  const slug = (file.slug || '').toLowerCase();
+  const fileName = (file.fileName || '').toLowerCase();
+  if (slug && CLIENT_ONLY_SLUGS.has(slug)) return true;
+  for (const s of CLIENT_ONLY_SLUGS) {
+    if (fileName.startsWith(s)) return true;
+  }
+  return false;
 }
 
 async function fetchModFilesBulk(apiKey, fileIds) {
@@ -343,8 +381,11 @@ async function installGenericModpack(server, serverDir) {
     fs.unlinkSync(mrpackPath);
   }
 
-  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ? WHERE id = ?')
-    .run(mcVersion, loaderType, downloadUrl, server.id);
+  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
+    .run(mcVersion, loaderType, downloadUrl,
+      selectedVersion.versionNumber,
+      selectedVersion.id,
+      server.id);
 }
 
 /**

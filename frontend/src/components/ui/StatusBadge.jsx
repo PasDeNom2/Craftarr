@@ -2,7 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 
 const STATUS = {
-  running:    { label: 'En ligne',     dot: '#4ADE80', text: '#4ADE80',  bg: 'rgba(74,222,128,0.08)',  border: 'rgba(74,222,128,0.2)'  },
+  running:    { label: 'En ligne',     dot: 'var(--accent)', text: 'var(--accent)',  bg: 'rgba(var(--accent-rgb),0.08)',  border: 'rgba(var(--accent-rgb),0.2)'  },
   starting:   { label: 'Démarrage',   dot: '#FBBF24', text: '#FBBF24',  bg: 'rgba(251,191,36,0.08)',  border: 'rgba(251,191,36,0.2)'  },
   stopped:    { label: 'Arrêté',       dot: '#6B6B76', text: '#6B6B76',  bg: 'rgba(107,107,118,0.08)', border: 'rgba(107,107,118,0.2)' },
   installing: { label: 'Installation', dot: '#FBBF24', text: '#FBBF24',  bg: 'rgba(251,191,36,0.08)',  border: 'rgba(251,191,36,0.2)'  },

@@ -103,12 +103,12 @@ export default function Console({ server }) {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" style={{ background: '#0A0A0C' }}>
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: 'var(--bg)' }}>
 
       {/* Toolbar */}
       <div
         className="flex items-center justify-between px-4 py-2 flex-shrink-0"
-        style={{ background: '#0D0D10', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+        style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
       >
         <div className="flex items-center gap-2">
           <Terminal size={13} strokeWidth={1.5} className="text-[#6B6B76]" />
@@ -129,7 +129,7 @@ export default function Console({ server }) {
             className={clsx(
               'flex items-center gap-1 text-[11px] px-2 py-0.5 rounded transition-colors',
               autoScroll
-                ? 'text-[#4ADE80]'
+                ? 'text-[var(--accent)]'
                 : 'text-[#4A4A55] hover:text-[#6B6B76]'
             )}
             onClick={scrollToBottom}
@@ -139,7 +139,7 @@ export default function Console({ server }) {
             {!autoScroll && unread > 0 && (
               <span
                 className="text-[9px] font-bold px-1 rounded-full ml-0.5"
-                style={{ background: '#4ADE80', color: '#09090B' }}
+                style={{ background: 'var(--accent)', color: 'var(--bg)' }}
               >
                 {unread > 99 ? '99+' : unread}
               </span>
@@ -166,7 +166,7 @@ export default function Console({ server }) {
             const colors = {
               error:  '#F87171',
               warn:   '#FBBF24',
-              join:   '#4ADE80',
+              join:   'var(--accent)',
               leave:  '#6B6B76',
               server: '#F0F0F0',
               info:   '#F0F0F0',
@@ -192,8 +192,8 @@ export default function Console({ server }) {
         <div className="flex justify-center py-1" style={{ background: 'rgba(13,13,16,0.8)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <button
             onClick={scrollToBottom}
-            className="flex items-center gap-1 text-xs text-[#4ADE80] px-3 py-1 rounded-full transition-colors hover:text-[#22c55e]"
-            style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)' }}
+            className="flex items-center gap-1 text-xs px-3 py-1 rounded-full transition-colors"
+            style={{ color: 'var(--accent)', background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.2)' }}
           >
             <ChevronDown size={12} strokeWidth={1.5} />
             {unread} nouvelle{unread > 1 ? 's' : ''} ligne{unread > 1 ? 's' : ''}
@@ -205,13 +205,13 @@ export default function Console({ server }) {
       <form
         onSubmit={handleSend}
         className="flex gap-2 px-3 py-2 flex-shrink-0"
-        style={{ background: '#0D0D10', borderTop: '1px solid rgba(255,255,255,0.04)' }}
+        style={{ background: 'var(--bg-sidebar)', borderTop: '1px solid rgba(255,255,255,0.04)' }}
       >
-        <span className="text-[#4ADE80] font-mono text-sm self-center select-none">{'>'}</span>
+        <span className="font-mono text-sm self-center select-none" style={{ color: 'var(--accent)' }}>{'>'}</span>
         <input
           ref={inputRef}
           className="flex-1 bg-transparent border-none outline-none text-sm font-mono text-[#F0F0F0] disabled:opacity-40"
-          style={{ caretColor: '#4ADE80' }}
+          style={{ caretColor: 'var(--accent)' }}
           placeholder={server.status === 'running' ? 'Entrez une commande RCON...' : 'Serveur arrêté'}
           value={command}
           onChange={e => { setCommand(e.target.value); setHistoryIdx(-1); }}

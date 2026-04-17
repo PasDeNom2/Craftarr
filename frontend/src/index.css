@@ -2,12 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme variables ── */
+:root, [data-theme="dark"] {
+  --bg:          #09090B;
+  --bg-card:     #131316;
+  --bg-hover:    #1C1C21;
+  --bg-sidebar:  #0D0D10;
+  --accent:      #4ADE80;
+  --accent-rgb:  74, 222, 128;
+  --accent-hover:#22c55e;
+}
+
+[data-theme="blue"] {
+  --bg:          #0D1B35;
+  --bg-card:     #162444;
+  --bg-hover:    #1E3058;
+  --bg-sidebar:  #0A1528;
+  --accent:      #60A5FA;
+  --accent-rgb:  96, 165, 250;
+  --accent-hover:#3b82f6;
+}
+
+[data-theme="red"] {
+  --bg:          #200B0B;
+  --bg-card:     #301010;
+  --bg-hover:    #421616;
+  --bg-sidebar:  #180808;
+  --accent:      #F87171;
+  --accent-rgb:  248, 113, 113;
+  --accent-hover:#ef4444;
+}
+
+[data-theme="daltonien"] {
+  --bg:          #0E0E10;
+  --bg-card:     #1A1A1F;
+  --bg-hover:    #252530;
+  --bg-sidebar:  #0A0A0D;
+  --accent:      #F59E0B;
+  --accent-rgb:  245, 158, 11;
+  --accent-hover:#d97706;
+}
+
 @layer base {
   * { box-sizing: border-box; }
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    background-color: #09090B;
+    background-color: var(--bg);
     color: #F0F0F0;
     -webkit-font-smoothing: antialiased;
   }
@@ -18,7 +59,7 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
   select option {
-    background-color: #1C1C21;
+    background-color: var(--bg-hover);
     color: #F0F0F0;
   }
 }
@@ -44,7 +85,7 @@
     border: 1px solid rgba(255,255,255,0.12);
   }
   .btn-secondary:hover:not(:disabled) {
-    background-color: #1C1C21;
+    background-color: var(--bg-hover);
   }
 
   /* Danger — same as secondary, turns red on hover */
@@ -63,20 +104,20 @@
   }
   .btn-ghost:hover:not(:disabled) {
     color: #F0F0F0;
-    background-color: #1C1C21;
+    background-color: var(--bg-hover);
   }
 
   /* ── Card ── */
   .card {
     @apply rounded-xl p-5;
-    background-color: #131316;
+    background-color: var(--bg-card);
     border: 1px solid rgba(255,255,255,0.06);
   }
 
   /* ── Input ── */
   .input {
     @apply w-full rounded-lg px-3 py-2 text-sm;
-    background-color: #1C1C21;
+    background-color: var(--bg-hover);
     border: 1px solid rgba(255,255,255,0.08);
     color: #F0F0F0;
     transition: border-color 0.2s;
@@ -133,7 +174,7 @@
   100% { background-position:  200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, #131316 25%, #1C1C21 50%, #131316 75%);
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: 8px;

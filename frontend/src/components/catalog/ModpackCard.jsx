@@ -1,5 +1,6 @@
 import React from 'react';
 import SourceBadge from '../ui/SourceBadge';
+import { useI18n } from '../../i18n';
 import { Download, Gamepad2, CheckCircle, Rocket, Package } from 'lucide-react';
 
 function formatCount(n) {
@@ -9,6 +10,7 @@ function formatCount(n) {
 }
 
 export default function ModpackCard({ modpack, onDeploy, onDetail }) {
+  const { t } = useI18n();
   return (
     <div
       className="flex flex-col gap-3 p-4 rounded-xl cursor-pointer group"
@@ -96,7 +98,7 @@ export default function ModpackCard({ modpack, onDeploy, onDetail }) {
         onClick={e => { e.stopPropagation(); onDeploy(modpack); }}
       >
         <Rocket size={12} strokeWidth={1.5} />
-        Déployer
+        {t('modpack.deploy')}
       </button>
     </div>
   );

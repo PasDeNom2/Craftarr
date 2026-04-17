@@ -28,6 +28,9 @@ function initDb() {
   // Migrations pour colonnes ajoutées après la création initiale
   const migrations = [
     "ALTER TABLE servers ADD COLUMN motd TEXT",
+    "ALTER TABLE servers ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'normal'",
+    "ALTER TABLE servers ADD COLUMN view_distance INTEGER NOT NULL DEFAULT 10",
+    "ALTER TABLE servers ADD COLUMN spawn_protection INTEGER NOT NULL DEFAULT 16",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* colonne déjà présente */ }

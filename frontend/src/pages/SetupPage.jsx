@@ -42,7 +42,7 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090B] flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
       {/* Language switcher top-right */}
       <div className="fixed top-4 right-4">
         <LanguageSwitcher />

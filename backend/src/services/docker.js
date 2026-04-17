@@ -76,6 +76,9 @@ function buildEnvVars(server) {
 
   if (server.seed) env.push(`SEED=${server.seed}`);
   if (server.whitelist_enabled) env.push('WHITELIST=true');
+  env.push(`DIFFICULTY=${server.difficulty || 'normal'}`);
+  env.push(`VIEW_DISTANCE=${server.view_distance || 10}`);
+  env.push(`SPAWN_PROTECTION=${server.spawn_protection ?? 16}`);
   // CurseForge API key pour ServerStarter et mc-image-helper
   const cfKey = process.env.CURSEFORGE_API_KEY;
   if (cfKey) env.push(`CF_API_KEY=${cfKey}`);
@@ -94,7 +97,57 @@ function buildEnvVars(server) {
   return env;
 }
 
-async function createServerContainer(server) {
+/**
+ * Choisit le bon tag d'image itzg/minecraft-server selon la version MC.
+ *
+ * Java requis par version Minecraft :
+ *  < 1.17          → Java 8   (Forge legacy, LaunchwWrapper, etc.)
+ *  1.17            → Java 16
+ *  1.18 – 1.20.4   → Java 17
+ *  ≥ 1.20.5        → Java 21
+ *
+ * Utiliser la mauvaise version Java provoque des ClassCastException (URLClassLoader)
+ * ou des erreurs de bytecode sur les vieux packs (RLCraft, FTB Legacy, etc.).
+ */
+function resolveMinecraftImage(mcVersion) {
+  if (!mcVersion) return 'itzg/minecraft-server:java17'; // safe default
+
+  // Extraire les deux premiers segments : "1.12.2" → [1, 12]
+  const parts = mcVersion.replace(/[^0-9.]/g, '').split('.').map(Number);
+  const major = parts[0] ?? 1;
+  const minor = parts[1] ?? 0;
+
+  if (major === 1) {
+    if (minor < 17) return 'itzg/minecraft-server:java8';
+    if (minor === 17) return 'itzg/minecraft-server:java16';
+    if (minor <= 20) {
+      // 1.20.5+ nécessite Java 21
+      const patch = parts[2] ?? 0;
+      if (minor === 20 && patch >= 5) return 'itzg/minecraft-server:java21';
+      return 'itzg/minecraft-server:java17';
+    }
+    return 'itzg/minecraft-server:java21';
+  }
+
+  return 'itzg/minecraft-server:java21';
+}
+
+/**
+ * Vérifie que l'image Docker est disponible localement.
+ * Si elle est absente, la télécharge depuis Docker Hub avec progression dans les logs.
+ */
+async function ensureImage(imageName, onProgress) {
+  const images = await docker.listImages({ filters: { reference: [imageName] } });
+  if (images.length > 0) {
+    console.log(`[Docker] Image ${imageName} déjà présente localement`);
+    return;
+  }
+  console.log(`[Docker] Image ${imageName} absente — téléchargement en cours...`);
+  await pullImage(imageName, onProgress);
+  console.log(`[Docker] Image ${imageName} téléchargée avec succès`);
+}
+
+async function createServerContainer(server, onProgress) {
   await ensureNetwork();
 
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
@@ -103,9 +156,13 @@ async function createServerContainer(server) {
   const hostServerDir = path.join(HOST_DATA_PATH, 'servers', server.id, 'server');
   const containerName = `mc-${server.id.slice(0, 8)}`;
 
+  const image = resolveMinecraftImage(server.mc_version);
+  console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'} : ${image}`);
+  await ensureImage(image, onProgress);
+
   const container = await docker.createContainer({
     name: containerName,
-    Image: 'itzg/minecraft-server:latest',
+    Image: image,
     Env: buildEnvVars(server),
     ExposedPorts: {
       '25565/tcp': {},

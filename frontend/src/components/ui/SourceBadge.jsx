@@ -3,7 +3,7 @@ import clsx from 'clsx';
 
 const SOURCES = {
   curseforge: { label: 'CurseForge', color: '#F97316', bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.25)'  },
-  modrinth:   { label: 'Modrinth',   color: '#4ADE80', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)'   },
+  modrinth:   { label: 'Modrinth',   color: 'var(--accent)', bg: 'rgba(var(--accent-rgb),0.08)', border: 'rgba(var(--accent-rgb),0.2)'   },
 };
 
 export default function SourceBadge({ source, sourceName, className }) {

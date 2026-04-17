@@ -5,9 +5,9 @@ const rcon = require('./rcon');
 let io;
 function setIo(ioInstance) { io = ioInstance; }
 
-// Docker stats polled every 5s, RCON polled every 30s to avoid spamming MC logs
-const DOCKER_INTERVAL = 5000;
-const RCON_INTERVAL = 30000;
+// Docker stats polled every 2s, RCON polled every 15s
+const DOCKER_INTERVAL = 2000;
+const RCON_INTERVAL = 15000;
 
 let dockerTimer = null;
 let rconTimer = null;
@@ -84,13 +84,40 @@ async function pollRconStats() {
   }
 }
 
+/**
+ * Push immédiat des métriques pour un serveur donné vers un socket spécifique.
+ * Appelé dès qu'un client souscrit à un serveur pour éviter d'attendre le prochain tick.
+ */
+async function pushImmediate(socket, serverId) {
+  const db = getDb();
+  const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(serverId);
+  if (!server) return;
+  try {
+    const metrics = {
+      serverId,
+      timestamp: Date.now(),
+      cpu: 0, memUsed: 0, memLimit: 0, memPercent: 0,
+      players: rconCache[serverId]?.players || { online: 0, max: server.max_players },
+      tps: rconCache[serverId]?.tps || null,
+      uptime: null,
+    };
+    if (server.container_id) {
+      const stats = await dockerService.getContainerStats(server.container_id);
+      if (stats) Object.assign(metrics, stats);
+    }
+    metrics.players = rconCache[serverId]?.players || metrics.players;
+    metrics.tps = rconCache[serverId]?.tps || metrics.tps;
+    socket.emit('metrics', metrics);
+  } catch {}
+}
+
 function startPolling() {
   if (dockerTimer) return;
   dockerTimer = setInterval(pollDockerStats, DOCKER_INTERVAL);
   rconTimer = setInterval(pollRconStats, RCON_INTERVAL);
-  // Run RCON once after 10s to populate cache quickly on startup
-  setTimeout(pollRconStats, 10000);
-  console.log('[Metrics] Polling démarré (Docker: 5s, RCON: 30s)');
+  // Run RCON once after 5s to populate cache quickly on startup
+  setTimeout(pollRconStats, 5000);
+  console.log('[Metrics] Polling démarré (Docker: 2s, RCON: 15s)');
 }
 
 function stopPolling() {
@@ -120,4 +147,4 @@ async function collectServerMetrics(server) {
   return metrics;
 }
 
-module.exports = { setIo, startPolling, stopPolling, collectServerMetrics };
+module.exports = { setIo, startPolling, stopPolling, collectServerMetrics, pushImmediate };
