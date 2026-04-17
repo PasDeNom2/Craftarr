@@ -94,6 +94,41 @@ function buildEnvVars(server) {
   return env;
 }
 
+/**
+ * Choisit le bon tag d'image itzg/minecraft-server selon la version MC.
+ *
+ * Java requis par version Minecraft :
+ *  < 1.17          → Java 8   (Forge legacy, LaunchwWrapper, etc.)
+ *  1.17            → Java 16
+ *  1.18 – 1.20.4   → Java 17
+ *  ≥ 1.20.5        → Java 21
+ *
+ * Utiliser la mauvaise version Java provoque des ClassCastException (URLClassLoader)
+ * ou des erreurs de bytecode sur les vieux packs (RLCraft, FTB Legacy, etc.).
+ */
+function resolveMinecraftImage(mcVersion) {
+  if (!mcVersion) return 'itzg/minecraft-server:java17'; // safe default
+
+  // Extraire les deux premiers segments : "1.12.2" → [1, 12]
+  const parts = mcVersion.replace(/[^0-9.]/g, '').split('.').map(Number);
+  const major = parts[0] ?? 1;
+  const minor = parts[1] ?? 0;
+
+  if (major === 1) {
+    if (minor < 17) return 'itzg/minecraft-server:java8';
+    if (minor === 17) return 'itzg/minecraft-server:java16';
+    if (minor <= 20) {
+      // 1.20.5+ nécessite Java 21
+      const patch = parts[2] ?? 0;
+      if (minor === 20 && patch >= 5) return 'itzg/minecraft-server:java21';
+      return 'itzg/minecraft-server:java17';
+    }
+    return 'itzg/minecraft-server:java21';
+  }
+
+  return 'itzg/minecraft-server:java21';
+}
+
 async function createServerContainer(server) {
   await ensureNetwork();
 
@@ -103,9 +138,12 @@ async function createServerContainer(server) {
   const hostServerDir = path.join(HOST_DATA_PATH, 'servers', server.id, 'server');
   const containerName = `mc-${server.id.slice(0, 8)}`;
 
+  const image = resolveMinecraftImage(server.mc_version);
+  console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'} : ${image}`);
+
   const container = await docker.createContainer({
     name: containerName,
-    Image: 'itzg/minecraft-server:latest',
+    Image: image,
     Env: buildEnvVars(server),
     ExposedPorts: {
       '25565/tcp': {},
