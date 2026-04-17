@@ -1,145 +1,143 @@
 # Craftarr ⛏️
 
-Gestionnaire de serveurs Minecraft auto-hébergé avec interface web moderne.
-Déployez des modpacks depuis CurseForge et Modrinth en quelques clics.
+Self-hosted Minecraft server manager with a modern web interface.
+Deploy modpacks from CurseForge and Modrinth in a few clicks.
 
 ---
 
-## Fonctionnalités
+## Features
 
-- **Catalogue unifié** — CurseForge + Modrinth + sources tierces en une vue
-- **Déploiement en 3 clics** — formulaire intelligent, progression en temps réel
-- **Dashboard serveur** — statut, métriques (RAM/CPU), console live, RCON
-- **Auto-updater** — vérification périodique, backup pre-update, rollback 1 clic
-- **Sauvegardes automatiques** — worlds, configs, plugins (tar.gz horodatés)
-- **Multi-sources** — ajoutez vos propres APIs de modpacks avec mapper JSON
-- **Multilingue** — 17 langues (FR, EN, ES, DE, PT, IT, RU, ZH, JA, KO, AR, PL, NL, TR, UK, SV, CS)
+- **Unified catalogue** — CurseForge + Modrinth + custom sources in one view
+- **One-click deploy** — smart form, real-time progress bar
+- **Server dashboard** — status, metrics (RAM/CPU), live console, RCON
+- **Auto-updater** — periodic check, pre-update backup, one-click rollback
+- **Automatic backups** — worlds, configs, plugins (timestamped tar.gz)
+- **Multi-source** — add your own modpack APIs with a JSON field mapper
+- **Multilingual** — 17 languages (EN, FR, ES, DE, PT, IT, RU, ZH, JA, KO, AR, PL, NL, TR, UK, SV, CS)
 
 ---
 
-## Démarrage rapide
+## Quick start
 
-### Prérequis
+### Requirements
 
 - Docker ≥ 24
 - Docker Compose v2
 
-### Installation
+### Install
 
 ```bash
-git clone https://github.com/PasDeNom2/MCManager.git craftarr
-cd craftarr
+git clone https://github.com/PasDeNom2/Craftarr.git
+cd Craftarr
 cp .env.example .env
 ```
 
-Éditez `.env` :
+Edit `.env` and add your CurseForge API key:
 
 ```env
-CURSEFORGE_API_KEY=votre-cle-curseforge   # Requis pour CurseForge
+CURSEFORGE_API_KEY=your-curseforge-key
 ```
 
-Les secrets (JWT, chiffrement, mot de passe admin) sont générés automatiquement au premier démarrage et affichés dans les logs du backend.
+Admin credentials (JWT secret, encryption key, password) are **auto-generated** on first start and printed in the backend logs.
 
-### Lancement
+### Start
 
 ```bash
 docker-compose up -d
 ```
 
-Interface disponible sur **http://localhost:8080**
-
-Les identifiants admin sont affichés dans les logs au premier démarrage :
+Open **http://localhost:8080** — credentials are shown in the logs:
 
 ```bash
 docker-compose logs backend
 ```
 
-### Obtenir une clé CurseForge
+### Get a CurseForge API key
 
-1. Rendez-vous sur https://console.curseforge.com
-2. Créez un compte ou connectez-vous
-3. Générez une clé API dans "API Keys"
-4. Ajoutez-la dans `.env` ou directement dans Paramètres → Sources API
+1. Go to https://console.curseforge.com
+2. Sign in or create an account
+3. Generate a key under "API Keys"
+4. Add it to `.env` or directly in Settings → API Sources
 
 ---
 
-## Structure des données
+## Data structure
 
 ```
 data/
-├── craftarr.db       ← Base SQLite (config, serveurs, backups)
-├── secrets.json      ← Secrets auto-générés (ne pas committer)
+├── craftarr.db       ← SQLite database (config, servers, backups)
+├── secrets.json      ← Auto-generated secrets (never commit this)
 └── servers/
     └── {server-id}/
-        ├── server/   ← Volume monté dans le container Minecraft
+        ├── server/   ← Bind-mounted into the Minecraft container
         │   ├── world/
         │   ├── mods/
         │   └── config/
-        └── backups/  ← Snapshots tar.gz horodatés
+        └── backups/  ← Timestamped tar.gz snapshots
 ```
 
 ---
 
-## Variables d'environnement
+## Environment variables
 
-| Variable | Défaut | Description |
+| Variable | Default | Description |
 |---|---|---|
-| `CURSEFORGE_API_KEY` | — | Clé API CurseForge (requis pour CurseForge) |
-| `MODRINTH_API_KEY` | — | Clé API Modrinth (optionnelle) |
-| `UI_PORT` | `8080` | Port de l'interface web |
-| `HOST_DATA_PATH` | `/root/Projet/craftarr/data` | Chemin hôte du dossier data |
-| `UPDATE_CHECK_INTERVAL_HOURS` | `6` | Fréquence de vérification des mises à jour |
-| `ADMIN_USERNAME` | `admin` | Surcharge du nom admin (optionnel) |
-| `ADMIN_PASSWORD` | auto-généré | Surcharge du mot de passe admin (optionnel) |
+| `CURSEFORGE_API_KEY` | — | CurseForge API key (required for CurseForge) |
+| `MODRINTH_API_KEY` | — | Modrinth API key (optional) |
+| `UI_PORT` | `8080` | Web UI port |
+| `HOST_DATA_PATH` | `/root/Projet/craftarr/data` | Host path to the data folder |
+| `UPDATE_CHECK_INTERVAL_HOURS` | `6` | How often to check for modpack updates |
+| `ADMIN_USERNAME` | `admin` | Override auto-generated admin username |
+| `ADMIN_PASSWORD` | auto-generated | Override auto-generated admin password |
 
 ---
 
-## Architecture technique
+## Tech stack
 
-| Couche | Technologie |
+| Layer | Technology |
 |---|---|
 | Backend | Node.js 20 + Express + Socket.io |
 | Frontend | React 18 + Vite + TailwindCSS |
-| Base de données | SQLite (better-sqlite3) |
-| Containers MC | itzg/minecraft-server |
-| Communication Docker | dockerode (Docker socket) |
-| Chiffrement | AES-256-GCM (crypto natif Node.js) |
-| Auth | JWT (7 jours) + bcrypt |
+| Database | SQLite (better-sqlite3) |
+| MC containers | itzg/minecraft-server |
+| Docker API | dockerode (Docker socket) |
+| Encryption | AES-256-GCM (native Node.js crypto) |
+| Auth | JWT (7 days) + bcrypt |
 
 ---
 
-## Commandes utiles
+## Useful commands
 
 ```bash
-# Voir les logs en temps réel
+# Stream logs
 docker-compose logs -f backend
 
-# Redémarrer après modification du .env
+# Restart after .env changes
 docker-compose up -d --force-recreate
 
-# Arrêt propre
+# Stop
 docker-compose down
 
-# Arrêt + suppression des volumes (repart de zéro)
+# Stop and wipe all data
 docker-compose down -v
 ```
 
 ---
 
-## Développement local
+## Local development
 
 ```bash
-# Backend (port 3000)
+# Backend — http://localhost:3000
 cd backend && npm install && npm run dev
 
-# Frontend (port 5173, proxie vers localhost:3000)
+# Frontend — http://localhost:5173 (proxied to :3000)
 cd frontend && npm install && npm run dev
 ```
 
 ---
 
-## Sécurité
+## Security
 
-- Les secrets (JWT, clé de chiffrement, mot de passe admin) sont auto-générés au premier démarrage dans `data/secrets.json`
-- Les clés API tierces sont stockées chiffrées en AES-256-GCM dans SQLite
-- Ne pas exposer l'interface directement sur internet sans reverse proxy (nginx/traefik + HTTPS)
+- Secrets (JWT, encryption key, admin password) are auto-generated on first start and stored in `data/secrets.json`
+- Third-party API keys are stored AES-256-GCM encrypted in SQLite
+- Do not expose the UI directly to the internet without a reverse proxy (nginx / traefik + HTTPS)
