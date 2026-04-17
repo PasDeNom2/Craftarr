@@ -34,6 +34,7 @@ function formatServer(row) {
   return {
     ...row,
     whitelist_enabled: !!row.whitelist_enabled,
+    online_mode: row.online_mode !== 0,
     auto_update: !!row.auto_update,
   };
 }
@@ -82,7 +83,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
     const {
       name, modpack_id, modpack_name, modpack_source, modpack_version, modpack_version_id,
       port, ram_mb = 4096, max_players = 20, seed, whitelist_enabled = false,
-      mc_version, loader_type = 'forge', auto_update = false,
+      mc_version, loader_type = 'forge', auto_update = false, online_mode = true,
     } = req.body;
 
     if (!name || !modpack_id || !modpack_source) {
@@ -90,7 +91,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
     }
 
     const db = getDb();
-    const assignedPort = port || findFreePort(db);
+    const assignedPort = port || await findFreePort(db);
     const rconPort = assignedPort + 10;
     const rconPassword = uuidv4().replace(/-/g, '').slice(0, 16);
     const id = uuidv4();
@@ -98,11 +99,12 @@ router.post('/', authMiddleware, async (req, res, next) => {
     db.prepare(`
       INSERT INTO servers (id, name, modpack_id, modpack_name, modpack_source, modpack_version,
         modpack_version_id, port, rcon_port, rcon_password, ram_mb, max_players, seed,
-        whitelist_enabled, status, mc_version, loader_type, auto_update)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?)
+        whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?)
     `).run(id, name, modpack_id, modpack_name || modpack_id, modpack_source, modpack_version || null,
       modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
-      seed || null, whitelist_enabled ? 1 : 0, mc_version || null, loader_type, auto_update ? 1 : 0);
+      seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
+      (mc_version && /^1\.\d+/.test(mc_version) ? mc_version : null), loader_type, auto_update ? 1 : 0);
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
     res.status(201).json(formatServer(server));
@@ -186,7 +188,14 @@ router.post('/:id/start', authMiddleware, async (req, res, next) => {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
-    if (!server.container_id) return res.status(400).json({ error: 'Container non créé' });
+    // Si le container n'existe pas encore, le créer (cas d'un serveur installé mais dont le container a échoué)
+    if (!server.container_id) {
+      const { containerId, containerName } = await dockerService.createServerContainer(server);
+      db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ? WHERE id = ?')
+        .run(containerId, containerName, 'starting', server.id);
+      await dockerService.startContainer(containerId);
+      return res.json({ ok: true, status: 'starting' });
+    }
 
     await dockerService.startContainer(server.container_id);
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
@@ -388,8 +397,8 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-    const allowed = ['name', 'port', 'ram_mb', 'max_players', 'whitelist_enabled', 'auto_update', 'update_interval_hours', 'motd'];
-    const booleans = new Set(['whitelist_enabled', 'auto_update']);
+    const allowed = ['name', 'port', 'ram_mb', 'max_players', 'whitelist_enabled', 'online_mode', 'auto_update', 'update_interval_hours', 'motd'];
+    const booleans = new Set(['whitelist_enabled', 'online_mode', 'auto_update']);
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
@@ -550,10 +559,43 @@ router.get('/:id/metrics', authMiddleware, async (req, res, next) => {
   }
 });
 
-function findFreePort(db) {
-  const used = db.prepare('SELECT port FROM servers').all().map(r => r.port);
+// GET /api/servers/:id/players — liste les joueurs vus + statut online
+router.get('/:id/players', authMiddleware, (req, res) => {
+  const db = getDb();
+  const server = db.prepare('SELECT id FROM servers WHERE id = ?').get(req.params.id);
+  if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+  const players = db.prepare(
+    'SELECT username, uuid, online, first_seen, last_seen FROM players WHERE server_id = ? ORDER BY online DESC, last_seen DESC'
+  ).all(req.params.id);
+  res.json(players);
+});
+
+// GET /api/servers/:id/players/:username/events — historique d'un joueur
+router.get('/:id/players/:username/events', authMiddleware, (req, res) => {
+  const db = getDb();
+  const events = db.prepare(
+    "SELECT type, detail, created_at FROM player_events WHERE server_id = ? AND player_name = ? ORDER BY created_at DESC LIMIT 100"
+  ).all(req.params.id, req.params.username);
+  res.json(events);
+});
+
+async function findFreePort(db) {
+  // Ports utilisés en DB
+  const dbPorts = db.prepare('SELECT port, rcon_port FROM servers').all()
+    .flatMap(r => [r.port, r.rcon_port]);
+
+  // Ports réellement alloués par les containers Docker (même orphelins)
+  let dockerPorts = [];
+  try {
+    const containers = await dockerService.listMcContainers();
+    dockerPorts = containers.flatMap(c =>
+      (c.Ports || []).map(p => p.PublicPort).filter(Boolean)
+    );
+  } catch { /* Docker inaccessible */ }
+
+  const used = new Set([...dbPorts, ...dockerPorts]);
   let port = 25565;
-  while (used.includes(port)) port++;
+  while (used.has(port) || used.has(port + 10)) port++;
   return port;
 }
 

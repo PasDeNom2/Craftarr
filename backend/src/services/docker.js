@@ -18,9 +18,31 @@ async function ensureNetwork() {
 }
 
 /**
+ * Lit NEOFORGE_VERSION= depuis startserver.sh/bat du server pack.
+ * ATM11 : startserver.sh contient `NEOFORGE_VERSION=26.1.2.12-beta`
+ */
+function detectNeoForgeVersionFromStartScript(serverDir) {
+  const scripts = ['startserver.sh', 'startserver.bat', 'start.sh', 'start.bat'];
+  const dirs = [serverDir];
+  try {
+    for (const entry of fs.readdirSync(serverDir, { withFileTypes: true })) {
+      if (entry.isDirectory()) dirs.push(path.join(serverDir, entry.name));
+    }
+  } catch {}
+  for (const dir of dirs) {
+    for (const script of scripts) {
+      try {
+        const content = fs.readFileSync(path.join(dir, script), 'utf8');
+        const m = content.match(/NEOFORGE_VERSION\s*=\s*["']?([0-9][^\s"']+)["']?/);
+        if (m) return m[1].trim();
+      } catch {}
+    }
+  }
+  return null;
+}
+
+/**
  * Détecte le JAR d'installation NeoForge bundlé dans le server pack.
- * ATM11 et d'autres packs incluent leur propre installer (ex: neoforge-26.1.2.10-beta-installer.jar).
- * Retourne le chemin absolu du JAR dans DATA_PATH (pour le bind-mount /data) ou null.
  */
 function detectNeoForgeInstallerFromPack(serverDir) {
   try {
@@ -41,14 +63,35 @@ function detectNeoForgeInstallerFromPack(serverDir) {
   }
 }
 
+/**
+ * Dérive la version MC depuis une version NeoForge.
+ * Schéma NeoForge :
+ *   21.x.y    → MC 1.21.x   (ancien schéma)
+ *   20.x.y    → MC 1.20.x
+ *   26.1.x.y  → MC 1.21.1   (nouveau schéma post-26)
+ */
+function deriveMcVersionFromNeoForge(nfVersion) {
+  const parts = nfVersion.replace(/-.*/, '').split('.').map(Number);
+  const major = parts[0];
+  if (major >= 20 && major <= 25 && parts.length >= 2) {
+    return `1.${major}.${parts[1]}`;
+  }
+  if (major === 26 && parts.length >= 2) {
+    return `1.21.${parts[1]}`;
+  }
+  return null;
+}
+
 function buildEnvVars(server) {
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
 
-  // Détecte si un JAR d'installation NeoForge est bundlé dans le server pack
+  const neoForgeVersionFromScript = server.loader_type === 'neoforge'
+    ? detectNeoForgeVersionFromStartScript(serverDir)
+    : null;
+
   const neoForgeInstallerPath = server.loader_type === 'neoforge'
     ? detectNeoForgeInstallerFromPack(serverDir)
     : null;
-  // Converti le chemin absolu (DATA_PATH) en chemin /data vu depuis le container MC
   const neoForgeInstallerInContainer = neoForgeInstallerPath
     ? neoForgeInstallerPath.replace(serverDir, '/data')
     : null;
@@ -59,18 +102,27 @@ function buildEnvVars(server) {
     `MAX_MEMORY=${server.ram_mb}M`,
     `INIT_MEMORY=${Math.min(1024, Math.floor(server.ram_mb / 2))}M`,
     `MAX_PLAYERS=${server.max_players}`,
-    `ONLINE_MODE=FALSE`,
+    `ONLINE_MODE=${server.online_mode !== 0 ? 'TRUE' : 'FALSE'}`,
     `ENABLE_RCON=true`,
     `RCON_PORT=25575`,
     `RCON_PASSWORD=${server.rcon_password}`,
     `MOTD=${server.motd || `${server.name} — Powered by Craftarr`}`,
   ];
 
-  if (neoForgeInstallerInContainer) {
-    // Utilise le JAR d'installation bundlé par le server pack (ex: ATM11 = 26.1.2.10-beta)
+  if (neoForgeVersionFromScript) {
+    // startserver.sh fournit la version exacte → méthode la plus fiable
+    console.log(`[Docker] NeoForge version (startserver) : ${neoForgeVersionFromScript}`);
+    env.push(`NEOFORGE_VERSION=${neoForgeVersionFromScript}`);
+    const derivedMc = deriveMcVersionFromNeoForge(neoForgeVersionFromScript);
+    if (derivedMc) {
+      console.log(`[Docker] MC version déduite : ${derivedMc}`);
+      env.push(`VERSION=${derivedMc}`);
+    }
+  } else if (neoForgeInstallerInContainer) {
     console.log(`[Docker] NeoForge installer bundlé : ${neoForgeInstallerInContainer}`);
     env.push(`NEOFORGE_INSTALLER=${neoForgeInstallerInContainer}`);
-  } else if (server.mc_version) {
+  } else if (server.mc_version && /^1\.\d{1,2}(\.\d{1,2})?$/.test(server.mc_version)) {
+    // Uniquement une vraie version MC (1.x.y), jamais une version loader (26.1.2)
     env.push(`VERSION=${server.mc_version}`);
   }
 
@@ -109,8 +161,14 @@ function buildEnvVars(server) {
  * Utiliser la mauvaise version Java provoque des ClassCastException (URLClassLoader)
  * ou des erreurs de bytecode sur les vieux packs (RLCraft, FTB Legacy, etc.).
  */
-function resolveMinecraftImage(mcVersion) {
-  if (!mcVersion) return 'itzg/minecraft-server:java17'; // safe default
+function resolveMinecraftImage(mcVersion, neoforgeVersion) {
+  // NeoForge 26.x (MC 1.21.1+) nécessite Java 25 (class file version 69)
+  if (neoforgeVersion) {
+    const nfMajor = parseInt(neoforgeVersion.split('.')[0], 10);
+    if (nfMajor >= 26) return 'itzg/minecraft-server:java25';
+    return 'itzg/minecraft-server:java21'; // NeoForge < 26 → Java 21
+  }
+  if (!mcVersion) return 'itzg/minecraft-server:java21'; // NeoForge sans version connue → Java 21 safe
 
   // Extraire les deux premiers segments : "1.12.2" → [1, 12]
   const parts = mcVersion.replace(/[^0-9.]/g, '').split('.').map(Number);
@@ -156,8 +214,11 @@ async function createServerContainer(server, onProgress) {
   const hostServerDir = path.join(HOST_DATA_PATH, 'servers', server.id, 'server');
   const containerName = `mc-${server.id.slice(0, 8)}`;
 
-  const image = resolveMinecraftImage(server.mc_version);
-  console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'} : ${image}`);
+  const nfVersionForImage = server.loader_type === 'neoforge'
+    ? detectNeoForgeVersionFromStartScript(path.join(DATA_PATH, 'servers', server.id, 'server'))
+    : null;
+  const image = resolveMinecraftImage(server.mc_version, nfVersionForImage);
+  console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'} NeoForge ${nfVersionForImage || 'n/a'} : ${image}`);
   await ensureImage(image, onProgress);
 
   const container = await docker.createContainer({
@@ -241,11 +302,11 @@ async function getContainerStatus(containerId) {
   }
 }
 
-function streamContainerLogs(containerId, onData, onError) {
+function streamContainerLogs(containerId, onData, onError, useTail = false) {
   const { PassThrough } = require('stream');
   const container = docker.getContainer(containerId);
   container.logs(
-    { follow: true, stdout: true, stderr: true, tail: 200 },
+    { follow: true, stdout: true, stderr: true, tail: useTail ? 200 : 0 },
     (err, stream) => {
       if (err) return onError?.(err);
 
