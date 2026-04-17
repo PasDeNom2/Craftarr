@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useI18n } from '../i18n';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -22,11 +23,11 @@ import {
 } from 'lucide-react';
 
 const TABS = [
-  { id: 'Console',      Icon: Terminal     },
-  { id: 'Métriques',   Icon: Activity     },
-  { id: 'Sauvegardes', Icon: HardDrive    },
-  { id: 'Fichiers',    Icon: FolderOpen   },
-  { id: 'Paramètres',  Icon: SettingsIcon },
+  { id: 'Console',      Icon: Terminal,      labelKey: 'server.tabs.console'   },
+  { id: 'Métriques',   Icon: Activity,      labelKey: 'server.tabs.metrics'   },
+  { id: 'Sauvegardes', Icon: HardDrive,     labelKey: 'server.tabs.backups'   },
+  { id: 'Fichiers',    Icon: FolderOpen,    labelKey: 'server.tabs.files'     },
+  { id: 'Paramètres',  Icon: SettingsIcon,  labelKey: 'server.tabs.settings'  },
 ];
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
@@ -462,6 +463,7 @@ export default function ServerDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { t } = useI18n();
   const [tab, setTab] = useState('Console');
   const [showUpdate, setShowUpdate] = useState(false);
   const [showWorldImport, setShowWorldImport] = useState(false);
@@ -603,7 +605,7 @@ export default function ServerDetailPage() {
 
         {/* Tabs */}
         <div className="flex gap-0.5">
-          {TABS.map(({ id: tabId, Icon }) => (
+          {TABS.map(({ id: tabId, Icon, labelKey }) => (
             <button
               key={tabId}
               onClick={() => setTab(tabId)}
@@ -615,7 +617,7 @@ export default function ServerDetailPage() {
               )}
             >
               <Icon size={14} strokeWidth={1.5} />
-              <span className="uppercase tracking-[0.06em]">{tabId}</span>
+              <span className="uppercase tracking-[0.06em]">{t(labelKey)}</span>
             </button>
           ))}
         </div>

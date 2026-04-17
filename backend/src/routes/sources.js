@@ -125,7 +125,7 @@ router.post('/:id/test', authMiddleware, async (req, res, next) => {
 router.get('/export', authMiddleware, (req, res) => {
   const db = getDb();
   const sources = db.prepare('SELECT * FROM api_sources WHERE is_builtin = 0').all().map(formatSource);
-  res.setHeader('Content-Disposition', 'attachment; filename="mcmanager-sources.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="craftarr-sources.json"');
   res.json(sources);
 });
 

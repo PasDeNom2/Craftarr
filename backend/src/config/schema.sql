@@ -1,4 +1,4 @@
--- MCManager Database Schema
+-- Craftarr Database Schema
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,

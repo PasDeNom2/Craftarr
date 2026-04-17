@@ -1,7 +1,7 @@
 {
-  "name": "mcmanager-backend",
+  "name": "craftarr-backend",
   "version": "1.0.0",
-  "description": "MCManager backend — Minecraft server manager",
+  "description": "Craftarr backend — Minecraft server manager",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

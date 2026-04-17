@@ -7,7 +7,7 @@ const DATA_PATH = process.env.DATA_PATH || '/data';
 // HOST_DATA_PATH = chemin hôte correspondant à DATA_PATH, utilisé pour les bind mounts des containers MC
 // (Docker daemon interprète les chemins de bind mounts depuis le point de vue de l'hôte)
 const HOST_DATA_PATH = process.env.HOST_DATA_PATH || DATA_PATH;
-const MC_NETWORK = 'mcmanager';
+const MC_NETWORK = 'craftarr';
 
 async function ensureNetwork() {
   const networks = await docker.listNetworks({ filters: { name: [MC_NETWORK] } });
@@ -63,7 +63,7 @@ function buildEnvVars(server) {
     `ENABLE_RCON=true`,
     `RCON_PORT=25575`,
     `RCON_PASSWORD=${server.rcon_password}`,
-    `MOTD=${server.motd || `${server.name} — Powered by MCManager`}`,
+    `MOTD=${server.motd || `${server.name} — Powered by Craftarr`}`,
   ];
 
   if (neoForgeInstallerInContainer) {

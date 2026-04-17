@@ -72,7 +72,7 @@ function loadOrCreateSecrets() {
   if (firstRun) {
     console.log('');
     console.log('╔══════════════════════════════════════════════════╗');
-    console.log('║          MCManager — Premier démarrage           ║');
+    console.log('║           Craftarr — Premier démarrage           ║');
     console.log('╠══════════════════════════════════════════════════╣');
     console.log(`║  Identifiant : ${stored.admin_username.padEnd(33)}║`);
     console.log(`║  Mot de passe : ${stored.admin_password.padEnd(32)}║`);

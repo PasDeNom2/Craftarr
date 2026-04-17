@@ -85,7 +85,7 @@ setupLogsSocket(io);
 
 // ─── Démarrage ──────────────────────────────────────────────
 server.listen(PORT, async () => {
-  console.log(`[MCManager] Backend démarré sur le port ${PORT}`);
+  console.log(`[Craftarr] Backend démarré sur le port ${PORT}`);
   await ensureAdminUser();
   metrics.startPolling();
   updater.scheduleUpdater();
@@ -93,10 +93,10 @@ server.listen(PORT, async () => {
 
 // ─── Arrêt propre ───────────────────────────────────────────
 process.on('SIGTERM', () => {
-  console.log('[MCManager] SIGTERM reçu, arrêt propre...');
+  console.log('[Craftarr] SIGTERM reçu, arrêt propre...');
   metrics.stopPolling();
   server.close(() => {
-    console.log('[MCManager] Serveur arrêté.');
+    console.log('[Craftarr] Serveur arrêté.');
     process.exit(0);
   });
 });

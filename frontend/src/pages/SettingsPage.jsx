@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSources, updateSource } from '../services/api';
 import ApiSourceList from '../components/settings/ApiSourceList';
+import { useI18n } from '../i18n';
 import toast from 'react-hot-toast';
 
 function Section({ title, children }) {
@@ -22,16 +23,17 @@ function ApiKeyField({ sourceId, label, description }) {
   const qc = useQueryClient();
   const [value, setValue] = useState('');
   const [saved, setSaved] = useState(false);
+  const { t } = useI18n();
 
   const save = useMutation({
     mutationFn: () => updateSource(sourceId, { api_key: value }),
     onSuccess: () => {
       setSaved(true);
       setValue('');
-      toast.success(`Clé ${label} enregistrée`);
+      toast.success(t('settings.saveSuccess'));
       qc.invalidateQueries({ queryKey: ['sources'] });
     },
-    onError: () => toast.error('Erreur lors de la sauvegarde'),
+    onError: () => toast.error(t('settings.saveError')),
   });
 
   return (
@@ -46,14 +48,14 @@ function ApiKeyField({ sourceId, label, description }) {
           className="input flex-1"
           value={value}
           onChange={e => { setValue(e.target.value); setSaved(false); }}
-          placeholder={saved ? '••••••••••••••••' : 'Entrez votre clé API...'}
+          placeholder={saved ? '••••••••••••••••' : t('settings.enterKey')}
         />
         <button
           className="btn-primary shrink-0"
           onClick={() => save.mutate()}
           disabled={!value || save.isPending}
         >
-          {save.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
+          {save.isPending ? t('settings.saving') : t('settings.save')}
         </button>
       </div>
     </div>
@@ -61,41 +63,39 @@ function ApiKeyField({ sourceId, label, description }) {
 }
 
 export default function SettingsPage() {
+  const { t } = useI18n();
+
   return (
     <div className="p-7 max-w-3xl mx-auto space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight mb-1">Paramètres</h1>
-        <p className="text-[#6B6B76] text-sm">Configuration globale de MCManager</p>
+        <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight mb-1">{t('settings.title')}</h1>
+        <p className="text-[#6B6B76] text-sm">{t('settings.subtitle')}</p>
       </div>
 
-      <Section title="Clés API">
+      <Section title={t('settings.apiKeys')}>
         <ApiKeyField
           sourceId="curseforge"
           label="CurseForge API Key"
-          description="Obtenez votre clé sur console.curseforge.com — requise pour accéder au catalogue CurseForge"
+          description={t('settings.curseforgeDesc')}
         />
         <ApiKeyField
           sourceId="modrinth"
-          label="Modrinth API Key (optionnelle)"
-          description="Améliore le rate limit pour les recherches Modrinth. Disponible sur modrinth.com/settings/pats"
+          label={t('settings.modrinthOptional')}
+          description={t('settings.modrinthDesc')}
         />
       </Section>
 
-      <Section title="Sources de modpacks">
-        <p className="text-xs text-[#6B6B76]">
-          Activez ou désactivez des sources, ajoutez des APIs tierces.
-          Le catalogue agrège toutes les sources actives en une vue unifiée.
-        </p>
+      <Section title={t('settings.apiSources')}>
         <ApiSourceList />
       </Section>
 
-      <Section title="Informations système">
+      <Section title="System">
         <div className="card space-y-3 text-sm">
           {[
             ['Version MCManager', '1.0.0'],
             ['Backend', 'Node.js + Express'],
             ['Image Minecraft', 'itzg/minecraft-server'],
-            ['Base de données', 'SQLite'],
+            ['Database', 'SQLite'],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px' }}>
               <span className="text-[#6B6B76]">{k}</span>

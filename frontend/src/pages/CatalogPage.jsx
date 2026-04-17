@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getCatalog } from '../services/api';
 import { useServerStore } from '../store';
+import { useI18n } from '../i18n';
 import ModpackCard from '../components/catalog/ModpackCard';
 import ModpackDetail from '../components/catalog/ModpackDetail';
 import DeployModal from '../components/catalog/DeployModal';
@@ -15,6 +16,7 @@ export default function CatalogPage() {
   const [mcVersion, setMcVersion] = useState('');
   const [selectedModpack, setSelectedModpack] = useState(null);
   const [deployModpack, setDeployModpack] = useState(null);
+  const { t } = useI18n();
 
   const servers = useServerStore(s => s.servers);
   const runningCount = servers.filter(s => s.status === 'running').length;
@@ -36,49 +38,45 @@ export default function CatalogPage() {
 
   return (
     <div className="p-7 max-w-screen-xl mx-auto">
-      {/* Page header */}
       <div className="mb-7">
-        <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">Catalogue</h1>
-        <p className="text-sm text-[#6B6B76] mt-1">Déployez des serveurs Minecraft en quelques clics</p>
+        <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">{t('catalog.title')}</h1>
+        <p className="text-sm text-[#6B6B76] mt-1">{t('catalog.subtitle')}</p>
       </div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4 mb-7">
         <StatCard
           icon={Activity}
-          label="Serveurs actifs"
+          label={t('catalog.activeServers')}
           value={runningCount}
           accent={runningCount > 0}
-          sub={runningCount > 0 ? `${runningCount} en ligne` : 'Aucun actif'}
+          sub={runningCount > 0 ? `${runningCount} ${t('catalog.online')}` : t('catalog.noneActive')}
         />
         <StatCard
           icon={Server}
-          label="Serveurs arrêtés"
+          label={t('catalog.stoppedServers')}
           value={stoppedCount}
-          sub={`${servers.length} au total`}
+          sub={`${servers.length} ${t('catalog.totalServers')}`}
         />
         <StatCard
           icon={Loader}
-          label="En cours"
+          label={t('catalog.inProgress')}
           value={installingCount}
-          sub={installingCount > 0 ? 'Installation...' : 'Aucun en cours'}
+          sub={installingCount > 0 ? t('catalog.installing') : t('catalog.noneInProgress')}
         />
       </div>
 
-      {/* Catalogue section */}
       <div className="card">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-[#F0F0F0] uppercase tracking-[0.08em]">Modpacks disponibles</h2>
-          <span className="text-xs text-[#6B6B76]">{modpacks.length} résultats</span>
+          <h2 className="text-sm font-semibold text-[#F0F0F0] uppercase tracking-[0.08em]">{t('catalog.available')}</h2>
+          <span className="text-xs text-[#6B6B76]">{modpacks.length} {t('catalog.results')}</span>
         </div>
 
-        {/* Search & filters */}
         <form onSubmit={handleSearch} className="flex gap-3 mb-5 flex-wrap">
           <div className="flex-1 min-w-60 relative">
             <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4A4A55]" />
             <input
               className="input pl-9"
-              placeholder="Rechercher un modpack..."
+              placeholder={t('catalog.search')}
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
             />
@@ -88,7 +86,7 @@ export default function CatalogPage() {
             value={mcVersion}
             onChange={e => setMcVersion(e.target.value)}
           >
-            <option value="">Toutes versions</option>
+            <option value="">{t('catalog.allVersions')}</option>
             {MC_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
           {(query || mcVersion) && (
@@ -98,12 +96,11 @@ export default function CatalogPage() {
               onClick={() => { setQuery(''); setInputValue(''); setMcVersion(''); }}
             >
               <X size={13} strokeWidth={1.5} />
-              Effacer
+              {t('catalog.clear')}
             </button>
           )}
         </form>
 
-        {/* Content */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -118,9 +115,9 @@ export default function CatalogPage() {
             >
               <AlertCircle size={20} strokeWidth={1.5} className="text-[#F87171]" />
             </div>
-            <p className="font-medium text-[#F0F0F0] text-sm">Erreur de chargement</p>
-            <p className="text-sm text-[#6B6B76]">Vérifiez vos clés API dans les paramètres</p>
-            <button className="btn-secondary mt-1" onClick={() => refetch()}>Réessayer</button>
+            <p className="font-medium text-[#F0F0F0] text-sm">{t('catalog.loadError')}</p>
+            <p className="text-sm text-[#6B6B76]">{t('catalog.loadErrorHint')}</p>
+            <button className="btn-secondary mt-1" onClick={() => refetch()}>{t('catalog.retry')}</button>
           </div>
         ) : modpacks.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-2 text-center">
@@ -130,8 +127,8 @@ export default function CatalogPage() {
             >
               <Search size={18} strokeWidth={1.5} className="text-[#4A4A55]" />
             </div>
-            <p className="font-medium text-[#F0F0F0] text-sm mt-1">Aucun modpack trouvé</p>
-            {query && <p className="text-sm text-[#6B6B76]">Essayez un autre terme de recherche</p>}
+            <p className="font-medium text-[#F0F0F0] text-sm mt-1">{t('catalog.noResults')}</p>
+            {query && <p className="text-sm text-[#6B6B76]">{t('catalog.noResultsHint')}</p>}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -148,7 +145,6 @@ export default function CatalogPage() {
         )}
       </div>
 
-      {/* Modals */}
       {selectedModpack && (
         <ModpackDetail
           modpack={selectedModpack}

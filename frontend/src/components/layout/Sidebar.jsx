@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useServerStore, useAuthStore } from '../../store';
+import { useI18n } from '../../i18n';
 import clsx from 'clsx';
 import {
   LayoutDashboard,
@@ -56,6 +57,7 @@ export default function Sidebar() {
   const logout = useAuthStore(s => s.logout);
   const user = useAuthStore(s => s.user);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const runningCount = servers.filter(s => s.status === 'running').length;
 
@@ -85,10 +87,7 @@ export default function Sidebar() {
           <Layers size={16} strokeWidth={2} className="text-black" />
         </div>
         {!collapsed && (
-          <span
-            className="font-semibold text-[#F0F0F0] text-sm tracking-tight"
-            style={{ opacity: collapsed ? 0 : 1, transition: 'opacity 0.2s' }}
-          >
+          <span className="font-semibold text-[#F0F0F0] text-sm tracking-tight" style={{ opacity: 1, transition: 'opacity 0.2s' }}>
             MCManager
           </span>
         )}
@@ -96,9 +95,8 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 space-y-0.5">
-        <NavItem to="/catalog" icon={LayoutDashboard} label="Catalogue" collapsed={collapsed} />
+        <NavItem to="/catalog" icon={LayoutDashboard} label={t('nav.catalogue')} collapsed={collapsed} />
 
-        {/* Servers section */}
         {!collapsed ? (
           <div>
             <button
@@ -106,7 +104,7 @@ export default function Sidebar() {
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[#6B6B76] hover:bg-[#1C1C21] hover:text-[#F0F0F0] transition-all duration-200"
             >
               <Server size={18} strokeWidth={1.5} className="shrink-0" />
-              <span className="flex-1 text-left">Serveurs</span>
+              <span className="flex-1 text-left">{t('nav.servers')}</span>
               {runningCount > 0 && (
                 <span className="text-[10px] font-semibold text-[#4ADE80] bg-[#4ADE80]/10 px-1.5 py-0.5 rounded-md">
                   {runningCount}
@@ -118,7 +116,7 @@ export default function Sidebar() {
             {serversOpen && (
               <div className="mt-0.5 ml-4 pl-3 border-l space-y-0.5" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                 {servers.length === 0 ? (
-                  <p className="text-xs text-[#4A4A55] px-3 py-2">Aucun serveur déployé</p>
+                  <p className="text-xs text-[#4A4A55] px-3 py-2">{t('nav.noServers')}</p>
                 ) : (
                   servers.map(server => (
                     <NavLink
@@ -136,13 +134,7 @@ export default function Sidebar() {
                           {isActive && (
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#F0F0F0] rounded-r-full" />
                           )}
-                          <span
-                            className={clsx(
-                              'w-1.5 h-1.5 rounded-full shrink-0',
-                              STATUS_DOT[server.status] || STATUS_DOT.stopped,
-                              server.status === 'running' && 'pulse-dot'
-                            )}
-                          />
+                          <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', STATUS_DOT[server.status] || STATUS_DOT.stopped, server.status === 'running' && 'pulse-dot')} />
                           <span className="truncate flex-1">{server.name}</span>
                         </>
                       )}
@@ -155,14 +147,14 @@ export default function Sidebar() {
         ) : (
           <NavLink
             to="#"
-            title="Serveurs"
+            title={t('nav.servers')}
             className="flex items-center justify-center w-10 mx-auto py-2 rounded-lg text-[#6B6B76] hover:bg-[#1C1C21] hover:text-[#F0F0F0] transition-all duration-200"
           >
             <Server size={18} strokeWidth={1.5} />
           </NavLink>
         )}
 
-        <NavItem to="/settings" icon={Settings} label="Paramètres" collapsed={collapsed} />
+        <NavItem to="/settings" icon={Settings} label={t('nav.settings')} collapsed={collapsed} />
       </nav>
 
       {/* Footer */}
@@ -178,7 +170,7 @@ export default function Sidebar() {
             <button
               onClick={handleLogout}
               className="p-1 rounded-md hover:bg-[#1C1C21] text-[#4A4A55] hover:text-[#F87171] transition-colors"
-              title="Déconnexion"
+              title={t('nav.logout')}
             >
               <LogOut size={13} strokeWidth={1.5} />
             </button>
@@ -190,7 +182,7 @@ export default function Sidebar() {
             'flex items-center justify-center rounded-lg text-[#4A4A55] hover:text-[#6B6B76] hover:bg-[#1C1C21] transition-all duration-200',
             collapsed ? 'w-10 h-8 mx-auto' : 'w-full h-8'
           )}
-          title={collapsed ? 'Développer' : 'Réduire'}
+          title={collapsed ? t('nav.expand') : t('nav.collapse')}
         >
           {collapsed
             ? <PanelLeftOpen size={15} strokeWidth={1.5} />

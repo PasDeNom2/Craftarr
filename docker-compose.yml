@@ -3,14 +3,14 @@ version: '3.9'
 services:
   backend:
     build: ./backend
-    container_name: mcmanager-backend
+    container_name: craftarr-backend
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       - PORT=3000
       - DATA_PATH=/data
       # Chemin hôte du dossier data (pour les bind mounts des containers MC)
-      - HOST_DATA_PATH=${HOST_DATA_PATH:-/root/Projet/mcmanager/data}
+      - HOST_DATA_PATH=${HOST_DATA_PATH:-/root/Projet/craftarr/data}
       # Optionnel : surcharger ici ou dans un .env
       # - ADMIN_USERNAME=admin
       # - ADMIN_PASSWORD=monmotdepasse
@@ -22,7 +22,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
     networks:
-      - mcmanager-net
+      - craftarr-net
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 15s
@@ -32,7 +32,7 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: mcmanager-frontend
+    container_name: craftarr-frontend
     restart: unless-stopped
     ports:
       - "${UI_PORT:-8080}:80"
@@ -40,9 +40,9 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - mcmanager-net
+      - craftarr-net
 
 networks:
-  mcmanager-net:
-    name: mcmanager
+  craftarr-net:
+    name: craftarr
     driver: bridge

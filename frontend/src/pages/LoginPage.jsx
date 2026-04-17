@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { login } from '../services/api';
 import { useAuthStore } from '../store';
+import { useI18n } from '../i18n';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { Layers } from 'lucide-react';
 
 export default function LoginPage() {
@@ -11,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { setToken, setUser } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -22,7 +25,7 @@ export default function LoginPage() {
       setUser({ username: data.username });
       navigate('/', { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Identifiants invalides');
+      toast.error(err.response?.data?.error || t('login.error'));
     } finally {
       setLoading(false);
     }
@@ -30,14 +33,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#09090B] flex items-center justify-center p-4">
+      {/* Language switcher top-right */}
+      <div className="fixed top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F0F0F0] rounded-xl mb-4">
             <Layers size={20} strokeWidth={2} className="text-black" />
           </div>
           <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">MCManager</h1>
-          <p className="text-[#6B6B76] text-sm mt-1">Gestionnaire de serveurs Minecraft</p>
+          <p className="text-[#6B6B76] text-sm mt-1">{t('app.tagline')}</p>
         </div>
 
         <form
@@ -46,7 +53,7 @@ export default function LoginPage() {
           style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.06)' }}
         >
           <div>
-            <label className="label">Nom d'utilisateur</label>
+            <label className="label">{t('login.username')}</label>
             <input
               type="text"
               className="input"
@@ -57,7 +64,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="label">Mot de passe</label>
+            <label className="label">{t('login.password')}</label>
             <input
               type="password"
               className="input"
@@ -71,7 +78,7 @@ export default function LoginPage() {
             className="btn-primary w-full justify-center py-2.5 mt-2"
             disabled={loading}
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? t('login.loading') : t('login.submit')}
           </button>
         </form>
       </div>

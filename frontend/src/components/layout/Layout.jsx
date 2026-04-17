@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useServerStore } from '../../store';
 import { getServers } from '../../services/api';
 import { getSocket } from '../../hooks/useSocket';
@@ -41,9 +42,18 @@ export default function Layout() {
   return (
     <div className="flex h-screen overflow-hidden bg-surface">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-surface">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar with language switcher */}
+        <div
+          className="flex items-center justify-end px-4 py-2 shrink-0"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+        >
+          <LanguageSwitcher />
+        </div>
+        <main className="flex-1 overflow-y-auto bg-surface">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

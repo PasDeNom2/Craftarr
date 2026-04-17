@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
-const DB_PATH = path.join(DATA_PATH, 'mcmanager.db');
+const DB_PATH = path.join(DATA_PATH, 'craftarr.db');
 
 let db;
 
