@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSources, updateSource } from '../services/api';
-import ApiSourceList from '../components/settings/ApiSourceList';
 import { useI18n } from '../i18n';
 import toast from 'react-hot-toast';
 
@@ -85,14 +84,10 @@ export default function SettingsPage() {
         />
       </Section>
 
-      <Section title={t('settings.apiSources')}>
-        <ApiSourceList />
-      </Section>
-
       <Section title="System">
         <div className="card space-y-3 text-sm">
           {[
-            ['Version MCManager', '1.0.0'],
+            ['Version', '1.0.0'],
             ['Backend', 'Node.js + Express'],
             ['Image Minecraft', 'itzg/minecraft-server'],
             ['Database', 'SQLite'],
