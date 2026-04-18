@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS servers (
   loader_type TEXT,                            -- forge|fabric|quilt|neoforge|vanilla
   auto_update INTEGER NOT NULL DEFAULT 1,
   update_interval_hours INTEGER NOT NULL DEFAULT 6,
+  online_mode INTEGER NOT NULL DEFAULT 1,           -- 1=premium (skins), 0=cracked
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   last_seen TEXT
 );
@@ -66,6 +67,28 @@ CREATE TABLE IF NOT EXISTS update_history (
   status TEXT NOT NULL DEFAULT 'pending',      -- pending|success|failed|rolled-back
   changelog TEXT,
   backup_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS players (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  server_id TEXT NOT NULL,
+  username TEXT NOT NULL,
+  uuid TEXT,
+  online INTEGER NOT NULL DEFAULT 0,
+  first_seen TEXT NOT NULL DEFAULT (datetime('now')),
+  last_seen TEXT,
+  UNIQUE(server_id, username),
+  FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS player_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  server_id TEXT NOT NULL,
+  player_name TEXT NOT NULL,
+  type TEXT NOT NULL,     -- join|leave|chat|command|death
+  detail TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
 );

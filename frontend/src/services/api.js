@@ -74,6 +74,10 @@ export const getFiles = (id, path = '') => api.get(`/servers/${id}/files`, { par
 export const getFileContent = (id, path) => api.get(`/servers/${id}/files/content`, { params: { path } }).then(r => r.data);
 export const putFileContent = (id, path, content) => api.put(`/servers/${id}/files/content`, { path, content }).then(r => r.data);
 
+// Players
+export const getPlayers = (serverId) => api.get(`/servers/${serverId}/players`).then(r => r.data);
+export const getPlayerEvents = (serverId, username) => api.get(`/servers/${serverId}/players/${username}/events`).then(r => r.data);
+
 // Backups
 export const getBackups = (serverId) => api.get(`/servers/${serverId}/backups`).then(r => r.data);
 export const deleteBackup = (serverId, backupId) => api.delete(`/servers/${serverId}/backups/${backupId}`).then(r => r.data);

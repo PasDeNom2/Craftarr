@@ -13,17 +13,19 @@ import Console from '../components/servers/Console';
 import MetricsPanel from '../components/servers/MetricsPanel';
 import BackupList from '../components/servers/BackupList';
 import FileExplorer from '../components/servers/FileExplorer';
+import PlayersPanel from '../components/servers/PlayersPanel';
 import Modal from '../components/ui/Modal';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import {
   Terminal, Activity, HardDrive, FolderOpen, Settings as SettingsIcon,
   Play, Square, RotateCcw, Upload, Trash2, ArrowUp, Package, Globe,
-  AlertTriangle, Save,
+  AlertTriangle, Save, Users,
 } from 'lucide-react';
 
 const TABS = [
   { id: 'Console',      Icon: Terminal,      labelKey: 'server.tabs.console'   },
+  { id: 'Joueurs',      Icon: Users,         labelKey: 'server.tabs.players'   },
   { id: 'Métriques',   Icon: Activity,      labelKey: 'server.tabs.metrics'   },
   { id: 'Sauvegardes', Icon: HardDrive,     labelKey: 'server.tabs.backups'   },
   { id: 'Fichiers',    Icon: FolderOpen,    labelKey: 'server.tabs.files'     },
@@ -31,7 +33,7 @@ const TABS = [
 ];
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
-const CONTAINER_ENV_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);
+const CONTAINER_ENV_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'online_mode', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);
 
 // ─── UpdateModal ──────────────────────────────────────────────────────────────
 function UpdateModal({ server, onClose }) {
@@ -198,6 +200,7 @@ function EditTab({ server, onInstallMods }) {
     ram_mb: server.ram_mb,
     max_players: server.max_players,
     whitelist_enabled: server.whitelist_enabled,
+    online_mode: server.online_mode !== false,
     auto_update: server.auto_update,
     update_interval_hours: server.update_interval_hours || 6,
     motd: server.motd || '',
@@ -380,6 +383,19 @@ function EditTab({ server, onInstallMods }) {
             onChange={e => set('whitelist_enabled', e.target.checked)}
             style={{ accentColor: '#4ADE80' }} />
           <span className="text-sm text-[#6B6B76]">Whitelist activée</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" className="w-4 h-4 rounded" checked={form.online_mode}
+            onChange={e => set('online_mode', e.target.checked)}
+            style={{ accentColor: '#4ADE80' }} />
+          <div className="flex flex-col">
+            <span className="text-sm text-[#6B6B76]">Mode Premium (comptes Minecraft officiels)</span>
+            <span className="text-[11px] text-[#4A4A55]">
+              {form.online_mode
+                ? 'Activé — skins réels, authentification Mojang. Les comptes crackés ne peuvent pas se connecter.'
+                : 'Désactivé — mode cracked, tous les joueurs peuvent se connecter (pas de skins officiels).'}
+            </span>
+          </div>
         </label>
       </div>
 
@@ -671,6 +687,11 @@ export default function ServerDetailPage() {
         <div className={clsx('h-full', tab !== 'Console' && 'hidden')}>
           <Console server={server} />
         </div>
+        {tab === 'Joueurs' && (
+          <div className="h-full">
+            <PlayersPanel server={server} />
+          </div>
+        )}
         {tab === 'Métriques' && (
           <div className="p-6">
             <MetricsPanel server={server} />

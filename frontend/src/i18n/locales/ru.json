@@ -73,7 +73,7 @@
     "version": "Версия",
     "latestVersion": "Последняя версия",
     "port": "Порт",
-    "ram": "ОЗУ (МБ)",
+    "ram": "Выделенная RAM",
     "maxPlayers": "Макс. игроков",
     "motd": "MOTD (описание)",
     "motdPlaceholder": "Сервер Minecraft",
@@ -82,7 +82,23 @@
     "submit": "Развернуть сервер",
     "loading": "Разворачивание...",
     "success": "Сервер создан — установка!",
-    "error": "Ошибка создания сервера"
+    "error": "Ошибка создания сервера",
+    "versionLoading": "Загрузка версий...",
+    "versionNone": "Нет доступных версий",
+    "loaderAuto": "Загрузчик определён автоматически",
+    "ramMin": "1 ГБ",
+    "ramMax": "32 ГБ",
+    "seed": "Сид (необязательно)",
+    "seedPlaceholder": "Случайный, если пусто",
+    "worldImportLabel": "Импорт папки world",
+    "worldImportHint": "— необязательный zip",
+    "worldImportClick": "Нажмите для выбора .zip",
+    "worldRemove": "Удалить",
+    "onlineMode": "Премиум режим (официальные аккаунты Minecraft)",
+    "onlineModeOn": "Включено — настоящие скины, аут. Mojang. Взломанные аккаунты не могут подключиться.",
+    "onlineModeOff": "Отключено — cracked-режим, все игроки приняты (без официальных скинов).",
+    "deploying": "Создание...",
+    "deploy": "Развернуть сервер"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "Метрики",
       "backups": "Резервные копии",
       "files": "Файлы",
-      "settings": "Настройки"
+      "settings": "Настройки",
+      "players": "Игроки"
     },
     "actions": {
       "start": "Запустить",

@@ -73,7 +73,7 @@
     "version": "Wersja",
     "latestVersion": "Najnowsza wersja",
     "port": "Port",
-    "ram": "RAM (MB)",
+    "ram": "Przydzielona RAM",
     "maxPlayers": "Maks. graczy",
     "motd": "MOTD (opis)",
     "motdPlaceholder": "Serwer Minecraft",
@@ -82,7 +82,23 @@
     "submit": "Wdróż serwer",
     "loading": "Wdrażanie...",
     "success": "Serwer utworzony — instalacja!",
-    "error": "Błąd tworzenia serwera"
+    "error": "Błąd tworzenia serwera",
+    "versionLoading": "Ładowanie wersji...",
+    "versionNone": "Brak dostępnych wersji",
+    "loaderAuto": "Loader wykryty automatycznie",
+    "ramMin": "1 GB",
+    "ramMax": "32 GB",
+    "seed": "Ziarno (opcjonalne)",
+    "seedPlaceholder": "Losowe jeśli puste",
+    "worldImportLabel": "Importuj folder world",
+    "worldImportHint": "— opcjonalny zip",
+    "worldImportClick": "Kliknij, aby wybrać .zip",
+    "worldRemove": "Usuń",
+    "onlineMode": "Tryb Premium (oficjalne konta Minecraft)",
+    "onlineModeOn": "Włączony — prawdziwe skiny, auth Mojang. Złamane konta nie mogą się połączyć.",
+    "onlineModeOff": "Wyłączony — tryb cracked, wszyscy gracze akceptowani (brak oficjalnych skinów).",
+    "deploying": "Tworzenie...",
+    "deploy": "Wdróż serwer"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "Metryki",
       "backups": "Kopie zapasowe",
       "files": "Pliki",
-      "settings": "Ustawienia"
+      "settings": "Ustawienia",
+      "players": "Gracze"
     },
     "actions": {
       "start": "Uruchom",

@@ -73,7 +73,7 @@
     "version": "Sürüm",
     "latestVersion": "Son sürüm",
     "port": "Port",
-    "ram": "RAM (MB)",
+    "ram": "Ayrılan RAM",
     "maxPlayers": "Maks. oyuncu",
     "motd": "MOTD (açıklama)",
     "motdPlaceholder": "Bir Minecraft sunucusu",
@@ -82,7 +82,23 @@
     "submit": "Sunucuyu dağıt",
     "loading": "Dağıtılıyor...",
     "success": "Sunucu oluşturuldu — yükleniyor!",
-    "error": "Sunucu oluşturma hatası"
+    "error": "Sunucu oluşturma hatası",
+    "versionLoading": "Sürümler yükleniyor...",
+    "versionNone": "Kullanılabilir sürüm yok",
+    "loaderAuto": "Yükleyici otomatik algılandı",
+    "ramMin": "1 GB",
+    "ramMax": "32 GB",
+    "seed": "Tohum (isteğe bağlı)",
+    "seedPlaceholder": "Boşsa rastgele",
+    "worldImportLabel": "World klasörünü içe aktar",
+    "worldImportHint": "— isteğe bağlı zip",
+    "worldImportClick": ".zip seçmek için tıklayın",
+    "worldRemove": "Kaldır",
+    "onlineMode": "Premium Mod (resmi Minecraft hesapları)",
+    "onlineModeOn": "Etkin — gerçek skinler, Mojang kimlik doğrulama. Kırık hesaplar bağlanamaz.",
+    "onlineModeOff": "Devre dışı — cracked modu, tüm oyuncular kabul edilir (resmi skin yok).",
+    "deploying": "Oluşturuluyor...",
+    "deploy": "Sunucuyu Dağıt"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "Metrikler",
       "backups": "Yedekler",
       "files": "Dosyalar",
-      "settings": "Ayarlar"
+      "settings": "Ayarlar",
+      "players": "Oyuncular"
     },
     "actions": {
       "start": "Başlat",

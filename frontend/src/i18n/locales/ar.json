@@ -73,7 +73,7 @@
     "version": "الإصدار",
     "latestVersion": "أحدث إصدار",
     "port": "المنفذ",
-    "ram": "الذاكرة (MB)",
+    "ram": "ذاكرة وصول عشوائي مخصصة",
     "maxPlayers": "الحد الأقصى للاعبين",
     "motd": "MOTD (الوصف)",
     "motdPlaceholder": "خادم Minecraft",
@@ -82,7 +82,23 @@
     "submit": "نشر الخادم",
     "loading": "جارٍ النشر...",
     "success": "تم إنشاء الخادم — جارٍ التثبيت!",
-    "error": "خطأ في إنشاء الخادم"
+    "error": "خطأ في إنشاء الخادم",
+    "versionLoading": "جار تحميل الإصدارات...",
+    "versionNone": "لا توجد إصدارات متاحة",
+    "loaderAuto": "تم اكتشاف المحمّل تلقائيًا",
+    "ramMin": "1 GB",
+    "ramMax": "32 GB",
+    "seed": "البذرة (اختياري)",
+    "seedPlaceholder": "عشوائي إذا كان فارغًا",
+    "worldImportLabel": "استيراد مجلد العالم",
+    "worldImportHint": "— zip اختياري",
+    "worldImportClick": "انقر لتحديد ملف .zip",
+    "worldRemove": "إزالة",
+    "onlineMode": "الوضع المميز (حسابات Minecraft الرسمية)",
+    "onlineModeOn": "مفعّل — سكنات حقيقية، مصادقة Mojang. الحسابات المقرصنة لا يمكنها الاتصال.",
+    "onlineModeOff": "معطّل — وضع المقرصن، جميع اللاعبين مقبولون (بدون سكنات رسمية).",
+    "deploying": "جار الإنشاء...",
+    "deploy": "نشر الخادم"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "المقاييس",
       "backups": "النسخ الاحتياطية",
       "files": "الملفات",
-      "settings": "الإعدادات"
+      "settings": "الإعدادات",
+      "players": "اللاعبون"
     },
     "actions": {
       "start": "تشغيل",

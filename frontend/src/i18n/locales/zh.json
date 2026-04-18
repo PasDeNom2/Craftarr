@@ -73,7 +73,7 @@
     "version": "版本",
     "latestVersion": "最新版本",
     "port": "端口",
-    "ram": "内存 (MB)",
+    "ram": "分配内存",
     "maxPlayers": "最大玩家数",
     "motd": "MOTD（描述）",
     "motdPlaceholder": "一个 Minecraft 服务器",
@@ -82,7 +82,23 @@
     "submit": "部署服务器",
     "loading": "部署中...",
     "success": "服务器已创建 — 安装中！",
-    "error": "创建服务器时出错"
+    "error": "创建服务器时出错",
+    "versionLoading": "加载版本中...",
+    "versionNone": "没有可用版本",
+    "loaderAuto": "自动检测加载器",
+    "ramMin": "1 GB",
+    "ramMax": "32 GB",
+    "seed": "种子（可选）",
+    "seedPlaceholder": "留空则随机",
+    "worldImportLabel": "导入世界文件夹",
+    "worldImportHint": "— 可选 zip",
+    "worldImportClick": "点击选择 .zip 文件",
+    "worldRemove": "移除",
+    "onlineMode": "正版模式（官方 Minecraft 账号）",
+    "onlineModeOn": "已启用 — 真实皮肤，Mojang 验证。破解账号无法连接。",
+    "onlineModeOff": "已禁用 — 破解模式，所有玩家均可连接（无官方皮肤）。",
+    "deploying": "创建中...",
+    "deploy": "部署服务器"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "指标",
       "backups": "备份",
       "files": "文件",
-      "settings": "设置"
+      "settings": "设置",
+      "players": "玩家"
     },
     "actions": {
       "start": "启动",

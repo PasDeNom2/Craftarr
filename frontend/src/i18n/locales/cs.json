@@ -73,7 +73,7 @@
     "version": "Verze",
     "latestVersion": "Nejnovější verze",
     "port": "Port",
-    "ram": "RAM (MB)",
+    "ram": "Přidělená RAM",
     "maxPlayers": "Max. hráčů",
     "motd": "MOTD (popis)",
     "motdPlaceholder": "Server Minecraft",
@@ -82,7 +82,23 @@
     "submit": "Nasadit server",
     "loading": "Nasazování...",
     "success": "Server vytvořen — instalace!",
-    "error": "Chyba při vytváření serveru"
+    "error": "Chyba při vytváření serveru",
+    "versionLoading": "Načítání verzí...",
+    "versionNone": "Žádné verze k dispozici",
+    "loaderAuto": "Načítač detekován automaticky",
+    "ramMin": "1 GB",
+    "ramMax": "32 GB",
+    "seed": "Seed (volitelné)",
+    "seedPlaceholder": "Náhodný pokud prázdné",
+    "worldImportLabel": "Importovat složku world",
+    "worldImportHint": "— volitelný zip",
+    "worldImportClick": "Klikněte pro výběr .zip",
+    "worldRemove": "Odstranit",
+    "onlineMode": "Prémiový režim (officiální účty Minecraft)",
+    "onlineModeOn": "Povoleno — skutečné skiny, auth Mojang. Cracknuté účty se nemohou připojit.",
+    "onlineModeOff": "Zakázáno — cracked režim, všichni hráči přijati (žádné officiální skiny).",
+    "deploying": "Vytváření...",
+    "deploy": "Nasadit server"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "Metriky",
       "backups": "Zálohy",
       "files": "Soubory",
-      "settings": "Nastavení"
+      "settings": "Nastavení",
+      "players": "Hráči"
     },
     "actions": {
       "start": "Spustit",

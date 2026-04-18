@@ -73,7 +73,7 @@
     "version": "Versie",
     "latestVersion": "Nieuwste versie",
     "port": "Poort",
-    "ram": "RAM (MB)",
+    "ram": "Toegewezen RAM",
     "maxPlayers": "Max. spelers",
     "motd": "MOTD (beschrijving)",
     "motdPlaceholder": "Een Minecraft-server",
@@ -82,7 +82,23 @@
     "submit": "Server implementeren",
     "loading": "Implementeren...",
     "success": "Server aangemaakt — installatie!",
-    "error": "Fout bij aanmaken server"
+    "error": "Fout bij aanmaken server",
+    "versionLoading": "Versies laden...",
+    "versionNone": "Geen versies beschikbaar",
+    "loaderAuto": "Loader automatisch gedetecteerd",
+    "ramMin": "1 GB",
+    "ramMax": "32 GB",
+    "seed": "Seed (optioneel)",
+    "seedPlaceholder": "Willekeurig als leeg",
+    "worldImportLabel": "World-map importeren",
+    "worldImportHint": "— optionele zip",
+    "worldImportClick": "Klik om een .zip te selecteren",
+    "worldRemove": "Verwijderen",
+    "onlineMode": "Premium-modus (officiële Minecraft-accounts)",
+    "onlineModeOn": "Ingeschakeld — echte skins, Mojang-auth. Gecrackede accounts kunnen niet verbinden.",
+    "onlineModeOff": "Uitgeschakeld — cracked-modus, alle spelers geaccepteerd (geen officiële skins).",
+    "deploying": "Aanmaken...",
+    "deploy": "Server implementeren"
   },
   "server": {
     "tabs": {
@@ -90,7 +106,8 @@
       "metrics": "Statistieken",
       "backups": "Back-ups",
       "files": "Bestanden",
-      "settings": "Instellingen"
+      "settings": "Instellingen",
+      "players": "Spelers"
     },
     "actions": {
       "start": "Starten",

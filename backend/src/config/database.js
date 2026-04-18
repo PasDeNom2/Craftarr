@@ -31,6 +31,7 @@ function initDb() {
     "ALTER TABLE servers ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'normal'",
     "ALTER TABLE servers ADD COLUMN view_distance INTEGER NOT NULL DEFAULT 10",
     "ALTER TABLE servers ADD COLUMN spawn_protection INTEGER NOT NULL DEFAULT 16",
+    "ALTER TABLE servers ADD COLUMN online_mode INTEGER NOT NULL DEFAULT 1",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* colonne déjà présente */ }
