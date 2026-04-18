@@ -23,13 +23,14 @@ import {
 } from 'lucide-react';
 import PlayersPanel from '../components/servers/PlayersPanel';
 
+// Stable English IDs — never change, only labelKey is translated
 const TABS = [
-  { id: 'Console',      Icon: Terminal,      labelKey: 'server.tabs.console'   },
-  { id: 'Métriques',   Icon: Activity,      labelKey: 'server.tabs.metrics'   },
-  { id: 'Sauvegardes', Icon: HardDrive,     labelKey: 'server.tabs.backups'   },
-  { id: 'Fichiers',    Icon: FolderOpen,    labelKey: 'server.tabs.files'     },
-  { id: 'Joueurs',     Icon: Users,         labelKey: 'server.tabs.players'   },
-  { id: 'Paramètres',  Icon: SettingsIcon,  labelKey: 'server.tabs.settings'  },
+  { id: 'console',   Icon: Terminal,     labelKey: 'server.tabs.console'   },
+  { id: 'metrics',   Icon: Activity,     labelKey: 'server.tabs.metrics'   },
+  { id: 'backups',   Icon: HardDrive,    labelKey: 'server.tabs.backups'   },
+  { id: 'files',     Icon: FolderOpen,   labelKey: 'server.tabs.files'     },
+  { id: 'players',   Icon: Users,        labelKey: 'server.tabs.players'   },
+  { id: 'settings',  Icon: SettingsIcon, labelKey: 'server.tabs.settings'  },
 ];
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
@@ -37,6 +38,7 @@ const CONTAINER_ENV_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelis
 
 // ─── UpdateModal ──────────────────────────────────────────────────────────────
 function UpdateModal({ server, onClose }) {
+  const { t } = useI18n();
   const [selectedVersionId, setSelectedVersionId] = useState('');
   const qc = useQueryClient();
   const { updateServer: patchStore } = useServerStore();
@@ -50,28 +52,31 @@ function UpdateModal({ server, onClose }) {
   const doUpdate = useMutation({
     mutationFn: () => updateServer(server.id, selectedVersionId || undefined),
     onSuccess: (data) => {
-      if (data.upToDate) toast.success('Le serveur est déjà à jour !');
-      else { toast.success(`Mise à jour vers ${data.version} lancée`); patchStore(server.id, { status: 'updating' }); }
+      if (data.upToDate) toast.success(t('update.upToDate'));
+      else {
+        toast.success(t('update.successVersion', { version: data.version }));
+        patchStore(server.id, { status: 'updating' });
+      }
       qc.invalidateQueries({ queryKey: ['server', server.id] });
       onClose();
     },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur lors de la mise à jour'),
+    onError: (err) => toast.error(err.response?.data?.error || t('update.error')),
   });
 
   return (
-    <Modal open onClose={onClose} title="Mettre à jour le modpack" size="md">
+    <Modal open onClose={onClose} title={t('update.title')} size="md">
       <div className="p-6 space-y-5">
         <div className="card space-y-1 text-sm">
-          <p className="text-[#6B6B76] text-xs uppercase tracking-[0.08em]">Version actuelle</p>
-          <p className="font-medium text-[#F0F0F0]">{server.modpack_version || 'Inconnue'}</p>
+          <p className="text-[#6B6B76] text-xs uppercase tracking-[0.08em]">{t('update.currentVersion')}</p>
+          <p className="font-medium text-[#F0F0F0]">{server.modpack_version || t('serverSettings.unknown')}</p>
         </div>
         <div>
-          <label className="label">Version cible</label>
+          <label className="label">{t('update.targetVersion')}</label>
           {isLoading ? (
-            <div className="input text-[#4A4A55] text-sm animate-pulse">Chargement des versions...</div>
+            <div className="input text-[#4A4A55] text-sm animate-pulse">{t('update.loadingVersions')}</div>
           ) : (
             <select className="input" value={selectedVersionId} onChange={e => setSelectedVersionId(e.target.value)}>
-              <option value="">Dernière version disponible</option>
+              <option value="">{t('update.latestAvailable')}</option>
               {versions.map((v) => {
                 const label = v.displayName || v.name || v.versionNumber || v.id;
                 const type = RELEASE_TYPE_LABEL[v.releaseType] || '';
@@ -79,19 +84,19 @@ function UpdateModal({ server, onClose }) {
                 const isCurrent = String(v.id) === String(server.modpack_version_id);
                 return (
                   <option key={v.id} value={String(v.id)}>
-                    {isCurrent ? '> ' : ''}{label}{type ? ` [${type}]` : ''}{mcVer ? ` — MC ${mcVer}` : ''}{isCurrent ? ' (actuelle)' : ''}
+                    {isCurrent ? '> ' : ''}{label}{type ? ` [${type}]` : ''}{mcVer ? ` — MC ${mcVer}` : ''}{isCurrent ? ` ${t('update.currentLabel')}` : ''}
                   </option>
                 );
               })}
             </select>
           )}
-          <p className="text-xs text-[#6B6B76] mt-1">Un backup automatique sera créé avant la mise à jour.</p>
+          <p className="text-xs text-[#6B6B76] mt-1">{t('update.backupNote')}</p>
         </div>
         <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <button className="btn-ghost" onClick={onClose}>Annuler</button>
+          <button className="btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
           <button className="btn-primary ml-auto gap-2" onClick={() => doUpdate.mutate()} disabled={doUpdate.isPending}>
             <RotateCcw size={13} strokeWidth={1.5} />
-            {doUpdate.isPending ? 'Lancement...' : 'Mettre à jour'}
+            {doUpdate.isPending ? t('update.loading') : t('update.submit')}
           </button>
         </div>
       </div>
@@ -101,6 +106,7 @@ function UpdateModal({ server, onClose }) {
 
 // ─── WorldImportModal ─────────────────────────────────────────────────────────
 function WorldImportModal({ server, onClose }) {
+  const { t } = useI18n();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const qc = useQueryClient();
@@ -110,26 +116,20 @@ function WorldImportModal({ server, onClose }) {
     setUploading(true);
     try {
       await importWorld(server.id, file);
-      toast.success('World importé avec succès !');
+      toast.success(t('worldImport.success'));
       qc.invalidateQueries({ queryKey: ['server', server.id] });
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erreur lors de l\'import');
+      toast.error(err.response?.data?.error || t('worldImport.error'));
     } finally {
       setUploading(false);
     }
   }
 
   return (
-    <Modal open onClose={onClose} title="Importer un dossier world" size="sm">
+    <Modal open onClose={onClose} title={t('worldImport.title')} size="sm">
       <div className="p-6 space-y-4">
-        <p className="text-sm text-[#6B6B76]">
-          Le zip doit contenir les dossiers{' '}
-          <code className="text-[#F0F0F0] font-mono text-xs">world/</code>,{' '}
-          <code className="text-[#F0F0F0] font-mono text-xs">world_nether/</code> et/ou{' '}
-          <code className="text-[#F0F0F0] font-mono text-xs">world_the_end/</code>.
-          Le serveur sera arrêté puis redémarré automatiquement.
-        </p>
+        <p className="text-sm text-[#6B6B76]">{t('worldImport.description')}</p>
         <div
           className="rounded-xl p-6 text-center cursor-pointer transition-all duration-200"
           style={{
@@ -148,16 +148,16 @@ function WorldImportModal({ server, onClose }) {
             ) : (
               <div className="space-y-2">
                 <Globe size={22} strokeWidth={1.5} className="mx-auto text-[#4A4A55]" />
-                <p className="text-sm text-[#6B6B76]">Sélectionner un fichier .zip</p>
+                <p className="text-sm text-[#6B6B76]">{t('worldImport.selectFile')}</p>
               </div>
             )}
           </label>
         </div>
         <div className="flex gap-3">
-          <button className="btn-ghost" onClick={onClose}>Annuler</button>
+          <button className="btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
           <button className="btn-primary ml-auto gap-2" onClick={handleImport} disabled={!file || uploading}>
             <Upload size={13} strokeWidth={1.5} />
-            {uploading ? 'Import en cours...' : 'Importer'}
+            {uploading ? t('worldImport.loading') : t('worldImport.submit')}
           </button>
         </div>
       </div>
@@ -179,7 +179,7 @@ function resizeTo64(file) {
         canvas.toBlob(blob => blob ? resolve(new File([blob], 'server-icon.png', { type: 'image/png' })) : reject(new Error('Canvas toBlob failed')), 'image/png');
       } catch (e) { reject(e); }
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image invalide')); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Invalid image')); };
     img.src = url;
   });
 }
@@ -234,21 +234,21 @@ function EditTab({ server, onInstallMods }) {
         setRecreating(true);
         try {
           await recreateContainer(server.id);
-          toast.success('Paramètres appliqués — container recréé et démarré');
+          toast.success(t('server.settings.savedRecreated'));
           patchStore(server.id, { status: 'starting' });
           qc.invalidateQueries({ queryKey: ['server', server.id] });
         } catch (err) {
-          toast.error('Sauvegardé mais erreur à la recréation : ' + (err.response?.data?.error || err.message));
+          toast.error(t('server.settings.recreateError') + ': ' + (err.response?.data?.error || err.message));
         } finally {
           setRecreating(false);
         }
       } else if (envChanged && isRunning) {
-        toast.success('Paramètres sauvegardés — arrêtez puis recréez le container pour les appliquer');
+        toast.success(t('server.settings.savedNeedRecreate'));
       } else {
-        toast.success('Paramètres sauvegardés');
+        toast.success(t('server.settings.saved'));
       }
     },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur lors de la sauvegarde'),
+    onError: (err) => toast.error(err.response?.data?.error || t('server.settings.saveError')),
   });
 
   function handleIconChange(e) {
@@ -266,12 +266,12 @@ function EditTab({ server, onInstallMods }) {
     try {
       const resized = await resizeTo64(iconFile);
       await uploadServerIcon(server.id, resized);
-      toast.success('Icône mise à jour (64x64) — redémarrez le serveur pour l\'appliquer');
+      toast.success(t('server.settings.iconUpdated'));
       setIconPreview(null);
       setIconFile(null);
       setIconKey(Date.now());
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message || 'Erreur lors de l\'upload');
+      toast.error(err.response?.data?.error || err.message || t('server.settings.iconError'));
     } finally {
       setIconUploading(false);
     }
@@ -310,11 +310,11 @@ function EditTab({ server, onInstallMods }) {
                 style={{ background: '#1C1C21', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 {iconPreview
-                  ? <img src={iconPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                  ? <img src={iconPreview} alt="" className="w-full h-full object-cover" />
                   : <img
                       key={iconKey}
                       src={`${getServerIconUrl(server.id)}?v=${iconKey}`}
-                      alt="Icône"
+                      alt=""
                       className="w-full h-full object-cover"
                       onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
                     />
@@ -351,7 +351,7 @@ function EditTab({ server, onInstallMods }) {
               className="input font-mono text-sm"
               value={form.motd}
               onChange={e => set('motd', e.target.value)}
-              placeholder={`${server.name} — Powered by MCManager`}
+              placeholder={`${server.name} — Powered by Craftarr`}
               maxLength={59}
             />
             <div className="flex justify-between mt-1">
@@ -467,7 +467,7 @@ function EditTab({ server, onInstallMods }) {
           <button
             className="btn-secondary text-sm gap-2"
             onClick={() => {
-              if (confirm(t('server.settings.downloadModsHint'))) {
+              if (confirm(t('server.settings.downloadModsConfirm'))) {
                 onInstallMods();
               }
             }}
@@ -510,7 +510,7 @@ export default function ServerDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { t } = useI18n();
-  const [tab, setTab] = useState('Console');
+  const [tab, setTab] = useState('console');
   const [showUpdate, setShowUpdate] = useState(false);
   const [showWorldImport, setShowWorldImport] = useState(false);
   const { updateServer: patchStore, removeServer } = useServerStore();
@@ -523,45 +523,45 @@ export default function ServerDetailPage() {
 
   const startMut = useMutation({
     mutationFn: () => startServer(id),
-    onSuccess: () => { toast.success('Serveur démarré'); patchStore(id, { status: 'starting' }); qc.invalidateQueries({ queryKey: ['server', id] }); },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur'),
+    onSuccess: () => { toast.success(t('server.started')); patchStore(id, { status: 'starting' }); qc.invalidateQueries({ queryKey: ['server', id] }); },
+    onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   const stopMut = useMutation({
     mutationFn: () => stopServer(id),
-    onSuccess: () => { toast.success('Serveur arrêté'); patchStore(id, { status: 'stopped' }); qc.invalidateQueries({ queryKey: ['server', id] }); },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur'),
+    onSuccess: () => { toast.success(t('server.stoppedMsg')); patchStore(id, { status: 'stopped' }); qc.invalidateQueries({ queryKey: ['server', id] }); },
+    onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   const restartMut = useMutation({
     mutationFn: () => restartServer(id),
-    onSuccess: () => { toast.success('Serveur redémarré'); patchStore(id, { status: 'starting' }); },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur'),
+    onSuccess: () => { toast.success(t('server.restarted')); patchStore(id, { status: 'starting' }); },
+    onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   const deleteMut = useMutation({
     mutationFn: () => deleteServer(id),
-    onSuccess: () => { removeServer(id); navigate('/'); toast.success('Serveur supprimé'); },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur'),
+    onSuccess: () => { removeServer(id); navigate('/'); toast.success(t('server.deleted')); },
+    onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   const installModsMut = useMutation({
     mutationFn: () => installMods(id),
-    onSuccess: () => { toast.success('Téléchargement lancé — surveille la console...'); qc.invalidateQueries({ queryKey: ['server', id] }); },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur'),
+    onSuccess: () => { toast.success(t('server.installModsLaunched')); qc.invalidateQueries({ queryKey: ['server', id] }); },
+    onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center space-y-3">
         <div className="w-6 h-6 border border-[#F0F0F0] border-t-transparent rounded-full animate-spin mx-auto" style={{ borderTopColor: 'transparent' }} />
-        <p className="text-[#6B6B76] text-sm">Chargement...</p>
+        <p className="text-[#6B6B76] text-sm">{t('common.loading')}</p>
       </div>
     </div>
   );
 
   if (isError || !server) return (
-    <div className="flex items-center justify-center h-full text-[#6B6B76]">Serveur introuvable</div>
+    <div className="flex items-center justify-center h-full text-[#6B6B76]">{t('server.notFound')}</div>
   );
 
   const isBusy = startMut.isPending || stopMut.isPending || restartMut.isPending;
@@ -636,13 +636,13 @@ export default function ServerDetailPage() {
             )}
             <button className="btn-secondary text-sm py-1.5 px-4 gap-2" onClick={() => setShowWorldImport(true)}>
               <Globe size={13} strokeWidth={1.5} />
-              World
+              {t('server.actions.importWorld')}
             </button>
             <button
               className="btn-danger text-sm py-1.5 px-3"
-              onClick={() => { if (confirm(`Supprimer définitivement "${server.name}" et toutes ses données ?`)) deleteMut.mutate(); }}
+              onClick={() => { if (confirm(t('server.deleteConfirm', { name: server.name }))) deleteMut.mutate(); }}
               disabled={deleteMut.isPending}
-              title="Supprimer le serveur"
+              title={t('server.actions.delete')}
             >
               <Trash2 size={14} strokeWidth={1.5} />
             </button>
@@ -671,30 +671,30 @@ export default function ServerDetailPage() {
 
       {/* ── Content ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className={clsx('h-full', tab !== 'Console' && 'hidden')}>
+        <div className={clsx('h-full', tab !== 'console' && 'hidden')}>
           <Console server={server} />
         </div>
-        {tab === 'Métriques' && (
+        {tab === 'metrics' && (
           <div className="p-6">
             <MetricsPanel server={server} />
           </div>
         )}
-        {tab === 'Sauvegardes' && (
+        {tab === 'backups' && (
           <div className="p-6">
             <BackupList server={server} />
           </div>
         )}
-        {tab === 'Fichiers' && (
+        {tab === 'files' && (
           <div className="h-full">
             <FileExplorer server={server} />
           </div>
         )}
-        {tab === 'Joueurs' && (
+        {tab === 'players' && (
           <div className="p-6">
             <PlayersPanel server={server} />
           </div>
         )}
-        {tab === 'Paramètres' && (
+        {tab === 'settings' && (
           <div className="p-6">
             <EditTab server={server} onInstallMods={() => installModsMut.mutate()} />
           </div>
