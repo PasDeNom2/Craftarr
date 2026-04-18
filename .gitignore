@@ -1,0 +1,4 @@
+node_modules/
+craftarr/data/
+*.env
+.env
