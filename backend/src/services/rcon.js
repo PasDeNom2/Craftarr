@@ -103,15 +103,17 @@ async function sendCommand(server, command, timeoutMs = 8000) {
 async function getPlayerList(server) {
   try {
     const resp = await sendCommand(server, 'list');
-    // Format moderne : "There are 2 of a max of 20 players online:"
+    // Format moderne : "There are 2 of a max of 20 players online: Steve, Alex"
     // Format ancien  : "2/20 players online"
-    const match = resp.match(/(\d+)\s+of\s+a\s+max\s+of\s+(\d+)/) || resp.match(/(\d+)\/(\d+)/);
-    if (match) {
-      return { online: parseInt(match[1]), max: parseInt(match[2]) };
+    const countMatch = resp.match(/(\d+)\s+of\s+a\s+max\s+of\s+(\d+)/) || resp.match(/(\d+)\/(\d+)/);
+    const namesMatch = resp.match(/online:\s*(.+)/i);
+    const names = namesMatch ? namesMatch[1].split(',').map(n => n.trim()).filter(Boolean) : [];
+    if (countMatch) {
+      return { online: parseInt(countMatch[1]), max: parseInt(countMatch[2]), names };
     }
-    return { online: 0, max: server.max_players };
+    return { online: 0, max: server.max_players, names: [] };
   } catch {
-    return { online: 0, max: server.max_players };
+    return { online: 0, max: server.max_players, names: [] };
   }
 }
 

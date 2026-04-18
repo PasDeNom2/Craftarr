@@ -378,37 +378,86 @@ async function getContainerStatus(containerId) {
   }
 }
 
-function streamContainerLogs(containerId, onData, onError, onEnd) {
+// Retourne une fonction stop() qui détruit le stream Docker.
+// since: timestamp Unix (secondes) — si fourni, ne rejoue pas les anciennes lignes.
+function streamContainerLogs(containerId, onData, onError, onEnd, { since = null } = {}) {
   const { PassThrough } = require('stream');
   const container = docker.getContainer(containerId);
-  container.logs(
-    { follow: true, stdout: true, stderr: true, tail: 200 },
-    (err, stream) => {
-      if (err) return onError?.(err);
+  const opts = { follow: true, stdout: true, stderr: true };
+  if (since != null) {
+    opts.since = since;
+    opts.tail = 0;
+  } else {
+    opts.tail = 200;
+  }
 
-      // Docker renvoie un stream multiplexé : 8 octets de header + payload par chunk.
-      // demuxStream sépare stdout/stderr correctement avant de passer les données.
-      const stdout = new PassThrough();
-      const stderr = new PassThrough();
-      docker.modem.demuxStream(stream, stdout, stderr);
+  let streamRef = null;
+  let intentionallyStopped = false;
+  const stop = () => {
+    intentionallyStopped = true;
+    try { streamRef?.destroy(); } catch {}
+  };
 
-      let lineBuffer = '';
-      const processChunk = chunk => {
-        lineBuffer += chunk.toString('utf8');
-        const parts = lineBuffer.split('\n');
-        lineBuffer = parts.pop(); // fragment incomplet, attendre la suite
-        parts
-          .map(l => l.replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '').trim())
-          .filter(Boolean)
-          .forEach(onData);
-      };
+  container.logs(opts, (err, stream) => {
+    if (err) { if (!intentionallyStopped) onError?.(err); return; }
+    streamRef = stream;
 
-      stdout.on('data', processChunk);
-      stderr.on('data', processChunk);
-      stream.on('error', onError || console.error);
-      stream.on('end', () => onEnd?.());
-    }
-  );
+    // Docker renvoie un stream multiplexé : 8 octets de header + payload par chunk.
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    docker.modem.demuxStream(stream, stdout, stderr);
+
+    let lineBuffer = '';
+    const processChunk = chunk => {
+      lineBuffer += chunk.toString('utf8');
+      const parts = lineBuffer.split('\n');
+      lineBuffer = parts.pop();
+      parts
+        .map(l => l.replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '').trim())
+        .filter(Boolean)
+        .forEach(onData);
+    };
+
+    stdout.on('data', processChunk);
+    stderr.on('data', processChunk);
+    stream.on('error', err => { if (!intentionallyStopped) (onError || console.error)(err); });
+    stream.on('end', () => { if (!intentionallyStopped) onEnd?.(); });
+  });
+
+  return stop;
+}
+
+// Récupère les N dernières lignes de logs sans suivre (pour historique UI).
+// Avec follow:false, dockerode retourne un Buffer (format multiplexé Docker), pas un stream.
+function getRecentLogs(containerId, lines = 200) {
+  return new Promise((resolve) => {
+    const container = docker.getContainer(containerId);
+    container.logs({ follow: false, stdout: true, stderr: true, tail: lines }, (err, data) => {
+      if (err || !data) return resolve([]);
+      try {
+        // Parse du format multiplexé Docker : header 8 octets + payload
+        // Header[0] = type (1=stdout, 2=stderr), Header[4..7] = taille payload (big-endian)
+        const buf = Buffer.isBuffer(data) ? data : Buffer.from(String(data));
+        const result = [];
+        let offset = 0;
+        while (offset + 8 <= buf.length) {
+          const size = buf.readUInt32BE(offset + 4);
+          offset += 8;
+          if (size === 0) continue;
+          if (offset + size > buf.length) break;
+          const payload = buf.slice(offset, offset + size).toString('utf8');
+          offset += size;
+          payload.split('\n').forEach(l => {
+            const clean = l.replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '').trim();
+            if (clean) result.push(clean);
+          });
+        }
+        resolve(result);
+      } catch {
+        resolve([]);
+      }
+    });
+  });
 }
 
 async function pullImage(imageName, onProgress) {
@@ -463,6 +512,7 @@ module.exports = {
   getContainerStats,
   getContainerStatus,
   streamContainerLogs,
+  getRecentLogs,
   pullImage,
   listMcContainers,
 };

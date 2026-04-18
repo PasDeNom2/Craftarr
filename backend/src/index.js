@@ -24,7 +24,7 @@ const sourcesRoutes = require('./routes/sources');
 const backupsRoutes = require('./routes/backups');
 const vanillaRoutes = require('./routes/vanilla');
 
-const { setupLogsSocket } = require('./websocket/logs');
+const { setupLogsSocket, startLogStream, setIo: setLogsIo } = require('./websocket/logs');
 const metrics = require('./services/metrics');
 const installer = require('./services/installer');
 const updater = require('./services/updater');
@@ -84,22 +84,36 @@ updater.setIo(io);
 
 // Setup handlers WebSocket
 setupLogsSocket(io);
+setLogsIo(io);
 
-// Expose io + startLogStream globally so routes can trigger streams on server start
 app.set('io', io);
 
 // ─── Démarrage ──────────────────────────────────────────────
 const { getDb } = require('./config/database');
 const dockerService = require('./services/docker');
+const rcon = require('./services/rcon');
 
 async function reconcileServerStates() {
   const db = getDb();
-  const activeServers = db.prepare("SELECT id, container_id FROM servers WHERE status IN ('starting', 'running') AND container_id IS NOT NULL").all();
+  const activeServers = db.prepare("SELECT * FROM servers WHERE status IN ('starting', 'running') AND container_id IS NOT NULL").all();
+
+  // Remettre tous les joueurs offline par défaut — la synchro RCON ci-dessous corrigera ensuite
+  db.prepare('UPDATE players SET is_online = 0').run();
+
   for (const server of activeServers) {
     const state = await dockerService.getContainerStatus(server.container_id);
     if (state === 'removed') {
       db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
       console.log(`[Craftarr] Serveur ${server.id.slice(0, 8)} — container disparu, statut mis en erreur`);
+    } else if (state === 'running') {
+      // Relance le stream de logs pour capturer les événements joueurs dès le démarrage
+      startLogStream(io, server.id);
+      // Synchro des joueurs en ligne via RCON
+      rcon.getPlayerList(server).then(({ names }) => {
+        for (const username of names) {
+          db.prepare('UPDATE players SET is_online = 1 WHERE server_id = ? AND username = ?').run(server.id, username);
+        }
+      }).catch(() => {});
     }
   }
 }

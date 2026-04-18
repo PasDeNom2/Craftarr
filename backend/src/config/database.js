@@ -53,6 +53,10 @@ function initDb() {
       timestamp TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
     )`,
+    "ALTER TABLE servers ADD COLUMN needs_recreate INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE players ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE players ADD COLUMN ban_reason TEXT",
+    "ALTER TABLE players ADD COLUMN is_online INTEGER NOT NULL DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* colonne déjà présente */ }
