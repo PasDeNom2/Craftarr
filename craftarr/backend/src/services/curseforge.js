@@ -122,7 +122,7 @@ function detectLoaders(versions = []) {
 function extractMcVersions(indexes) {
   const versions = new Set();
   indexes.forEach(i => {
-    if (i.gameVersion && /^\d+\.\d+/.test(i.gameVersion)) {
+    if (i.gameVersion && /^1\.\d+/.test(i.gameVersion)) {
       versions.add(i.gameVersion);
     }
   });

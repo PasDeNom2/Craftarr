@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS servers (
   max_players INTEGER NOT NULL DEFAULT 20,
   seed TEXT,
   whitelist_enabled INTEGER NOT NULL DEFAULT 0,
+  online_mode INTEGER NOT NULL DEFAULT 1,
   status TEXT NOT NULL DEFAULT 'installing',   -- installing|running|stopped|error|updating
   mc_version TEXT,
   loader_type TEXT,                            -- forge|fabric|quilt|neoforge|vanilla

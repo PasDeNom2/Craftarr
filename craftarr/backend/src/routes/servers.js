@@ -34,6 +34,7 @@ function formatServer(row) {
   return {
     ...row,
     whitelist_enabled: !!row.whitelist_enabled,
+    online_mode: row.online_mode !== 0,
     auto_update: !!row.auto_update,
   };
 }
@@ -82,7 +83,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
     const {
       name, modpack_id, modpack_name, modpack_source, modpack_version, modpack_version_id,
       port, ram_mb = 4096, max_players = 20, seed, whitelist_enabled = false,
-      mc_version, loader_type = 'forge', auto_update = false,
+      mc_version, loader_type = 'forge', auto_update = false, online_mode = true,
     } = req.body;
 
     if (!name || !modpack_id || !modpack_source) {
@@ -98,11 +99,13 @@ router.post('/', authMiddleware, async (req, res, next) => {
     db.prepare(`
       INSERT INTO servers (id, name, modpack_id, modpack_name, modpack_source, modpack_version,
         modpack_version_id, port, rcon_port, rcon_password, ram_mb, max_players, seed,
-        whitelist_enabled, status, mc_version, loader_type, auto_update)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?)
+        whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?)
     `).run(id, name, modpack_id, modpack_name || modpack_id, modpack_source, modpack_version || null,
       modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
-      seed || null, whitelist_enabled ? 1 : 0, mc_version || null, loader_type, auto_update ? 1 : 0);
+      seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
+      (mc_version && /^1\.\d{1,2}(\.\d{1,2})?$/.test(mc_version) ? mc_version : null),
+      loader_type, auto_update ? 1 : 0);
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
     res.status(201).json(formatServer(server));

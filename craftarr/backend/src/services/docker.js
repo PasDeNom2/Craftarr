@@ -122,7 +122,7 @@ function buildEnvVars(server) {
     `MAX_MEMORY=${server.ram_mb}M`,
     `INIT_MEMORY=${Math.min(1024, Math.floor(server.ram_mb / 2))}M`,
     `MAX_PLAYERS=${server.max_players}`,
-    `ONLINE_MODE=FALSE`,
+    `ONLINE_MODE=${server.online_mode !== 0 ? 'TRUE' : 'FALSE'}`,
     `ENABLE_RCON=true`,
     `RCON_PORT=25575`,
     `RCON_PASSWORD=${server.rcon_password}`,
