@@ -677,6 +677,11 @@ export default function ServerDetailPage() {
                   </h1>
                 )}
                 <StatusBadge status={server.status} />
+                {server.needs_recreate && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24', border: '1px solid rgba(251,191,36,0.25)' }}>
+                    ⚠ {t('server.needsRecreate')}
+                  </span>
+                )}
               </div>
               <div className="flex gap-3 text-xs text-[#4A4A55] mt-0.5 flex-wrap font-mono">
                 <span>{server.modpack_name}</span>

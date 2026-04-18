@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPlayers, getPlayerEvents, kickPlayer, warnPlayer, banPlayer, unbanPlayer } from '../../services/api';
+import { getSocket } from '../../hooks/useSocket';
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,6 +13,31 @@ import {
 import clsx from 'clsx';
 
 const DATE_FNS_LOCALES = { fr, en: enUS, de, es, pt, it, nl, pl, cs, sv, ru, uk, ja, ko, zh: zhCN, ar, tr };
+
+function PlayerAvatar({ username, size = 32, className = '' }) {
+  const [err, setErr] = useState(false);
+  if (err) {
+    return (
+      <div
+        className={`flex items-center justify-center text-sm font-bold ${className}`}
+        style={{ width: size, height: size, background: 'rgba(255,255,255,0.06)', color: '#F0F0F0' }}
+      >
+        {username[0].toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={`https://mc-heads.net/avatar/${username}/${size}`}
+      alt={username}
+      width={size}
+      height={size}
+      className={className}
+      onError={() => setErr(true)}
+      style={{ imageRendering: 'pixelated' }}
+    />
+  );
+}
 
 const EVENT_ICONS = {
   join:    { icon: '→', color: '#4ADE80' },
@@ -75,12 +101,7 @@ function PlayerEvents({ server, player, onBack }) {
           {t('players.backToList')}
         </button>
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-            style={{ background: 'rgba(255,255,255,0.06)', color: '#F0F0F0' }}
-          >
-            {player.username[0].toUpperCase()}
-          </div>
+          <PlayerAvatar username={player.username} size={32} className="rounded-lg" />
           <div>
             <p className="text-sm font-semibold text-[#F0F0F0]">{player.username}</p>
             <p className="text-xs text-[#6B6B76]">{events.length} {t('players.events')}</p>
@@ -114,7 +135,7 @@ function PlayerEvents({ server, player, onBack }) {
                   </div>
                 </div>
                 <span className="text-[11px] text-[#4A4A55] shrink-0">
-                  {formatDistanceToNow(new Date(ev.timestamp), { locale: dateFnsLocale, addSuffix: true })}
+                  {(() => { try { return formatDistanceToNow(new Date(ev.timestamp.replace(' ', 'T') + 'Z'), { locale: dateFnsLocale, addSuffix: true }); } catch { return ev.timestamp; } })()}
                 </span>
               </div>
             );
@@ -138,6 +159,19 @@ export default function PlayersPanel({ server }) {
     queryFn: () => getPlayers(server.id),
     refetchInterval: 15000,
   });
+
+  // Mise à jour temps réel du statut en ligne via WebSocket
+  useEffect(() => {
+    const socket = getSocket();
+    const handler = ({ serverId, username, is_online }) => {
+      if (serverId !== server.id) return;
+      qc.setQueryData(['players', server.id], (old = []) =>
+        old.map(p => p.username === username ? { ...p, is_online } : p)
+      );
+    };
+    socket.on('player:status', handler);
+    return () => socket.off('player:status', handler);
+  }, [server.id, qc]);
 
   const kickMut = useMutation({
     mutationFn: ({ username, reason }) => kickPlayer(server.id, username, reason),
@@ -220,9 +254,12 @@ export default function PlayersPanel({ server }) {
               style={{ background: '#131316', border: `1px solid ${player.is_banned ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.06)'}` }}
             >
               {/* Avatar */}
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
-                style={{ background: player.is_banned ? 'rgba(248,113,113,0.1)' : 'rgba(255,255,255,0.06)', color: player.is_banned ? '#F87171' : '#F0F0F0' }}>
-                {player.username[0].toUpperCase()}
+              <div className="shrink-0 relative" style={{ opacity: player.is_banned ? 0.5 : 1 }}>
+                <PlayerAvatar username={player.username} size={36} className="rounded-lg" />
+                {player.is_online === 1 && (
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                    style={{ background: '#4ADE80', borderColor: '#131316' }} />
+                )}
               </div>
 
               {/* Info */}
@@ -253,52 +290,58 @@ export default function PlayersPanel({ server }) {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <button
-                  className="btn-secondary text-[11px] py-1 px-2 gap-1"
-                  onClick={() => setSelectedPlayer(player)}
-                  title={t('players.viewLogs')}
-                >
-                  <ChevronRight size={11} strokeWidth={1.5} />
-                  {t('players.logs')}
-                </button>
-                {server.status === 'running' && player.is_banned !== 1 && (
-                  <>
-                    <button
-                      className="btn-secondary text-[11px] py-1 px-2 gap-1"
-                      onClick={() => setModal({ type: 'warn', player })}
-                      title={t('players.warn')}
-                      style={{ color: '#FB923C' }}
-                    >
-                      <AlertTriangle size={11} strokeWidth={1.5} />
-                    </button>
-                    <button
-                      className="btn-secondary text-[11px] py-1 px-2 gap-1"
-                      onClick={() => setModal({ type: 'kick', player })}
-                      title={t('players.kick')}
-                    >
-                      <LogOut size={11} strokeWidth={1.5} />
-                    </button>
-                  </>
-                )}
-                {player.is_banned === 1 ? (
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Bouton unban toujours visible pour les joueurs bannis */}
+                {player.is_banned === 1 && (
                   <button
                     className="btn-secondary text-[11px] py-1 px-2 gap-1"
                     onClick={() => unbanMut.mutate({ username: player.username })}
-                    title={t('players.unban')}
+                    disabled={unbanMut.isPending}
                     style={{ color: '#4ADE80' }}
                   >
                     <ShieldCheck size={11} strokeWidth={1.5} />
-                  </button>
-                ) : (
-                  <button
-                    className="btn-danger text-[11px] py-1 px-2 gap-1"
-                    onClick={() => setModal({ type: 'ban', player })}
-                    title={t('players.ban')}
-                  >
-                    <Ban size={11} strokeWidth={1.5} />
+                    {t('players.unban')}
                   </button>
                 )}
+                {/* Actions secondaires visibles au survol */}
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button
+                    className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                    onClick={() => setSelectedPlayer(player)}
+                    title={t('players.viewLogs')}
+                  >
+                    <ChevronRight size={11} strokeWidth={1.5} />
+                    {t('players.logs')}
+                  </button>
+                  {server.status === 'running' && player.is_banned !== 1 && (
+                    <>
+                      <button
+                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        onClick={() => setModal({ type: 'warn', player })}
+                        title={t('players.warn')}
+                        style={{ color: '#FB923C' }}
+                      >
+                        <AlertTriangle size={11} strokeWidth={1.5} />
+                      </button>
+                      <button
+                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        onClick={() => setModal({ type: 'kick', player })}
+                        title={t('players.kick')}
+                      >
+                        <LogOut size={11} strokeWidth={1.5} />
+                      </button>
+                    </>
+                  )}
+                  {player.is_banned !== 1 && (
+                    <button
+                      className="btn-danger text-[11px] py-1 px-2 gap-1"
+                      onClick={() => setModal({ type: 'ban', player })}
+                      title={t('players.ban')}
+                    >
+                      <Ban size={11} strokeWidth={1.5} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

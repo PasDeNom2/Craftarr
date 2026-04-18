@@ -37,6 +37,7 @@ function formatServer(row) {
     whitelist_enabled: !!row.whitelist_enabled,
     online_mode: row.online_mode !== 0,
     auto_update: !!row.auto_update,
+    needs_recreate: !!row.needs_recreate,
   };
 }
 
@@ -177,7 +178,7 @@ router.post('/:id/recreate', authMiddleware, async (req, res, next) => {
 
     // Recréation avec les paramètres actuels (incluant CF_API_KEY, RAM, port)
     const { containerId, containerName } = await dockerService.createServerContainer(fresh);
-    db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ? WHERE id = ?')
+    db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
       .run(containerId, containerName, 'starting', server.id);
 
     await dockerService.startContainer(containerId);
@@ -196,8 +197,17 @@ router.post('/:id/start', authMiddleware, async (req, res, next) => {
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
     if (!server.container_id) return res.status(400).json({ error: 'Container non créé' });
 
-    await dockerService.startContainer(server.container_id);
-    db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
+    if (server.needs_recreate) {
+      // Recréer le container pour appliquer les nouveaux paramètres
+      await dockerService.removeContainer(server.container_id).catch(() => {});
+      const { containerId, containerName } = await dockerService.createServerContainer(server);
+      db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
+        .run(containerId, containerName, 'starting', server.id);
+      await dockerService.startContainer(containerId);
+    } else {
+      await dockerService.startContainer(server.container_id);
+      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
+    }
     startLogStream(req.app.get('io'), server.id);
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
@@ -215,6 +225,7 @@ router.post('/:id/stop', authMiddleware, async (req, res, next) => {
 
     await dockerService.stopContainer(server.container_id);
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
+    db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ?').run(server.id);
     res.json({ ok: true, status: 'stopped' });
   } catch (err) {
     next(err);
@@ -229,9 +240,19 @@ router.post('/:id/restart', authMiddleware, async (req, res, next) => {
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
     if (!server.container_id) return res.status(400).json({ error: 'Container non créé' });
 
-    await dockerService.restartContainer(server.container_id);
-    db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('running', server.id);
-    res.json({ ok: true, status: 'running' });
+    if (server.needs_recreate) {
+      // Arrêter + recréer le container pour appliquer les nouveaux paramètres
+      await dockerService.removeContainer(server.container_id).catch(() => {});
+      const { containerId, containerName } = await dockerService.createServerContainer(server);
+      db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
+        .run(containerId, containerName, 'starting', server.id);
+      await dockerService.startContainer(containerId);
+      startLogStream(req.app.get('io'), server.id);
+    } else {
+      await dockerService.restartContainer(server.container_id);
+      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('running', server.id);
+    }
+    res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
   }
@@ -324,7 +345,12 @@ router.post('/:id/update', authMiddleware, async (req, res, next) => {
       const target = versions.find(v => String(v.id) === String(version_id));
       if (!target) return res.status(404).json({ error: 'Version introuvable' });
 
-      const downloadUrl = target.downloadUrl || target.files?.find(f => f.primary)?.url || target.files?.[0]?.url;
+      let downloadUrl;
+      if (server.modpack_source === 'curseforge') {
+        downloadUrl = await updater.resolveCurseForgeDownloadUrl(server, target, versions);
+      } else {
+        downloadUrl = target.downloadUrl || target.files?.find(f => f.primary)?.url || target.files?.[0]?.url;
+      }
       const updateInfo = {
         latestVersionId: String(target.id),
         latestVersion: target.displayName || target.versionNumber || target.name || String(target.id),
@@ -403,6 +429,9 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
 });
 
 // PATCH /api/servers/:id — Modifier les paramètres du serveur
+// Champs qui nécessitent une recréation du container (port bindings, env vars Docker)
+const CONTAINER_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);
+
 router.patch('/:id', authMiddleware, async (req, res, next) => {
   try {
     const db = getDb();
@@ -418,6 +447,10 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
       }
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
+
+    // Lever needs_recreate si un champ impactant le container a changé
+    const needsRecreate = Object.keys(updates).some(k => CONTAINER_FIELDS.has(k) && updates[k] !== server[k]);
+    if (needsRecreate) updates.needs_recreate = 1;
 
     const setClauses = Object.keys(updates).map(k => `${k} = ?`).join(', ');
     db.prepare(`UPDATE servers SET ${setClauses} WHERE id = ?`).run(...Object.values(updates), server.id);

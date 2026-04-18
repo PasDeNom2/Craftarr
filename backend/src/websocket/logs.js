@@ -6,6 +6,9 @@ const metrics = require('../services/metrics');
 // Cache UUID: serverId -> { playerName -> uuid }
 const uuidCache = {};
 
+let _io = null;
+function setIo(io) { _io = io; }
+
 function parsePlayerEvent(serverId, line) {
   try {
     const db = getDb();
@@ -24,18 +27,22 @@ function parsePlayerEvent(serverId, line) {
       const username = joinMatch[1];
       const uuid = uuidCache[serverId]?.[username] || null;
       db.prepare(`
-        INSERT INTO players (server_id, username, uuid, first_seen, last_seen)
-        VALUES (?, ?, ?, datetime('now'), datetime('now'))
-        ON CONFLICT(server_id, username) DO UPDATE SET last_seen = datetime('now'), uuid = COALESCE(excluded.uuid, uuid)
+        INSERT INTO players (server_id, username, uuid, first_seen, last_seen, is_online)
+        VALUES (?, ?, ?, datetime('now'), datetime('now'), 1)
+        ON CONFLICT(server_id, username) DO UPDATE SET last_seen = datetime('now'), is_online = 1, uuid = COALESCE(excluded.uuid, uuid)
       `).run(serverId, username, uuid);
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'join', NULL)`).run(serverId, username);
+      _io?.emit('player:status', { serverId, username, is_online: 1 });
       return;
     }
 
     // Leave event
     const leaveMatch = line.match(/\]: (\S+) left the game/);
     if (leaveMatch) {
-      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'leave', NULL)`).run(serverId, leaveMatch[1]);
+      const username = leaveMatch[1];
+      db.prepare(`UPDATE players SET is_online = 0 WHERE server_id = ? AND username = ?`).run(serverId, username);
+      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'leave', NULL)`).run(serverId, username);
+      _io?.emit('player:status', { serverId, username, is_online: 0 });
       return;
     }
 
@@ -92,6 +99,15 @@ function setupLogsSocket(io) {
       if (!serverId) return;
       socket.join(`server:${serverId}`);
 
+      // Envoie les 200 dernières lignes à ce seul client (catch-up historique)
+      const db = getDb();
+      const srv = db.prepare('SELECT container_id FROM servers WHERE id = ?').get(serverId);
+      if (srv?.container_id) {
+        dockerService.getRecentLogs(srv.container_id, 200).then(lines => {
+          lines.forEach(line => socket.emit('log', { serverId, line, timestamp: Date.now() }));
+        }).catch(() => {});
+      }
+
       // Lance (ou attend) le stream si pas encore actif
       if (!activeStreams.has(serverId)) {
         startLogStream(io, serverId);
@@ -147,13 +163,13 @@ function startLogStream(io, serverId, attempt = 0) {
 
   console.log(`[Logs] Démarrage stream pour serveur ${serverId.slice(0, 8)} (tentative ${attempt + 1})`);
 
-  dockerService.streamContainerLogs(
+  // since: maintenant → pas de relecture des anciens logs (évite les doublons d'events joueurs)
+  const since = Math.floor(Date.now() / 1000);
+  const stopStream = dockerService.streamContainerLogs(
     server.container_id,
     line => {
       io.to(`server:${serverId}`).emit('log', { serverId, line, timestamp: Date.now() });
-      // Parse player events from log lines
       parsePlayerEvent(serverId, line);
-      // Transition starting → running dès que Minecraft affiche "Done"
       if (line.includes(']: Done (') || line.includes(': Done (')) {
         const changed = db.prepare('UPDATE servers SET status = ? WHERE id = ? AND status = ?')
           .run('running', serverId, 'starting');
@@ -165,7 +181,6 @@ function startLogStream(io, serverId, attempt = 0) {
     err => {
       console.error(`[Logs] Erreur stream ${serverId.slice(0, 8)}:`, err.message);
       activeStreams.delete(serverId);
-      // Si le container n'existe plus, mettre le serveur en erreur
       if (err.message && err.message.includes('no such container')) {
         const db = getDb();
         db.prepare("UPDATE servers SET status = 'error' WHERE id = ? AND status IN ('starting', 'running')")
@@ -174,18 +189,21 @@ function startLogStream(io, serverId, attempt = 0) {
       }
     },
     () => {
-      // Stream terminé naturellement → serveur arrêté
       const db = getDb();
       const changed = db.prepare("UPDATE servers SET status = 'stopped' WHERE id = ? AND status = 'running'")
         .run(serverId);
       if (changed.changes > 0) {
         io.emit('server:status', { serverId, status: 'stopped' });
       }
+      // Tous les joueurs sont offline quand le serveur s'arrête
+      db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ?').run(serverId);
       activeStreams.delete(serverId);
-    }
+    },
+    { since }
   );
 
   activeStreams.set(serverId, () => {
+    stopStream();
     activeStreams.delete(serverId);
   });
 }
@@ -195,4 +213,4 @@ function stopLogStream(serverId) {
   if (cleanup) cleanup();
 }
 
-module.exports = { setupLogsSocket, startLogStream };
+module.exports = { setupLogsSocket, startLogStream, setIo };

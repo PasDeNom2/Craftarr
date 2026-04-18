@@ -17,6 +17,11 @@ export default function Layout() {
 
     const socket = getSocket();
 
+    // Re-fetch la liste des serveurs à chaque reconnexion (rebuild backend, perte réseau…)
+    socket.on('connect', () => {
+      getServers().then(setServers).catch(console.error);
+    });
+
     socket.on('server:update-available', ({ serverId, serverName, latestVersion }) => {
       toast(`Mise à jour disponible pour ${serverName} → ${latestVersion}`, { duration: 8000 });
     });
@@ -39,6 +44,7 @@ export default function Layout() {
     socket.on('server:status', ({ serverId, status }) => applyStatus(serverId, status));
 
     return () => {
+      socket.off('connect');
       socket.off('server:update-available');
       socket.off('server:update-done');
       socket.off('install:done');
