@@ -10,7 +10,7 @@ services:
       - PORT=3000
       - DATA_PATH=/data
       # Chemin hôte du dossier data (pour les bind mounts des containers MC)
-      - HOST_DATA_PATH=${HOST_DATA_PATH:-/root/Projet/craftarr/data}
+      - HOST_DATA_PATH=${HOST_DATA_PATH:-${PWD}/data}
       # Optionnel : surcharger ici ou dans un .env
       # - ADMIN_USERNAME=admin
       # - ADMIN_PASSWORD=monmotdepasse
@@ -20,7 +20,7 @@ services:
       # - UI_PORT=8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./craftarr/data:/data
+      - ./data:/data
     networks:
       - craftarr-net
     healthcheck:
