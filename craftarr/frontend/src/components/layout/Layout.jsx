@@ -31,11 +31,16 @@ export default function Layout() {
       updateServer(serverId, { status: 'error' });
     });
 
+    socket.on('server:status', ({ serverId, status }) => {
+      updateServer(serverId, { status });
+    });
+
     return () => {
       socket.off('server:update-available');
       socket.off('server:update-done');
       socket.off('install:done');
       socket.off('install:error');
+      socket.off('server:status');
     };
   }, []);
 

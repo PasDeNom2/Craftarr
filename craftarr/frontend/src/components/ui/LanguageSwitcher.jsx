@@ -11,11 +11,17 @@ export default function LanguageSwitcher() {
 
   const current = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
 
-  const filtered = LANGUAGES.filter(l =>
-    l.native.toLowerCase().includes(search.toLowerCase()) ||
-    l.name.toLowerCase().includes(search.toLowerCase()) ||
-    l.code.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = LANGUAGES.filter(l => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    const countryCode = [...l.flag].map(c => String.fromCharCode(c.codePointAt(0) - 0x1F1E6 + 65)).join('').toLowerCase();
+    return (
+      l.native.toLowerCase().includes(q) ||
+      l.name.toLowerCase().includes(q) ||
+      l.code.toLowerCase().includes(q) ||
+      countryCode.includes(q)
+    );
+  });
 
   useEffect(() => {
     function onClickOutside(e) {

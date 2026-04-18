@@ -55,7 +55,9 @@
     "loadErrorHint": "Verifica le chiavi API nelle impostazioni",
     "retry": "Riprova",
     "noResults": "Nessun modpack trovato",
-    "noResultsHint": "Prova un altro termine di ricerca"
+    "noResultsHint": "Prova un altro termine di ricerca",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Crea un server Minecraft Vanilla"
   },
   "modpack": {
     "deploy": "Distribuisci",
@@ -107,7 +109,8 @@
       "backups": "Backup",
       "files": "File",
       "settings": "Impostazioni",
-      "players": "Giocatori"
+      "players": "Giocatori",
+      "whitelist": "Lista bianca"
     },
     "actions": {
       "start": "Avvia",
@@ -191,14 +194,25 @@
     "send": "Invia",
     "connecting": "Connessione...",
     "noLogs": "In attesa dei log...",
-    "rconError": "Errore nell'invio del comando"
+    "rconError": "Errore nell'invio del comando",
+    "clear": "Svuota",
+    "autoScroll": "Auto-scroll",
+    "newLines": "{count} nuove righe",
+    "stoppedPlaceholder": "Server fermato"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Nessuna metrica disponibile",
     "players": "Giocatori connessi",
-    "uptime": "Uptime"
+    "uptime": "Uptime",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Avvia il server per vedere le metriche in tempo reale.",
+    "waiting": "In attesa delle prime metriche...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Backup",
@@ -220,7 +234,12 @@
     "save": "Salva",
     "saving": "Salvataggio...",
     "saveSuccess": "File salvato",
-    "back": "Indietro"
+    "back": "Indietro",
+    "modified": "Modificato",
+    "inaccessible": "Cartella inaccessibile (server non avviato?)",
+    "notEditable": "Questo tipo di file non può essere modificato nel browser",
+    "readError": "Impossibile leggere il file",
+    "loadError": "Errore durante il salvataggio"
   },
   "serverSettings": {
     "title": "Impostazioni server",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Lingua",
     "search": "Cerca lingua..."
+  },
+  "whitelist": {
+    "toggle": "Attiva lista bianca",
+    "toggleOnDesc": "Solo i giocatori in lista bianca possono connettersi",
+    "toggleOffDesc": "Tutti i giocatori possono connettersi",
+    "enabled": "Lista bianca attivata",
+    "disabled": "Lista bianca disattivata",
+    "add": "Aggiungi",
+    "addPlaceholder": "Nome giocatore...",
+    "added": "{{name}} aggiunto alla lista bianca",
+    "removed": "{{name}} rimosso dalla lista bianca",
+    "remove": "Rimuovi",
+    "empty": "Nessun giocatore in lista bianca"
   }
 }

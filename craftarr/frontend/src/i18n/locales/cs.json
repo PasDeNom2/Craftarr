@@ -55,7 +55,9 @@
     "loadErrorHint": "Zkontrolujte API klíče v nastavení",
     "retry": "Zkusit znovu",
     "noResults": "Žádné modpacky nenalezeny",
-    "noResultsHint": "Zkuste jiný výraz"
+    "noResultsHint": "Zkuste jiný výraz",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Vytvořit Vanilla Minecraft server"
   },
   "modpack": {
     "deploy": "Nasadit",
@@ -107,7 +109,8 @@
       "backups": "Zálohy",
       "files": "Soubory",
       "settings": "Nastavení",
-      "players": "Hráči"
+      "players": "Hráči",
+      "whitelist": "Whitelist"
     },
     "actions": {
       "start": "Spustit",
@@ -191,14 +194,25 @@
     "send": "Odeslat",
     "connecting": "Připojování...",
     "noLogs": "Čekám na logy...",
-    "rconError": "Chyba odeslání příkazu"
+    "rconError": "Chyba odeslání příkazu",
+    "clear": "Vymazat",
+    "autoScroll": "Automatické posouvání",
+    "newLines": "{count} nových řádků",
+    "stoppedPlaceholder": "Server zastaven"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Žádné metriky",
     "players": "Připojení hráči",
-    "uptime": "Doba provozu"
+    "uptime": "Doba provozu",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Spusťte server pro zobrazení metrik v reálném čase.",
+    "waiting": "Čekání na první metriky...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Zálohy",
@@ -220,7 +234,12 @@
     "save": "Uložit",
     "saving": "Ukládání...",
     "saveSuccess": "Soubor uložen",
-    "back": "Zpět"
+    "back": "Zpět",
+    "modified": "Upraveno",
+    "inaccessible": "Složka nepřístupná (server není spuštěn?)",
+    "notEditable": "Tento typ souboru nelze upravovat v prohlížeči",
+    "readError": "Soubor nelze přečíst",
+    "loadError": "Chyba při ukládání"
   },
   "serverSettings": {
     "title": "Nastavení serveru",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Jazyk",
     "search": "Hledat jazyk..."
+  },
+  "whitelist": {
+    "toggle": "Povolit whitelist",
+    "toggleOnDesc": "Připojit se mohou jen hráči na whitelistu",
+    "toggleOffDesc": "Připojit se mohou všichni hráči",
+    "enabled": "Whitelist povolen",
+    "disabled": "Whitelist zakázán",
+    "add": "Přidat",
+    "addPlaceholder": "Jméno hráče...",
+    "added": "{{name}} přidán na whitelist",
+    "removed": "{{name}} odebrán z whitelistu",
+    "remove": "Odebrat",
+    "empty": "Na whitelistu nejsou žádní hráči"
   }
 }

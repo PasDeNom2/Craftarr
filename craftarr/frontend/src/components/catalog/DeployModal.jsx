@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
-import { createServer, getModpackVersions } from '../../services/api';
+import { createServer, getModpackVersions, uploadServerIcon } from '../../services/api';
 import { useServerStore } from '../../store';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Rocket, Globe } from 'lucide-react';
+import IconPicker from '../ui/IconPicker';
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
 const LOADER_LABELS = { forge: 'Forge', neoforge: 'NeoForge', fabric: 'Fabric', quilt: 'Quilt', vanilla: 'Vanilla' };
@@ -26,6 +27,7 @@ export default function DeployModal({ modpack, onClose }) {
     version_id: '',
   });
   const [worldFile, setWorldFile] = useState(null);
+  const [iconFile, setIconFile] = useState(null);
   const [deploying, setDeploying] = useState(false);
   const { addServer } = useServerStore();
 
@@ -66,6 +68,9 @@ export default function DeployModal({ modpack, onClose }) {
         loader_type: detectedLoaders[0] || 'forge',
       });
       addServer(server);
+      if (iconFile) {
+        uploadServerIcon(server.id, iconFile).catch(console.error);
+      }
       if (worldFile) {
         const formData = new FormData();
         formData.append('world', worldFile);
@@ -93,6 +98,8 @@ export default function DeployModal({ modpack, onClose }) {
     <Modal open={!!modpack} onClose={onClose} title={`${t('deploy.title')} : ${modpack?.name}`} size="lg">
       <div className="p-6">
         <form onSubmit={handleDeploy} className="space-y-5">
+
+          <IconPicker value={iconFile} onChange={setIconFile} />
 
           {/* Version selector */}
           <div>

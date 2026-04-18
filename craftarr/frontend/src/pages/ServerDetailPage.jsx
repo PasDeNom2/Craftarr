@@ -7,7 +7,7 @@ import {
   updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods,
   uploadServerIcon, getServerIconUrl,
 } from '../services/api';
-import { useServerStore } from '../store';
+import { useServerStore, useIconStore } from '../store';
 import StatusBadge from '../components/ui/StatusBadge';
 import Console from '../components/servers/Console';
 import MetricsPanel from '../components/servers/MetricsPanel';
@@ -19,9 +19,11 @@ import clsx from 'clsx';
 import {
   Terminal, Activity, HardDrive, FolderOpen, Settings as SettingsIcon,
   Play, Square, RotateCcw, Upload, Trash2, ArrowUp, Package, Globe,
-  AlertTriangle, Save, Users,
+  AlertTriangle, Save, Users, Pencil,
 } from 'lucide-react';
 import PlayersPanel from '../components/servers/PlayersPanel';
+import WhitelistPanel from '../components/servers/WhitelistPanel';
+import { Shield } from 'lucide-react';
 
 // Stable English IDs — never change, only labelKey is translated
 const TABS = [
@@ -30,6 +32,7 @@ const TABS = [
   { id: 'backups',   Icon: HardDrive,    labelKey: 'server.tabs.backups'   },
   { id: 'files',     Icon: FolderOpen,   labelKey: 'server.tabs.files'     },
   { id: 'players',   Icon: Users,        labelKey: 'server.tabs.players'   },
+  { id: 'whitelist', Icon: Shield,       labelKey: 'server.tabs.whitelist' },
   { id: 'settings',  Icon: SettingsIcon, labelKey: 'server.tabs.settings'  },
 ];
 
@@ -190,10 +193,11 @@ function SectionTitle({ children }) {
   );
 }
 
-function EditTab({ server, onInstallMods }) {
+function EditTab({ server, onInstallMods, onWorldImport }) {
   const qc = useQueryClient();
   const { t } = useI18n();
   const { updateServer: patchStore } = useServerStore();
+  const bumpIcon = useIconStore(s => s.bumpIcon);
 
   const [form, setForm] = useState({
     name: server.name,
@@ -266,10 +270,12 @@ function EditTab({ server, onInstallMods }) {
     try {
       const resized = await resizeTo64(iconFile);
       await uploadServerIcon(server.id, resized);
+      const v = Date.now();
+      setIconKey(v);
+      bumpIcon(server.id);
       toast.success(t('server.settings.iconUpdated'));
       setIconPreview(null);
       setIconFile(null);
-      setIconKey(Date.now());
     } catch (err) {
       toast.error(err.response?.data?.error || err.message || t('server.settings.iconError'));
     } finally {
@@ -475,6 +481,13 @@ function EditTab({ server, onInstallMods }) {
             <Package size={14} strokeWidth={1.5} />
             {t('server.settings.downloadMods')}
           </button>
+          <button
+            className="btn-secondary text-sm gap-2"
+            onClick={onWorldImport}
+          >
+            <Globe size={14} strokeWidth={1.5} />
+            {t('server.actions.importWorld')}
+          </button>
         </div>
         <p className="text-[11px] text-[#4A4A55]">{t('server.settings.downloadModsHint')}</p>
       </div>
@@ -513,7 +526,11 @@ export default function ServerDetailPage() {
   const [tab, setTab] = useState('console');
   const [showUpdate, setShowUpdate] = useState(false);
   const [showWorldImport, setShowWorldImport] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [headerName, setHeaderName] = useState('');
+  const [headerIconKey, setHeaderIconKey] = useState(Date.now());
   const { updateServer: patchStore, removeServer } = useServerStore();
+  const bumpIcon = useIconStore(s => s.bumpIcon);
 
   const { data: server, isLoading, isError } = useQuery({
     queryKey: ['server', id],
@@ -579,21 +596,86 @@ export default function ServerDetailPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           {/* Left: icon + title */}
           <div className="flex items-center gap-4">
-            <div
-              className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center text-base font-bold text-[#6B6B76]"
-              style={{ background: '#1C1C21', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <img
-                src={`${getServerIconUrl(server.id)}?v=1`}
-                alt=""
-                className="w-full h-full object-cover"
-                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block'; }}
+            {/* Clickable icon */}
+            <div className="relative flex-shrink-0" style={{ width: 44, height: 44 }}>
+              <input
+                type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden"
+                onChange={async e => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const resized = await resizeTo64(file);
+                    await uploadServerIcon(server.id, resized);
+                    const v = Date.now();
+                    setHeaderIconKey(v);
+                    bumpIcon(server.id);
+                    toast.success(t('server.settings.iconUpdated'));
+                  } catch (err) {
+                    toast.error(err.response?.data?.error || t('server.settings.iconError'));
+                  }
+                  e.target.value = '';
+                }}
               />
-              <span style={{ display: 'none' }}>{server.name?.[0]?.toUpperCase() || 'S'}</span>
+              <div
+                className="w-full h-full rounded-xl overflow-hidden flex items-center justify-center text-base font-bold text-[#6B6B76]"
+                style={{ background: '#1C1C21', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <img
+                  key={headerIconKey}
+                  src={`${getServerIconUrl(server.id)}?v=${headerIconKey}`}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block'; }}
+                />
+                <span style={{ display: 'none' }}>{server.name?.[0]?.toUpperCase() || 'S'}</span>
+              </div>
+              {/* Edit button always visible bottom-right */}
+              <label
+                htmlFor="header-icon-input"
+                className="cursor-pointer absolute flex items-center justify-center rounded-full"
+                style={{
+                  width: 18, height: 18,
+                  bottom: -4, right: -4,
+                  background: 'var(--accent)',
+                  border: '2px solid #0D0D10',
+                }}
+                title={t('server.settings.icon')}
+              >
+                <Pencil size={9} strokeWidth={2.5} style={{ color: '#000' }} />
+              </label>
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-base font-semibold text-[#F0F0F0] leading-tight">{server.name}</h1>
+                {editingName ? (
+                  <input
+                    autoFocus
+                    className="text-base font-semibold text-[#F0F0F0] leading-tight bg-transparent border-b border-[#4A4A55] focus:border-[var(--accent)] outline-none w-48"
+                    value={headerName}
+                    onChange={e => setHeaderName(e.target.value)}
+                    onBlur={async () => {
+                      setEditingName(false);
+                      const trimmed = headerName.trim();
+                      if (trimmed && trimmed !== server.name) {
+                        try {
+                          const updated = await patchServer(server.id, { name: trimmed });
+                          patchStore(server.id, updated);
+                          qc.invalidateQueries({ queryKey: ['server', server.id] });
+                          toast.success(t('server.settings.saved'));
+                        } catch { toast.error(t('common.error')); }
+                      }
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') { setEditingName(false); } }}
+                  />
+                ) : (
+                  <h1
+                    className="text-base font-semibold text-[#F0F0F0] leading-tight cursor-pointer hover:text-white group/name flex items-center gap-1.5"
+                    onClick={() => { setHeaderName(server.name); setEditingName(true); }}
+                    title={t('server.settings.serverName')}
+                  >
+                    {server.name}
+                    <Pencil size={11} strokeWidth={1.5} className="text-[#4A4A55] opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                  </h1>
+                )}
                 <StatusBadge status={server.status} />
               </div>
               <div className="flex gap-3 text-xs text-[#4A4A55] mt-0.5 flex-wrap font-mono">
@@ -634,10 +716,6 @@ export default function ServerDetailPage() {
                 {t('server.actions.update')}
               </button>
             )}
-            <button className="btn-secondary text-sm py-1.5 px-4 gap-2" onClick={() => setShowWorldImport(true)}>
-              <Globe size={13} strokeWidth={1.5} />
-              {t('server.actions.importWorld')}
-            </button>
             <button
               className="btn-danger text-sm py-1.5 px-3"
               onClick={() => { if (confirm(t('server.deleteConfirm', { name: server.name }))) deleteMut.mutate(); }}
@@ -694,9 +772,14 @@ export default function ServerDetailPage() {
             <PlayersPanel server={server} />
           </div>
         )}
+        {tab === 'whitelist' && (
+          <div className="p-6">
+            <WhitelistPanel server={server} />
+          </div>
+        )}
         {tab === 'settings' && (
           <div className="p-6">
-            <EditTab server={server} onInstallMods={() => installModsMut.mutate()} />
+            <EditTab server={server} onInstallMods={() => installModsMut.mutate()} onWorldImport={() => setShowWorldImport(true)} />
           </div>
         )}
       </div>

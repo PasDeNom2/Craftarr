@@ -55,7 +55,9 @@
     "loadErrorHint": "Ayarlardaki API anahtarlarınızı kontrol edin",
     "retry": "Yeniden dene",
     "noResults": "Modpack bulunamadı",
-    "noResultsHint": "Farklı bir arama terimi deneyin"
+    "noResultsHint": "Farklı bir arama terimi deneyin",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Vanilla Minecraft sunucusu oluştur"
   },
   "modpack": {
     "deploy": "Dağıt",
@@ -107,7 +109,8 @@
       "backups": "Yedekler",
       "files": "Dosyalar",
       "settings": "Ayarlar",
-      "players": "Oyuncular"
+      "players": "Oyuncular",
+      "whitelist": "Beyaz Liste"
     },
     "actions": {
       "start": "Başlat",
@@ -191,14 +194,25 @@
     "send": "Gönder",
     "connecting": "Bağlanıyor...",
     "noLogs": "Günlükler bekleniyor...",
-    "rconError": "Komut gönderme hatası"
+    "rconError": "Komut gönderme hatası",
+    "clear": "Temizle",
+    "autoScroll": "Otomatik kaydır",
+    "newLines": "{count} yeni satır",
+    "stoppedPlaceholder": "Sunucu durduruldu"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Metrik yok",
     "players": "Bağlı oyuncular",
-    "uptime": "Çalışma süresi"
+    "uptime": "Çalışma süresi",
+    "tps": "TPS 1 dk",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Gerçek zamanlı metrikleri görmek için sunucuyu başlatın.",
+    "waiting": "İlk metrikler bekleniyor...",
+    "mb": "MB",
+    "tpsSub": "5dk: {tps5} · 15dk: {tps15}"
   },
   "backups": {
     "title": "Yedekler",
@@ -220,7 +234,12 @@
     "save": "Kaydet",
     "saving": "Kaydediliyor...",
     "saveSuccess": "Dosya kaydedildi",
-    "back": "Geri"
+    "back": "Geri",
+    "modified": "Değiştirildi",
+    "inaccessible": "Klasöre erişilemiyor (sunucu başlatılmadı mı?)",
+    "notEditable": "Bu dosya türü tarayıcıda düzenlenemez",
+    "readError": "Dosya okunamıyor",
+    "loadError": "Kaydetme hatası"
   },
   "serverSettings": {
     "title": "Sunucu ayarları",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Dil",
     "search": "Dil ara..."
+  },
+  "whitelist": {
+    "toggle": "Beyaz listeyi etkinleştir",
+    "toggleOnDesc": "Yalnızca beyaz listedeki oyuncular bağlanabilir",
+    "toggleOffDesc": "Tüm oyuncular bağlanabilir",
+    "enabled": "Beyaz liste etkinleştirildi",
+    "disabled": "Beyaz liste devre dışı bırakıldı",
+    "add": "Ekle",
+    "addPlaceholder": "Oyuncu adı...",
+    "added": "{{name}} beyaz listeye eklendi",
+    "removed": "{{name}} beyaz listeden kaldırıldı",
+    "remove": "Kaldır",
+    "empty": "Beyaz listede oyuncu yok"
   }
 }

@@ -6,7 +6,8 @@ import { useI18n } from '../i18n';
 import ModpackCard from '../components/catalog/ModpackCard';
 import ModpackDetail from '../components/catalog/ModpackDetail';
 import DeployModal from '../components/catalog/DeployModal';
-import { Search, X, AlertCircle, Activity, Server, Loader } from 'lucide-react';
+import VanillaModal from '../components/catalog/VanillaModal';
+import { Search, X, AlertCircle, Activity, Server, Loader, Box } from 'lucide-react';
 
 const MC_VERSIONS = ['1.21', '1.20.4', '1.20.1', '1.19.2', '1.18.2', '1.16.5', '1.12.2'];
 
@@ -16,6 +17,7 @@ export default function CatalogPage() {
   const [mcVersion, setMcVersion] = useState('');
   const [selectedModpack, setSelectedModpack] = useState(null);
   const [deployModpack, setDeployModpack] = useState(null);
+  const [vanillaOpen, setVanillaOpen] = useState(false);
   const { t } = useI18n();
 
   const servers = useServerStore(s => s.servers);
@@ -68,7 +70,20 @@ export default function CatalogPage() {
       <div className="card">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-sm font-semibold text-[#F0F0F0] uppercase tracking-[0.08em]">{t('catalog.available')}</h2>
-          <span className="text-xs text-[#6B6B76]">{modpacks.length} {t('catalog.results')}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#6B6B76]">{modpacks.length} {t('catalog.results')}</span>
+            <button
+              onClick={() => setVanillaOpen(true)}
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg transition-all duration-200"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#6B6B76' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#F0F0F0'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#6B6B76'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              title={t('catalog.vanillaHint')}
+            >
+              <Box size={12} strokeWidth={1.5} />
+              {t('catalog.vanilla')}
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-3 mb-5 flex-wrap">
@@ -158,6 +173,7 @@ export default function CatalogPage() {
           onClose={() => setDeployModpack(null)}
         />
       )}
+      <VanillaModal open={vanillaOpen} onClose={() => setVanillaOpen(false)} />
     </div>
   );
 }

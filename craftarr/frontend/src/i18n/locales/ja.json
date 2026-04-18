@@ -55,7 +55,9 @@
     "loadErrorHint": "設定でAPIキーを確認してください",
     "retry": "再試行",
     "noResults": "Modpackが見つかりません",
-    "noResultsHint": "別の検索語を試してください"
+    "noResultsHint": "別の検索語を試してください",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "バニラ Minecraft サーバーを作成"
   },
   "modpack": {
     "deploy": "デプロイ",
@@ -107,7 +109,8 @@
       "backups": "バックアップ",
       "files": "ファイル",
       "settings": "設定",
-      "players": "プレイヤー"
+      "players": "プレイヤー",
+      "whitelist": "ホワイトリスト"
     },
     "actions": {
       "start": "起動",
@@ -191,14 +194,25 @@
     "send": "送信",
     "connecting": "接続中...",
     "noLogs": "ログを待機中...",
-    "rconError": "コマンド送信エラー"
+    "rconError": "コマンド送信エラー",
+    "clear": "クリア",
+    "autoScroll": "自動スクロール",
+    "newLines": "{count} 新しい行",
+    "stoppedPlaceholder": "サーバー停止中"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "メトリクスなし",
     "players": "接続プレイヤー",
-    "uptime": "稼働時間"
+    "uptime": "稼働時間",
+    "tps": "TPS 1分",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "サーバーを起動してリアルタイムメトリクスを表示します。",
+    "waiting": "最初のメトリクスを待機中...",
+    "mb": "MB",
+    "tpsSub": "5分: {tps5} · 15分: {tps15}"
   },
   "backups": {
     "title": "バックアップ",
@@ -220,7 +234,12 @@
     "save": "保存",
     "saving": "保存中...",
     "saveSuccess": "ファイルを保存しました",
-    "back": "戻る"
+    "back": "戻る",
+    "modified": "変更済み",
+    "inaccessible": "フォルダにアクセスできません（サーバーが起動していますか？）",
+    "notEditable": "このファイル形式はブラウザで編集できません",
+    "readError": "ファイルを読み込めません",
+    "loadError": "保存エラー"
   },
   "serverSettings": {
     "title": "サーバー設定",
@@ -326,5 +345,18 @@
   "language": {
     "label": "言語",
     "search": "言語を検索..."
+  },
+  "whitelist": {
+    "toggle": "ホワイトリストを有効にする",
+    "toggleOnDesc": "ホワイトリストのプレイヤーのみ接続可能",
+    "toggleOffDesc": "すべてのプレイヤーが接続可能",
+    "enabled": "ホワイトリストを有効にしました",
+    "disabled": "ホワイトリストを無効にしました",
+    "add": "追加",
+    "addPlaceholder": "プレイヤー名...",
+    "added": "{{name}} をホワイトリストに追加しました",
+    "removed": "{{name}} をホワイトリストから削除しました",
+    "remove": "削除",
+    "empty": "ホワイトリストにプレイヤーがいません"
   }
 }

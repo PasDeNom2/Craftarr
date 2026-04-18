@@ -22,6 +22,7 @@ const serverRoutes = require('./routes/servers');
 const catalogRoutes = require('./routes/catalog');
 const sourcesRoutes = require('./routes/sources');
 const backupsRoutes = require('./routes/backups');
+const vanillaRoutes = require('./routes/vanilla');
 
 const { setupLogsSocket } = require('./websocket/logs');
 const metrics = require('./services/metrics');
@@ -51,6 +52,7 @@ app.use('/api/servers', serverRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/sources', sourcesRoutes);
 app.use('/api/servers', backupsRoutes);
+app.use('/api/vanilla', vanillaRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.0.0' }));
 

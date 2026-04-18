@@ -86,9 +86,12 @@ router.post('/', authMiddleware, async (req, res, next) => {
       mc_version, loader_type = 'forge', auto_update = false, online_mode = true,
     } = req.body;
 
-    if (!name || !modpack_id || !modpack_source) {
-      return res.status(400).json({ error: 'name, modpack_id et modpack_source sont requis' });
+    const isVanilla = loader_type === 'vanilla';
+    if (!name || (!isVanilla && (!modpack_id || !modpack_source))) {
+      return res.status(400).json({ error: 'name (et modpack_id/modpack_source pour les modpacks) sont requis' });
     }
+    const effectiveModpackId = isVanilla ? `vanilla-${mc_version || 'latest'}` : modpack_id;
+    const effectiveModpackSource = isVanilla ? 'vanilla' : modpack_source;
 
     const db = getDb();
     const assignedPort = port || findFreePort(db);
@@ -101,7 +104,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
         modpack_version_id, port, rcon_port, rcon_password, ram_mb, max_players, seed,
         whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?)
-    `).run(id, name, modpack_id, modpack_name || modpack_id, modpack_source, modpack_version || null,
+    `).run(id, name, effectiveModpackId, modpack_name || effectiveModpackId, effectiveModpackSource, modpack_version || null,
       modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
       seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
       (mc_version && /^1\.\d{1,2}(\.\d{1,2})?$/.test(mc_version) ? mc_version : null),
@@ -271,15 +274,27 @@ router.delete('/:id', authMiddleware, async (req, res, next) => {
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
     if (server.container_id) {
-      await dockerService.removeContainer(server.container_id).catch(() => {});
+      await dockerService.removeContainerAndImage(server.container_id).catch(() => {});
     }
     db.prepare('DELETE FROM servers WHERE id = ?').run(server.id);
 
-    // Suppression du dossier de données du serveur
+    // Suppression du dossier de données du serveur (modpack zip, fichiers installés, etc.)
     const serverDir = path.join(DATA_PATH, 'servers', server.id);
     try { fs.rmSync(serverDir, { recursive: true, force: true }); } catch (e) {
       console.warn(`[Delete] Impossible de supprimer ${serverDir}:`, e.message);
     }
+
+    // Nettoyage des dossiers orphelins (serveurs supprimés sans cleanup complet)
+    try {
+      const serversRoot = path.join(DATA_PATH, 'servers');
+      const knownIds = new Set(db.prepare('SELECT id FROM servers').all().map(r => r.id));
+      for (const entry of fs.readdirSync(serversRoot)) {
+        if (!knownIds.has(entry)) {
+          fs.rmSync(path.join(serversRoot, entry), { recursive: true, force: true });
+          console.log(`[Delete] Dossier orphelin supprimé : ${entry}`);
+        }
+      }
+    } catch {}
 
     res.json({ ok: true });
   } catch (err) {
@@ -650,10 +665,86 @@ router.get('/:id/metrics', authMiddleware, async (req, res, next) => {
   }
 });
 
+// GET /api/servers/:id/whitelist
+router.get('/:id/whitelist', authMiddleware, (req, res) => {
+  const db = getDb();
+  const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+  if (!server) return res.status(404).json({ error: 'Not found' });
+  const whitelistPath = path.join(DATA_PATH, 'servers', server.id, 'server', 'whitelist.json');
+  try {
+    const data = fs.existsSync(whitelistPath) ? JSON.parse(fs.readFileSync(whitelistPath, 'utf8')) : [];
+    res.json(data);
+  } catch {
+    res.json([]);
+  }
+});
+
+// POST /api/servers/:id/whitelist
+router.post('/:id/whitelist', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Not found' });
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: 'username required' });
+
+    // Fetch UUID from Mojang
+    let uuid = '00000000-0000-0000-0000-000000000000';
+    try {
+      const mojang = await fetch(`https://api.mojang.com/users/profiles/minecraft/${username}`);
+      if (mojang.ok) {
+        const data = await mojang.json();
+        const raw = data.id;
+        uuid = `${raw.slice(0,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}-${raw.slice(16,20)}-${raw.slice(20)}`;
+      }
+    } catch { /* offline mode — keep zeroed UUID */ }
+
+    const whitelistPath = path.join(DATA_PATH, 'servers', server.id, 'server', 'whitelist.json');
+    let list = [];
+    try { list = fs.existsSync(whitelistPath) ? JSON.parse(fs.readFileSync(whitelistPath, 'utf8')) : []; } catch { list = []; }
+    if (!list.find(p => p.name.toLowerCase() === username.toLowerCase())) {
+      list.push({ uuid, name: username });
+      fs.mkdirSync(path.dirname(whitelistPath), { recursive: true });
+      fs.writeFileSync(whitelistPath, JSON.stringify(list, null, 2));
+    }
+
+    if (server.status === 'running') {
+      const rcon = require('../services/rcon');
+      await rcon.sendCommand(server, `whitelist add ${username}`).catch(() => {});
+    }
+
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/servers/:id/whitelist/:username
+router.delete('/:id/whitelist/:username', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Not found' });
+    const { username } = req.params;
+
+    const whitelistPath = path.join(DATA_PATH, 'servers', server.id, 'server', 'whitelist.json');
+    let list = [];
+    try { list = fs.existsSync(whitelistPath) ? JSON.parse(fs.readFileSync(whitelistPath, 'utf8')) : []; } catch { list = []; }
+    list = list.filter(p => p.name.toLowerCase() !== username.toLowerCase());
+    fs.writeFileSync(whitelistPath, JSON.stringify(list, null, 2));
+
+    if (server.status === 'running') {
+      const rcon = require('../services/rcon');
+      await rcon.sendCommand(server, `whitelist remove ${username}`).catch(() => {});
+    }
+
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 function findFreePort(db) {
-  const used = db.prepare('SELECT port FROM servers').all().map(r => r.port);
+  const rows = db.prepare('SELECT port, rcon_port FROM servers').all();
+  const usedPorts = new Set(rows.flatMap(r => [r.port, r.rcon_port]));
   let port = 25565;
-  while (used.includes(port)) port++;
+  while (usedPorts.has(port) || usedPorts.has(port + 10)) port++;
   return port;
 }
 

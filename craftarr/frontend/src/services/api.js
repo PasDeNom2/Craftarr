@@ -87,6 +87,14 @@ export const warnPlayer = (serverId, username, reason) => api.post(`/servers/${s
 export const banPlayer = (serverId, username, reason) => api.post(`/servers/${serverId}/players/${encodeURIComponent(username)}/ban`, { reason }).then(r => r.data);
 export const unbanPlayer = (serverId, username) => api.delete(`/servers/${serverId}/players/${encodeURIComponent(username)}/ban`).then(r => r.data);
 
+// Whitelist
+export const getWhitelist = (serverId) => api.get(`/servers/${serverId}/whitelist`).then(r => r.data);
+export const addToWhitelist = (serverId, username) => api.post(`/servers/${serverId}/whitelist`, { username }).then(r => r.data);
+export const removeFromWhitelist = (serverId, username) => api.delete(`/servers/${serverId}/whitelist/${encodeURIComponent(username)}`).then(r => r.data);
+
+// Vanilla
+export const getVanillaVersions = (type = 'release') => api.get('/vanilla/versions', { params: { type } }).then(r => r.data);
+
 // Sources
 export const getSources = () => api.get('/sources').then(r => r.data);
 export const createSource = (data) => api.post('/sources', data).then(r => r.data);

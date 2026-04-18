@@ -55,7 +55,9 @@
     "loadErrorHint": "Sprawdź klucze API w ustawieniach",
     "retry": "Ponów",
     "noResults": "Nie znaleziono modpaków",
-    "noResultsHint": "Spróbuj innego wyszukiwania"
+    "noResultsHint": "Spróbuj innego wyszukiwania",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Utwórz serwer Minecraft Vanilla"
   },
   "modpack": {
     "deploy": "Wdróż",
@@ -107,7 +109,8 @@
       "backups": "Kopie zapasowe",
       "files": "Pliki",
       "settings": "Ustawienia",
-      "players": "Gracze"
+      "players": "Gracze",
+      "whitelist": "Biała lista"
     },
     "actions": {
       "start": "Uruchom",
@@ -191,14 +194,25 @@
     "send": "Wyślij",
     "connecting": "Łączenie...",
     "noLogs": "Oczekiwanie na logi...",
-    "rconError": "Błąd wysyłania polecenia"
+    "rconError": "Błąd wysyłania polecenia",
+    "clear": "Wyczyść",
+    "autoScroll": "Auto-przewijanie",
+    "newLines": "{count} nowych linii",
+    "stoppedPlaceholder": "Serwer zatrzymany"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Brak metryk",
     "players": "Połączeni gracze",
-    "uptime": "Czas działania"
+    "uptime": "Czas działania",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Uruchom serwer, aby zobaczyć metryki w czasie rzeczywistym.",
+    "waiting": "Oczekiwanie na pierwsze metryki...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Kopie zapasowe",
@@ -220,7 +234,12 @@
     "save": "Zapisz",
     "saving": "Zapisywanie...",
     "saveSuccess": "Plik zapisany",
-    "back": "Wstecz"
+    "back": "Wstecz",
+    "modified": "Zmodyfikowany",
+    "inaccessible": "Folder niedostępny (serwer nie uruchomiony?)",
+    "notEditable": "Tego typu pliku nie można edytować w przeglądarce",
+    "readError": "Nie można odczytać pliku",
+    "loadError": "Błąd zapisu"
   },
   "serverSettings": {
     "title": "Ustawienia serwera",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Język",
     "search": "Szukaj języka..."
+  },
+  "whitelist": {
+    "toggle": "Włącz białą listę",
+    "toggleOnDesc": "Tylko gracze z białej listy mogą się połączyć",
+    "toggleOffDesc": "Wszyscy gracze mogą się połączyć",
+    "enabled": "Biała lista włączona",
+    "disabled": "Biała lista wyłączona",
+    "add": "Dodaj",
+    "addPlaceholder": "Nazwa gracza...",
+    "added": "{{name}} dodany do białej listy",
+    "removed": "{{name}} usunięty z białej listy",
+    "remove": "Usuń",
+    "empty": "Brak graczy na białej liście"
   }
 }

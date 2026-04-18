@@ -55,7 +55,9 @@
     "loadErrorHint": "설정에서 API 키를 확인하세요",
     "retry": "재시도",
     "noResults": "모드팩 없음",
-    "noResultsHint": "다른 검색어를 시도해보세요"
+    "noResultsHint": "다른 검색어를 시도해보세요",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "바닐라 Minecraft 서버 만들기"
   },
   "modpack": {
     "deploy": "배포",
@@ -107,7 +109,8 @@
       "backups": "백업",
       "files": "파일",
       "settings": "설정",
-      "players": "플레이어"
+      "players": "플레이어",
+      "whitelist": "화이트리스트"
     },
     "actions": {
       "start": "시작",
@@ -191,14 +194,25 @@
     "send": "전송",
     "connecting": "연결 중...",
     "noLogs": "로그 대기 중...",
-    "rconError": "명령어 전송 오류"
+    "rconError": "명령어 전송 오류",
+    "clear": "지우기",
+    "autoScroll": "자동 스크롤",
+    "newLines": "{count}개의 새 줄",
+    "stoppedPlaceholder": "서버 중지됨"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "메트릭 없음",
     "players": "접속 플레이어",
-    "uptime": "가동 시간"
+    "uptime": "가동 시간",
+    "tps": "TPS 1분",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "실시간 메트릭을 보려면 서버를 시작하세요.",
+    "waiting": "첫 번째 메트릭을 기다리는 중...",
+    "mb": "MB",
+    "tpsSub": "5분: {tps5} · 15분: {tps15}"
   },
   "backups": {
     "title": "백업",
@@ -220,7 +234,12 @@
     "save": "저장",
     "saving": "저장 중...",
     "saveSuccess": "파일 저장됨",
-    "back": "뒤로"
+    "back": "뒤로",
+    "modified": "수정됨",
+    "inaccessible": "폴더에 접근할 수 없습니다 (서버가 시작되지 않았나요?)",
+    "notEditable": "이 파일 형식은 브라우저에서 편집할 수 없습니다",
+    "readError": "파일을 읽을 수 없습니다",
+    "loadError": "저장 오류"
   },
   "serverSettings": {
     "title": "서버 설정",
@@ -326,5 +345,18 @@
   "language": {
     "label": "언어",
     "search": "언어 검색..."
+  },
+  "whitelist": {
+    "toggle": "화이트리스트 활성화",
+    "toggleOnDesc": "화이트리스트 플레이어만 연결 가능",
+    "toggleOffDesc": "모든 플레이어가 연결 가능",
+    "enabled": "화이트리스트 활성화됨",
+    "disabled": "화이트리스트 비활성화됨",
+    "add": "추가",
+    "addPlaceholder": "플레이어 이름...",
+    "added": "{{name}} 화이트리스트에 추가됨",
+    "removed": "{{name}} 화이트리스트에서 제거됨",
+    "remove": "제거",
+    "empty": "화이트리스트에 플레이어 없음"
   }
 }

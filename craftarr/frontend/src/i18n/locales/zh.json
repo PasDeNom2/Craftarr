@@ -55,7 +55,9 @@
     "loadErrorHint": "请在设置中检查您的 API 密钥",
     "retry": "重试",
     "noResults": "未找到整合包",
-    "noResultsHint": "尝试其他搜索词"
+    "noResultsHint": "尝试其他搜索词",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "创建原版 Minecraft 服务器"
   },
   "modpack": {
     "deploy": "部署",
@@ -107,7 +109,8 @@
       "backups": "备份",
       "files": "文件",
       "settings": "设置",
-      "players": "玩家"
+      "players": "玩家",
+      "whitelist": "白名单"
     },
     "actions": {
       "start": "启动",
@@ -191,14 +194,25 @@
     "send": "发送",
     "connecting": "连接中...",
     "noLogs": "等待日志...",
-    "rconError": "发送命令时出错"
+    "rconError": "发送命令时出错",
+    "clear": "清空",
+    "autoScroll": "自动滚动",
+    "newLines": "{count} 条新行",
+    "stoppedPlaceholder": "服务器已停止"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "内存",
     "noData": "无可用指标",
     "players": "在线玩家",
-    "uptime": "运行时间"
+    "uptime": "运行时间",
+    "tps": "TPS 1分钟",
+    "ramLabel": "内存 (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "启动服务器以查看实时指标。",
+    "waiting": "等待首批指标...",
+    "mb": "MB",
+    "tpsSub": "5分钟: {tps5} · 15分钟: {tps15}"
   },
   "backups": {
     "title": "备份",
@@ -220,7 +234,12 @@
     "save": "保存",
     "saving": "保存中...",
     "saveSuccess": "文件已保存",
-    "back": "返回"
+    "back": "返回",
+    "modified": "已修改",
+    "inaccessible": "文件夹不可访问（服务器未启动？）",
+    "notEditable": "此文件类型无法在浏览器中编辑",
+    "readError": "无法读取文件",
+    "loadError": "保存时出错"
   },
   "serverSettings": {
     "title": "服务器设置",
@@ -326,5 +345,18 @@
   "language": {
     "label": "语言",
     "search": "搜索语言..."
+  },
+  "whitelist": {
+    "toggle": "启用白名单",
+    "toggleOnDesc": "只有白名单玩家可以连接",
+    "toggleOffDesc": "所有玩家均可连接",
+    "enabled": "白名单已启用",
+    "disabled": "白名单已禁用",
+    "add": "添加",
+    "addPlaceholder": "玩家用户名...",
+    "added": "{{name}} 已添加到白名单",
+    "removed": "{{name}} 已从白名单中移除",
+    "remove": "移除",
+    "empty": "白名单中没有玩家"
   }
 }

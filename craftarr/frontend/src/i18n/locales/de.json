@@ -55,7 +55,9 @@
     "loadErrorHint": "Überprüfe deine API-Schlüssel in den Einstellungen",
     "retry": "Erneut versuchen",
     "noResults": "Keine Modpacks gefunden",
-    "noResultsHint": "Versuche einen anderen Suchbegriff"
+    "noResultsHint": "Versuche einen anderen Suchbegriff",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Vanilla-Minecraft-Server erstellen"
   },
   "modpack": {
     "deploy": "Bereitstellen",
@@ -107,7 +109,8 @@
       "backups": "Backups",
       "files": "Dateien",
       "settings": "Einstellungen",
-      "players": "Spieler"
+      "players": "Spieler",
+      "whitelist": "Whitelist"
     },
     "actions": {
       "start": "Starten",
@@ -191,14 +194,25 @@
     "send": "Senden",
     "connecting": "Verbinde...",
     "noLogs": "Warte auf Logs...",
-    "rconError": "Fehler beim Senden des Befehls"
+    "rconError": "Fehler beim Senden des Befehls",
+    "clear": "Leeren",
+    "autoScroll": "Auto-Scroll",
+    "newLines": "{count} neue Zeilen",
+    "stoppedPlaceholder": "Server gestoppt"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Keine Metriken verfügbar",
     "players": "Verbundene Spieler",
-    "uptime": "Betriebszeit"
+    "uptime": "Betriebszeit",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Starte den Server, um Echtzeit-Metriken zu sehen.",
+    "waiting": "Warte auf erste Metriken...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Backups",
@@ -220,7 +234,12 @@
     "save": "Speichern",
     "saving": "Speichern...",
     "saveSuccess": "Datei gespeichert",
-    "back": "Zurück"
+    "back": "Zurück",
+    "modified": "Geändert",
+    "inaccessible": "Ordner nicht erreichbar (Server nicht gestartet?)",
+    "notEditable": "Dieser Dateityp kann nicht im Browser bearbeitet werden",
+    "readError": "Datei kann nicht gelesen werden",
+    "loadError": "Fehler beim Speichern"
   },
   "serverSettings": {
     "title": "Servereinstellungen",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Sprache",
     "search": "Sprache suchen..."
+  },
+  "whitelist": {
+    "toggle": "Whitelist aktivieren",
+    "toggleOnDesc": "Nur gelistete Spieler können sich verbinden",
+    "toggleOffDesc": "Alle Spieler können sich verbinden",
+    "enabled": "Whitelist aktiviert",
+    "disabled": "Whitelist deaktiviert",
+    "add": "Hinzufügen",
+    "addPlaceholder": "Spielername...",
+    "added": "{{name}} zur Whitelist hinzugefügt",
+    "removed": "{{name}} von der Whitelist entfernt",
+    "remove": "Entfernen",
+    "empty": "Keine Spieler auf der Whitelist"
   }
 }

@@ -48,6 +48,13 @@ export const useThemeStore = create((set) => {
   };
 });
 
+export const useIconStore = create((set) => ({
+  versions: {},  // { [serverId]: timestamp }
+  bumpIcon: (serverId) => set(state => ({
+    versions: { ...state.versions, [serverId]: Date.now() },
+  })),
+}));
+
 export const useLogsStore = create((set) => ({
   logs: {},  // { [serverId]: string[] }
   appendLog: (serverId, line) => set(state => {

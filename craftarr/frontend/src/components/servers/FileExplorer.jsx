@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getFiles, getFileContent, putFileContent } from '../../services/api';
+import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
@@ -32,6 +33,7 @@ function formatSize(bytes) {
 }
 
 export default function FileExplorer({ server }) {
+  const { t } = useI18n();
   const [currentPath, setCurrentPath] = useState('');
   const [openFile, setOpenFile] = useState(null); // { path, content }
   const [editContent, setEditContent] = useState('');
@@ -45,13 +47,13 @@ export default function FileExplorer({ server }) {
 
   const saveMut = useMutation({
     mutationFn: () => putFileContent(server.id, openFile.path, editContent),
-    onSuccess: () => { toast.success('Fichier sauvegardé'); setDirty(false); },
-    onError: (err) => toast.error(err.response?.data?.error || 'Erreur lors de la sauvegarde'),
+    onSuccess: () => { toast.success(t('files.saveSuccess')); setDirty(false); },
+    onError: (err) => toast.error(err.response?.data?.error || t('files.loadError')),
   });
 
   async function openFileForEdit(entry) {
     if (!isEditable(entry.name)) {
-      toast.error('Ce type de fichier ne peut pas être édité dans le navigateur');
+      toast.error(t('files.notEditable'));
       return;
     }
     try {
@@ -60,7 +62,7 @@ export default function FileExplorer({ server }) {
       setEditContent(data.content);
       setDirty(false);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Impossible de lire le fichier');
+      toast.error(err.response?.data?.error || t('files.readError'));
     }
   }
 
@@ -83,16 +85,16 @@ export default function FileExplorer({ server }) {
       <div className="flex flex-col h-full bg-dark-900 rounded-xl border border-dark-500 overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2 bg-dark-800 border-b border-dark-600">
           <button className="text-xs text-gray-400 hover:text-white" onClick={() => setOpenFile(null)}>
-            ← Retour
+            ← {t('files.back')}
           </button>
           <span className="text-xs font-mono text-gray-300 truncate">{openFile.path}</span>
-          {dirty && <span className="ml-auto text-xs text-yellow-400">● Modifié</span>}
+          {dirty && <span className="ml-auto text-xs text-yellow-400">● {t('files.modified')}</span>}
           <button
             className="btn-primary text-xs py-1 px-3 ml-auto"
             onClick={() => saveMut.mutate()}
             disabled={saveMut.isPending || !dirty}
           >
-            {saveMut.isPending ? 'Sauvegarde...' : '💾 Sauvegarder'}
+            {saveMut.isPending ? t('files.saving') : `💾 ${t('files.save')}`}
           </button>
         </div>
         <textarea
@@ -130,11 +132,11 @@ export default function FileExplorer({ server }) {
       {/* File list */}
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="text-gray-500 text-sm text-center py-10">Chargement...</div>
+          <div className="text-gray-500 text-sm text-center py-10">{t('common.loading')}</div>
         ) : !dir ? (
-          <div className="text-gray-500 text-sm text-center py-10">Dossier inaccessible (serveur non démarré ?)</div>
+          <div className="text-gray-500 text-sm text-center py-10">{t('files.inaccessible')}</div>
         ) : dir.entries.length === 0 ? (
-          <div className="text-gray-500 text-sm text-center py-10">Dossier vide</div>
+          <div className="text-gray-500 text-sm text-center py-10">{t('files.noFiles')}</div>
         ) : (
           <table className="w-full text-sm">
             <tbody>

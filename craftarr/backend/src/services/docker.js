@@ -116,9 +116,10 @@ function buildEnvVars(server) {
     ? neoForgeInstallerPath.replace(serverDir, '/data')
     : null;
 
+  const loaderType = server.loader_type?.toLowerCase() || 'forge';
   const env = [
     'EULA=TRUE',
-    `TYPE=${server.loader_type?.toUpperCase() || 'FORGE'}`,
+    `TYPE=${loaderType === 'vanilla' ? 'VANILLA' : loaderType.toUpperCase()}`,
     `MAX_MEMORY=${server.ram_mb}M`,
     `INIT_MEMORY=${Math.min(1024, Math.floor(server.ram_mb / 2))}M`,
     `MAX_PLAYERS=${server.max_players}`,
@@ -377,7 +378,7 @@ async function getContainerStatus(containerId) {
   }
 }
 
-function streamContainerLogs(containerId, onData, onError) {
+function streamContainerLogs(containerId, onData, onError, onEnd) {
   const { PassThrough } = require('stream');
   const container = docker.getContainer(containerId);
   container.logs(
@@ -405,6 +406,7 @@ function streamContainerLogs(containerId, onData, onError) {
       stdout.on('data', processChunk);
       stderr.on('data', processChunk);
       stream.on('error', onError || console.error);
+      stream.on('end', () => onEnd?.());
     }
   );
 }
@@ -428,12 +430,36 @@ async function listMcContainers() {
   return containers.filter(c => c.Names.some(n => n.startsWith('/mc-')));
 }
 
+async function removeContainerAndImage(containerId) {
+  let imageToRemove = null;
+  try {
+    const info = await docker.getContainer(containerId).inspect();
+    imageToRemove = info.Image; // sha256 digest
+  } catch {}
+
+  await removeContainer(containerId);
+
+  if (imageToRemove) {
+    try {
+      const remaining = await docker.listContainers({ all: true });
+      const stillUsed = remaining.some(c => c.ImageID === imageToRemove || c.Image === imageToRemove);
+      if (!stillUsed) {
+        await docker.getImage(imageToRemove).remove({ force: false });
+        console.log(`[Docker] Image supprimée : ${imageToRemove.slice(0, 20)}…`);
+      }
+    } catch (e) {
+      console.warn(`[Docker] Impossible de supprimer l'image : ${e.message}`);
+    }
+  }
+}
+
 module.exports = {
   createServerContainer,
   startContainer,
   stopContainer,
   restartContainer,
   removeContainer,
+  removeContainerAndImage,
   getContainerStats,
   getContainerStatus,
   streamContainerLogs,

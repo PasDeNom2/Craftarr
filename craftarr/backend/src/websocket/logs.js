@@ -154,8 +154,11 @@ function startLogStream(io, serverId, attempt = 0) {
       parsePlayerEvent(serverId, line);
       // Transition starting → running dès que Minecraft affiche "Done"
       if (line.includes(']: Done (') || line.includes(': Done (')) {
-        db.prepare('UPDATE servers SET status = ? WHERE id = ? AND status = ?')
+        const changed = db.prepare('UPDATE servers SET status = ? WHERE id = ? AND status = ?')
           .run('running', serverId, 'starting');
+        if (changed.changes > 0) {
+          io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'running' });
+        }
       }
     },
     err => {
@@ -168,6 +171,16 @@ function startLogStream(io, serverId, attempt = 0) {
           .run(serverId);
         io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'error' });
       }
+    },
+    () => {
+      // Stream terminé naturellement → serveur arrêté
+      const db = getDb();
+      const changed = db.prepare("UPDATE servers SET status = 'stopped' WHERE id = ? AND status = 'running'")
+        .run(serverId);
+      if (changed.changes > 0) {
+        io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'stopped' });
+      }
+      activeStreams.delete(serverId);
     }
   );
 

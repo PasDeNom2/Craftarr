@@ -55,7 +55,9 @@
     "loadErrorHint": "Vérifiez vos clés API dans les paramètres",
     "retry": "Réessayer",
     "noResults": "Aucun modpack trouvé",
-    "noResultsHint": "Essayez un autre terme de recherche"
+    "noResultsHint": "Essayez un autre terme de recherche",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Créer un serveur Minecraft Vanilla"
   },
   "modpack": {
     "deploy": "Déployer",
@@ -107,7 +109,8 @@
       "backups": "Sauvegardes",
       "files": "Fichiers",
       "settings": "Paramètres",
-      "players": "Joueurs"
+      "players": "Joueurs",
+      "whitelist": "Liste blanche"
     },
     "actions": {
       "start": "Démarrer",
@@ -191,14 +194,25 @@
     "send": "Envoyer",
     "connecting": "Connexion...",
     "noLogs": "En attente des logs...",
-    "rconError": "Erreur d'envoi de commande"
+    "rconError": "Erreur d'envoi de commande",
+    "clear": "Vider",
+    "autoScroll": "Auto-scroll",
+    "newLines": "{count} nouvelles lignes",
+    "stoppedPlaceholder": "Serveur arrêté"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Aucune métrique disponible",
     "players": "Joueurs connectés",
-    "uptime": "Uptime"
+    "uptime": "Uptime",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (Mo)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Démarrez le serveur pour voir les métriques en temps réel.",
+    "waiting": "En attente des premières métriques...",
+    "mb": "Mo",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Sauvegardes",
@@ -220,7 +234,12 @@
     "save": "Sauvegarder",
     "saving": "Sauvegarde...",
     "saveSuccess": "Fichier sauvegardé",
-    "back": "Retour"
+    "back": "Retour",
+    "modified": "Modifié",
+    "inaccessible": "Dossier inaccessible (serveur non démarré ?)",
+    "notEditable": "Ce type de fichier ne peut pas être édité dans le navigateur",
+    "readError": "Impossible de lire le fichier",
+    "loadError": "Erreur lors de la sauvegarde"
   },
   "serverSettings": {
     "title": "Paramètres du serveur",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Langue",
     "search": "Rechercher une langue..."
+  },
+  "whitelist": {
+    "toggle": "Activer la liste blanche",
+    "toggleOnDesc": "Seuls les joueurs de la liste blanche peuvent se connecter",
+    "toggleOffDesc": "Tous les joueurs peuvent se connecter",
+    "enabled": "Liste blanche activée",
+    "disabled": "Liste blanche désactivée",
+    "add": "Ajouter",
+    "addPlaceholder": "Nom du joueur...",
+    "added": "{{name}} ajouté à la liste blanche",
+    "removed": "{{name}} retiré de la liste blanche",
+    "remove": "Retirer",
+    "empty": "Aucun joueur sur la liste blanche"
   }
 }

@@ -55,7 +55,9 @@
     "loadErrorHint": "Verifique suas chaves API nas configurações",
     "retry": "Tentar novamente",
     "noResults": "Nenhum modpack encontrado",
-    "noResultsHint": "Tente outro termo de pesquisa"
+    "noResultsHint": "Tente outro termo de pesquisa",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Criar um servidor Minecraft Vanilla"
   },
   "modpack": {
     "deploy": "Implantar",
@@ -107,7 +109,8 @@
       "backups": "Backups",
       "files": "Arquivos",
       "settings": "Configurações",
-      "players": "Jogadores"
+      "players": "Jogadores",
+      "whitelist": "Lista branca"
     },
     "actions": {
       "start": "Iniciar",
@@ -191,14 +194,25 @@
     "send": "Enviar",
     "connecting": "Conectando...",
     "noLogs": "Aguardando logs...",
-    "rconError": "Erro ao enviar comando"
+    "rconError": "Erro ao enviar comando",
+    "clear": "Limpar",
+    "autoScroll": "Auto-scroll",
+    "newLines": "{count} novas linhas",
+    "stoppedPlaceholder": "Servidor parado"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Nenhuma métrica disponível",
     "players": "Jogadores conectados",
-    "uptime": "Uptime"
+    "uptime": "Uptime",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Inicie o servidor para ver as métricas em tempo real.",
+    "waiting": "Aguardando as primeiras métricas...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Backups",
@@ -220,7 +234,12 @@
     "save": "Salvar",
     "saving": "Salvando...",
     "saveSuccess": "Arquivo salvo",
-    "back": "Voltar"
+    "back": "Voltar",
+    "modified": "Modificado",
+    "inaccessible": "Pasta inacessível (servidor não iniciado?)",
+    "notEditable": "Este tipo de ficheiro não pode ser editado no navegador",
+    "readError": "Não é possível ler o ficheiro",
+    "loadError": "Erro ao guardar"
   },
   "serverSettings": {
     "title": "Configurações do servidor",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Idioma",
     "search": "Pesquisar idioma..."
+  },
+  "whitelist": {
+    "toggle": "Ativar lista branca",
+    "toggleOnDesc": "Apenas jogadores da lista branca podem conectar",
+    "toggleOffDesc": "Todos os jogadores podem conectar",
+    "enabled": "Lista branca ativada",
+    "disabled": "Lista branca desativada",
+    "add": "Adicionar",
+    "addPlaceholder": "Nome do jogador...",
+    "added": "{{name}} adicionado à lista branca",
+    "removed": "{{name}} removido da lista branca",
+    "remove": "Remover",
+    "empty": "Nenhum jogador na lista branca"
   }
 }

@@ -55,7 +55,9 @@
     "loadErrorHint": "Check your API keys in settings",
     "retry": "Retry",
     "noResults": "No modpacks found",
-    "noResultsHint": "Try a different search term"
+    "noResultsHint": "Try a different search term",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Create a Vanilla Minecraft server"
   },
   "modpack": {
     "deploy": "Deploy",
@@ -107,7 +109,8 @@
       "backups": "Backups",
       "files": "Files",
       "settings": "Settings",
-      "players": "Players"
+      "players": "Players",
+      "whitelist": "Whitelist"
     },
     "actions": {
       "start": "Start",
@@ -191,14 +194,25 @@
     "send": "Send",
     "connecting": "Connecting...",
     "noLogs": "Waiting for logs...",
-    "rconError": "Error sending command"
+    "rconError": "Error sending command",
+    "clear": "Clear",
+    "autoScroll": "Auto-scroll",
+    "newLines": "{count} new lines",
+    "stoppedPlaceholder": "Server stopped"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "No metrics available",
     "players": "Connected players",
-    "uptime": "Uptime"
+    "uptime": "Uptime",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Start the server to see real-time metrics.",
+    "waiting": "Waiting for first metrics...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Backups",
@@ -220,7 +234,12 @@
     "save": "Save",
     "saving": "Saving...",
     "saveSuccess": "File saved",
-    "back": "Back"
+    "back": "Back",
+    "modified": "Modified",
+    "inaccessible": "Folder inaccessible (server not started?)",
+    "notEditable": "This file type cannot be edited in the browser",
+    "readError": "Cannot read file",
+    "loadError": "Error saving file"
   },
   "serverSettings": {
     "title": "Server settings",
@@ -322,6 +341,19 @@
     "back": "Back",
     "current": "current",
     "optional": "optional"
+  },
+  "whitelist": {
+    "toggle": "Enable Whitelist",
+    "toggleOnDesc": "Only whitelisted players can connect",
+    "toggleOffDesc": "All players can connect",
+    "enabled": "Whitelist enabled",
+    "disabled": "Whitelist disabled",
+    "add": "Add",
+    "addPlaceholder": "Player username...",
+    "added": "{{name}} added to whitelist",
+    "removed": "{{name}} removed from whitelist",
+    "remove": "Remove",
+    "empty": "No players on the whitelist"
   },
   "language": {
     "label": "Language",

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useServerSocket } from '../../hooks/useSocket';
 import { useMetricsStore } from '../../store';
+import { useI18n } from '../../i18n';
 import clsx from 'clsx';
 import { Activity } from 'lucide-react';
 
@@ -64,6 +65,7 @@ function MiniChart({ data, dataKey, stroke, gradientId, label, formatter, domain
 }
 
 export default function MetricsPanel({ server }) {
+  const { t } = useI18n();
   const [history, setHistory] = useState([]);
   const { updateMetrics, metrics } = useMetricsStore();
   const current = metrics[server.id] || null;
@@ -96,29 +98,29 @@ export default function MetricsPanel({ server }) {
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard
-          label="Joueurs"
-          value={current?.players?.online ?? (isRunning ? '—' : '—')}
+          label={t('metrics.players')}
+          value={current?.players?.online ?? '—'}
           unit={`/ ${current?.players?.max ?? server.max_players}`}
           valueColor="var(--accent)"
         />
         <StatCard
-          label="RAM"
+          label={t('metrics.ram')}
           value={current?.memUsed ?? '—'}
-          unit="Mo"
-          sub={current ? `${current.memPercent}% de ${current.memLimit} Mo` : null}
+          unit={t('metrics.mb')}
+          sub={current ? `${current.memPercent}% / ${current.memLimit} ${t('metrics.mb')}` : null}
         />
         <StatCard
-          label="CPU"
+          label={t('metrics.cpu')}
           value={current?.cpu != null ? current.cpu.toFixed(1) : '—'}
           unit="%"
           valueColor={cpuColor}
         />
         <StatCard
-          label="TPS 1 min"
+          label={t('metrics.tps')}
           value={tps != null ? tps.toFixed(1) : '—'}
           unit="TPS"
           valueColor={tpsColor}
-          sub={current?.tps ? `5m: ${current.tps.tps5?.toFixed(1)} · 15m: ${current.tps.tps15?.toFixed(1)}` : null}
+          sub={current?.tps ? t('metrics.tpsSub', { tps5: current.tps.tps5?.toFixed(1), tps15: current.tps.tps15?.toFixed(1) }) : null}
         />
       </div>
 
@@ -130,15 +132,15 @@ export default function MetricsPanel({ server }) {
             dataKey="memUsed"
             stroke="#F0F0F0"
             gradientId="ramGrad"
-            label="RAM (Mo)"
-            formatter={(v) => [`${v} Mo`, 'RAM']}
+            label={t('metrics.ramLabel')}
+            formatter={(v) => [`${v} ${t('metrics.mb')}`, 'RAM']}
           />
           <MiniChart
             data={history}
             dataKey="cpu"
             stroke="var(--accent)"
             gradientId="cpuGrad"
-            label="CPU (%)"
+            label={t('metrics.cpuLabel')}
             formatter={(v) => [`${v?.toFixed(1)}%`, 'CPU']}
             domain={[0, 100]}
           />
@@ -153,14 +155,14 @@ export default function MetricsPanel({ server }) {
           >
             <Activity size={18} strokeWidth={1.5} className="text-[#4A4A55]" />
           </div>
-          <p className="text-[#6B6B76] text-sm">Démarrez le serveur pour voir les métriques en temps réel.</p>
+          <p className="text-[#6B6B76] text-sm">{t('metrics.startServer')}</p>
         </div>
       )}
 
       {isRunning && history.length === 0 && (
         <div className="text-center py-8 text-[#6B6B76] text-sm space-y-2">
           <div className="w-5 h-5 border border-[#4A4A55] border-t-transparent rounded-full animate-spin mx-auto" style={{ borderTopColor: 'transparent' }} />
-          <span>En attente des premières métriques...</span>
+          <span>{t('metrics.waiting')}</span>
         </div>
       )}
     </div>

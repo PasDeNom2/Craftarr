@@ -55,7 +55,9 @@
     "loadErrorHint": "Verifica tus claves API en ajustes",
     "retry": "Reintentar",
     "noResults": "No se encontraron modpacks",
-    "noResultsHint": "Prueba otro término de búsqueda"
+    "noResultsHint": "Prueba otro término de búsqueda",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Crear un servidor Minecraft Vanilla"
   },
   "modpack": {
     "deploy": "Desplegar",
@@ -107,7 +109,8 @@
       "backups": "Copias de seguridad",
       "files": "Archivos",
       "settings": "Ajustes",
-      "players": "Jugadores"
+      "players": "Jugadores",
+      "whitelist": "Lista blanca"
     },
     "actions": {
       "start": "Iniciar",
@@ -191,14 +194,25 @@
     "send": "Enviar",
     "connecting": "Conectando...",
     "noLogs": "Esperando logs...",
-    "rconError": "Error al enviar comando"
+    "rconError": "Error al enviar comando",
+    "clear": "Limpiar",
+    "autoScroll": "Auto-scroll",
+    "newLines": "{count} nuevas líneas",
+    "stoppedPlaceholder": "Servidor detenido"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Sin métricas disponibles",
     "players": "Jugadores conectados",
-    "uptime": "Tiempo activo"
+    "uptime": "Tiempo activo",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Inicia el servidor para ver las métricas en tiempo real.",
+    "waiting": "Esperando las primeras métricas...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Copias de seguridad",
@@ -220,7 +234,12 @@
     "save": "Guardar",
     "saving": "Guardando...",
     "saveSuccess": "Archivo guardado",
-    "back": "Atrás"
+    "back": "Atrás",
+    "modified": "Modificado",
+    "inaccessible": "Carpeta inaccesible (¿servidor no iniciado?)",
+    "notEditable": "Este tipo de archivo no se puede editar en el navegador",
+    "readError": "No se puede leer el archivo",
+    "loadError": "Error al guardar"
   },
   "serverSettings": {
     "title": "Ajustes del servidor",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Idioma",
     "search": "Buscar idioma..."
+  },
+  "whitelist": {
+    "toggle": "Activar lista blanca",
+    "toggleOnDesc": "Solo los jugadores en la lista blanca pueden conectarse",
+    "toggleOffDesc": "Todos los jugadores pueden conectarse",
+    "enabled": "Lista blanca activada",
+    "disabled": "Lista blanca desactivada",
+    "add": "Agregar",
+    "addPlaceholder": "Nombre del jugador...",
+    "added": "{{name}} añadido a la lista blanca",
+    "removed": "{{name}} eliminado de la lista blanca",
+    "remove": "Quitar",
+    "empty": "No hay jugadores en la lista blanca"
   }
 }

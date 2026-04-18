@@ -55,7 +55,9 @@
     "loadErrorHint": "Kontrollera dina API-nycklar i inställningarna",
     "retry": "Försök igen",
     "noResults": "Inga modpaket hittades",
-    "noResultsHint": "Prova ett annat sökord"
+    "noResultsHint": "Prova ett annat sökord",
+    "vanilla": "+ Vanilla",
+    "vanillaHint": "Skapa en Vanilla Minecraft-server"
   },
   "modpack": {
     "deploy": "Driftsätt",
@@ -107,7 +109,8 @@
       "backups": "Säkerhetskopior",
       "files": "Filer",
       "settings": "Inställningar",
-      "players": "Spelare"
+      "players": "Spelare",
+      "whitelist": "Vitlista"
     },
     "actions": {
       "start": "Starta",
@@ -191,14 +194,25 @@
     "send": "Skicka",
     "connecting": "Ansluter...",
     "noLogs": "Väntar på loggar...",
-    "rconError": "Fel vid sändning av kommando"
+    "rconError": "Fel vid sändning av kommando",
+    "clear": "Rensa",
+    "autoScroll": "Autoskroll",
+    "newLines": "{count} nya rader",
+    "stoppedPlaceholder": "Server stoppad"
   },
   "metrics": {
     "cpu": "CPU",
     "ram": "RAM",
     "noData": "Inga mätvärden",
     "players": "Anslutna spelare",
-    "uptime": "Drifttid"
+    "uptime": "Drifttid",
+    "tps": "TPS 1 min",
+    "ramLabel": "RAM (MB)",
+    "cpuLabel": "CPU (%)",
+    "startServer": "Starta servern för att se realtidsmätningar.",
+    "waiting": "Väntar på första mätvärden...",
+    "mb": "MB",
+    "tpsSub": "5m: {tps5} · 15m: {tps15}"
   },
   "backups": {
     "title": "Säkerhetskopior",
@@ -220,7 +234,12 @@
     "save": "Spara",
     "saving": "Sparar...",
     "saveSuccess": "Fil sparad",
-    "back": "Tillbaka"
+    "back": "Tillbaka",
+    "modified": "Ändrad",
+    "inaccessible": "Mappen är otillgänglig (server inte startad?)",
+    "notEditable": "Den här filtypen kan inte redigeras i webbläsaren",
+    "readError": "Kan inte läsa filen",
+    "loadError": "Fel vid sparning"
   },
   "serverSettings": {
     "title": "Serverinställningar",
@@ -326,5 +345,18 @@
   "language": {
     "label": "Språk",
     "search": "Sök språk..."
+  },
+  "whitelist": {
+    "toggle": "Aktivera vitlista",
+    "toggleOnDesc": "Bara vitlistade spelare kan ansluta",
+    "toggleOffDesc": "Alla spelare kan ansluta",
+    "enabled": "Vitlista aktiverad",
+    "disabled": "Vitlista inaktiverad",
+    "add": "Lägg till",
+    "addPlaceholder": "Spelarnamn...",
+    "added": "{{name}} tillagd i vitlistan",
+    "removed": "{{name}} borttagen från vitlistan",
+    "remove": "Ta bort",
+    "empty": "Inga spelare på vitlistan"
   }
 }

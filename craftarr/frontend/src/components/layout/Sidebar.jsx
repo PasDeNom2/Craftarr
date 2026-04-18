@@ -14,14 +14,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
+import ServerAvatar from '../ui/ServerAvatar';
 
-const STATUS_DOT_COLOR = {
-  running:    'var(--accent)',
-  stopped:    '#6B6B76',
-  installing: '#FBBF24',
-  updating:   '#FBBF24',
-  error:      '#F87171',
-};
 
 function NavItem({ to, icon: Icon, label, collapsed }) {
   return (
@@ -30,7 +24,7 @@ function NavItem({ to, icon: Icon, label, collapsed }) {
       end
       title={collapsed ? label : undefined}
       className={({ isActive }) => clsx(
-        'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative',
+        'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative',
         collapsed ? 'justify-center px-0 w-10 mx-auto' : 'px-3',
         isActive
           ? 'bg-[#1C1C21] text-[#F0F0F0]'
@@ -73,9 +67,9 @@ export default function Sidebar() {
         transition: 'width 0.3s cubic-bezier(0.16,1,0.3,1)',
         flexShrink: 0,
         borderRight: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--bg-sidebar)',
       }}
       className="flex flex-col overflow-hidden"
-      style={{ background: 'var(--bg-sidebar)' }}
     >
       {/* Logo */}
       <div
@@ -88,7 +82,7 @@ export default function Sidebar() {
           <Layers size={16} strokeWidth={2} className="text-black" />
         </div>
         {!collapsed && (
-          <span className="font-semibold text-[#F0F0F0] text-sm tracking-tight" style={{ opacity: 1, transition: 'opacity 0.2s' }}>
+          <span className="font-semibold text-[#F0F0F0] text-sm tracking-tight">
             Craftarr
           </span>
         )}
@@ -98,6 +92,7 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 space-y-0.5">
         <NavItem to="/catalog" icon={LayoutDashboard} label={t('nav.catalogue')} collapsed={collapsed} />
 
+        {/* Servers section */}
         {!collapsed ? (
           <div>
             <button
@@ -135,10 +130,7 @@ export default function Sidebar() {
                           {isActive && (
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-[#F0F0F0] rounded-r-full" />
                           )}
-                          <span
-                            className={clsx('w-1.5 h-1.5 rounded-full shrink-0', server.status === 'running' && 'pulse-dot')}
-                            style={{ background: STATUS_DOT_COLOR[server.status] || STATUS_DOT_COLOR.stopped }}
-                          />
+                          <ServerAvatar server={server} size={22} showDot />
                           <span className="truncate flex-1">{server.name}</span>
                         </>
                       )}
@@ -149,13 +141,28 @@ export default function Sidebar() {
             )}
           </div>
         ) : (
-          <NavLink
-            to="#"
-            title={t('nav.servers')}
-            className="flex items-center justify-center w-10 mx-auto py-2 rounded-lg text-[#6B6B76] hover:bg-[#1C1C21] hover:text-[#F0F0F0] transition-all duration-200"
-          >
-            <Server size={18} strokeWidth={1.5} />
-          </NavLink>
+          /* Collapsed: show each server as a dot-icon with tooltip */
+          <div className="space-y-0.5">
+            <div
+              title={t('nav.servers')}
+              className="flex items-center justify-center w-10 mx-auto py-2 rounded-lg text-[#6B6B76] cursor-default"
+            >
+              <Server size={18} strokeWidth={1.5} />
+            </div>
+            {servers.map(server => (
+              <NavLink
+                key={server.id}
+                to={`/servers/${server.id}`}
+                title={`${server.name} — ${server.status}`}
+                className={({ isActive }) => clsx(
+                  'flex items-center justify-center w-10 mx-auto py-1.5 rounded-lg transition-all duration-200',
+                  isActive ? 'bg-[#1C1C21]' : 'hover:bg-[#1C1C21]'
+                )}
+              >
+                <ServerAvatar server={server} size={30} showDot />
+              </NavLink>
+            ))}
+          </div>
         )}
 
         <NavItem to="/settings" icon={Settings} label={t('nav.settings')} collapsed={collapsed} />
@@ -179,6 +186,15 @@ export default function Sidebar() {
               <LogOut size={13} strokeWidth={1.5} />
             </button>
           </div>
+        )}
+        {collapsed && (
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center w-10 mx-auto py-1.5 rounded-lg text-[#4A4A55] hover:text-[#F87171] hover:bg-[#1C1C21] transition-colors"
+            title={t('nav.logout')}
+          >
+            <LogOut size={13} strokeWidth={1.5} />
+          </button>
         )}
         <button
           onClick={() => setCollapsed(c => !c)}

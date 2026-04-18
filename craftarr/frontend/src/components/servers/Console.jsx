@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from
 import { useServerSocket } from '../../hooks/useSocket';
 import { sendRcon } from '../../services/api';
 import { useLogsStore } from '../../store';
+import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Terminal, ChevronDown, Trash2 } from 'lucide-react';
@@ -17,6 +18,7 @@ function classifyLine(line) {
 }
 
 export default function Console({ server }) {
+  const { t } = useI18n();
   const { logs, appendLog, clearLogs } = useLogsStore();
   const lines = logs[server.id] || [];
   const [command, setCommand] = useState('');
@@ -82,7 +84,7 @@ export default function Console({ server }) {
       setHistoryIdx(-1);
       setCommand('');
     } catch (err) {
-      toast.error('Erreur RCON : ' + (err.response?.data?.error || err.message));
+      toast.error(t('console.rconError') + ' : ' + (err.response?.data?.error || err.message));
     } finally {
       setSending(false);
     }
@@ -123,7 +125,7 @@ export default function Console({ server }) {
             onClick={() => clearLogs(server.id)}
           >
             <Trash2 size={11} strokeWidth={1.5} />
-            Vider
+            {t('console.clear')}
           </button>
           <button
             className={clsx(
@@ -135,7 +137,7 @@ export default function Console({ server }) {
             onClick={scrollToBottom}
           >
             <ChevronDown size={11} strokeWidth={1.5} />
-            Auto-scroll
+            {t('console.autoScroll')}
             {!autoScroll && unread > 0 && (
               <span
                 className="text-[9px] font-bold px-1 rounded-full ml-0.5"
@@ -158,7 +160,7 @@ export default function Console({ server }) {
         {lines.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-[#4A4A55]">
             <Terminal size={20} strokeWidth={1} />
-            <span className="text-sm font-mono">En attente de logs...</span>
+            <span className="text-sm font-mono">{t('console.noLogs')}</span>
           </div>
         ) : (
           lines.map((line, i) => {
@@ -196,7 +198,7 @@ export default function Console({ server }) {
             style={{ color: 'var(--accent)', background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.2)' }}
           >
             <ChevronDown size={12} strokeWidth={1.5} />
-            {unread} nouvelle{unread > 1 ? 's' : ''} ligne{unread > 1 ? 's' : ''}
+            {t('console.newLines', { count: unread })}
           </button>
         </div>
       )}
@@ -212,7 +214,7 @@ export default function Console({ server }) {
           ref={inputRef}
           className="flex-1 bg-transparent border-none outline-none text-sm font-mono text-[#F0F0F0] disabled:opacity-40"
           style={{ caretColor: 'var(--accent)' }}
-          placeholder={server.status === 'running' ? 'Entrez une commande RCON...' : 'Serveur arrêté'}
+          placeholder={server.status === 'running' ? t('console.placeholder') : t('console.stoppedPlaceholder')}
           value={command}
           onChange={e => { setCommand(e.target.value); setHistoryIdx(-1); }}
           onKeyDown={handleKeyDown}
@@ -226,7 +228,7 @@ export default function Console({ server }) {
             className="text-xs text-[#6B6B76] hover:text-[#F0F0F0] font-mono disabled:opacity-40 transition-colors"
             disabled={sending || server.status !== 'running'}
           >
-            {sending ? '...' : 'Entree'}
+            {sending ? '...' : t('console.send')}
           </button>
         )}
       </form>
