@@ -20,7 +20,7 @@ services:
       # - UI_PORT=8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./data:/data
+      - ./craftarr/data:/data
     networks:
       - craftarr-net
     healthcheck:
