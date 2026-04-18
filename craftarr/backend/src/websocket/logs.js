@@ -124,6 +124,7 @@ function setupLogsSocket(io) {
  * réessaie toutes les 3 secondes jusqu'à 40 fois (~2 min).
  */
 function startLogStream(io, serverId, attempt = 0) {
+  if (attempt === 0 && activeStreams.has(serverId)) return; // already streaming
   const db = getDb();
   const server = db.prepare('SELECT container_id FROM servers WHERE id = ?').get(serverId);
 
@@ -157,7 +158,7 @@ function startLogStream(io, serverId, attempt = 0) {
         const changed = db.prepare('UPDATE servers SET status = ? WHERE id = ? AND status = ?')
           .run('running', serverId, 'starting');
         if (changed.changes > 0) {
-          io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'running' });
+          io.emit('server:status', { serverId, status: 'running' });
         }
       }
     },
@@ -169,7 +170,7 @@ function startLogStream(io, serverId, attempt = 0) {
         const db = getDb();
         db.prepare("UPDATE servers SET status = 'error' WHERE id = ? AND status IN ('starting', 'running')")
           .run(serverId);
-        io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'error' });
+        io.emit('server:status', { serverId, status: 'error' });
       }
     },
     () => {
@@ -178,7 +179,7 @@ function startLogStream(io, serverId, attempt = 0) {
       const changed = db.prepare("UPDATE servers SET status = 'stopped' WHERE id = ? AND status = 'running'")
         .run(serverId);
       if (changed.changes > 0) {
-        io.to(`server:${serverId}`).emit('server:status', { serverId, status: 'stopped' });
+        io.emit('server:status', { serverId, status: 'stopped' });
       }
       activeStreams.delete(serverId);
     }
@@ -194,4 +195,4 @@ function stopLogStream(serverId) {
   if (cleanup) cleanup();
 }
 
-module.exports = { setupLogsSocket };
+module.exports = { setupLogsSocket, startLogStream };

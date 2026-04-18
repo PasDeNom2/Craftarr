@@ -5,10 +5,12 @@ import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useServerStore } from '../../store';
 import { getServers } from '../../services/api';
 import { getSocket } from '../../hooks/useSocket';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 export default function Layout() {
   const { setServers, updateServer, addServer } = useServerStore();
+  const qc = useQueryClient();
 
   useEffect(() => {
     getServers().then(setServers).catch(console.error);
@@ -23,17 +25,18 @@ export default function Layout() {
       updateServer(serverId, { status: 'running', modpack_version: version });
     });
 
-    socket.on('install:done', ({ serverId }) => {
-      updateServer(serverId, { status: 'running' });
-    });
-
-    socket.on('install:error', ({ serverId }) => {
-      updateServer(serverId, { status: 'error' });
-    });
-
-    socket.on('server:status', ({ serverId, status }) => {
+    const applyStatus = (serverId, status) => {
       updateServer(serverId, { status });
+      qc.setQueryData(['server', serverId], old => old ? { ...old, status } : old);
+    };
+
+    socket.on('install:done', ({ serverId }) => applyStatus(serverId, 'running'));
+    socket.on('install:error', ({ serverId }) => applyStatus(serverId, 'error'));
+    socket.on('server:update-done', ({ serverId, version }) => {
+      updateServer(serverId, { status: 'running', modpack_version: version });
+      qc.setQueryData(['server', serverId], old => old ? { ...old, status: 'running' } : old);
     });
+    socket.on('server:status', ({ serverId, status }) => applyStatus(serverId, status));
 
     return () => {
       socket.off('server:update-available');
@@ -42,6 +45,7 @@ export default function Layout() {
       socket.off('install:error');
       socket.off('server:status');
     };
+
   }, []);
 
   return (

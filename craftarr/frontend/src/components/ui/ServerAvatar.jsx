@@ -3,15 +3,17 @@ import clsx from 'clsx';
 import { useIconStore } from '../../store';
 
 const STATUS_COLOR = {
-  running:    'var(--accent)',
-  stopped:    '#6B6B76',
+  running:    '#4ADE80',
+  stopped:    '#F87171',
+  error:      '#F87171',
+  starting:   '#FBBF24',
   installing: '#FBBF24',
   updating:   '#FBBF24',
-  error:      '#F87171',
 };
 
 const STATUS_PULSE = {
   running:    true,
+  starting:   true,
   installing: true,
   updating:   true,
 };

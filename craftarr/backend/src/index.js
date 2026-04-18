@@ -85,6 +85,9 @@ updater.setIo(io);
 // Setup handlers WebSocket
 setupLogsSocket(io);
 
+// Expose io + startLogStream globally so routes can trigger streams on server start
+app.set('io', io);
+
 // ─── Démarrage ──────────────────────────────────────────────
 const { getDb } = require('./config/database');
 const dockerService = require('./services/docker');

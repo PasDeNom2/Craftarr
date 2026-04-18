@@ -10,6 +10,7 @@ const backupService = require('../services/backup');
 const updater = require('../services/updater');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
+const { startLogStream } = require('../websocket/logs');
 
 // Multer pour l'upload de fichiers (world zip)
 let multer;
@@ -180,6 +181,7 @@ router.post('/:id/recreate', authMiddleware, async (req, res, next) => {
       .run(containerId, containerName, 'starting', server.id);
 
     await dockerService.startContainer(containerId);
+    startLogStream(req.app.get('io'), server.id);
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
@@ -196,6 +198,7 @@ router.post('/:id/start', authMiddleware, async (req, res, next) => {
 
     await dockerService.startContainer(server.container_id);
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
+    startLogStream(req.app.get('io'), server.id);
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
