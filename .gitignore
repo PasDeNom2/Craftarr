@@ -1,8 +1,1 @@
-node_modules/
-.env
-data/
-*.db
-dist/
-.DS_Store
-*.log
 .claude/
