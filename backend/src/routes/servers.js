@@ -499,12 +499,29 @@ router.post('/:id/icon', authMiddleware, (req, res, next) => {
 
 // ─── Players ──────────────────────────────────────────────────────────────────
 
+// Sync is_op depuis ops.json pour un serveur donné
+function syncOpsFromFile(serverId) {
+  try {
+    const db = getDb();
+    const opsPath = path.join(DATA_PATH, 'servers', serverId, 'server', 'ops.json');
+    if (!fs.existsSync(opsPath)) return;
+    const ops = JSON.parse(fs.readFileSync(opsPath, 'utf8'));
+    const opNames = new Set(ops.map(o => (o.name || '').toLowerCase()));
+    // Reset all then set ops
+    db.prepare('UPDATE players SET is_op = 0 WHERE server_id = ?').run(serverId);
+    for (const name of opNames) {
+      if (name) db.prepare('UPDATE players SET is_op = 1 WHERE server_id = ? AND LOWER(username) = ?').run(serverId, name);
+    }
+  } catch {}
+}
+
 // GET /api/servers/:id/players
 router.get('/:id/players', authMiddleware, (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT id FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+    syncOpsFromFile(req.params.id);
     const players = db.prepare(`
       SELECT p.*,
         (SELECT COUNT(*) FROM player_events WHERE server_id = p.server_id AND player_name = p.username) AS event_count,
@@ -574,6 +591,62 @@ router.post('/:id/players/:username/ban', authMiddleware, async (req, res, next)
     }
     db.prepare('UPDATE players SET is_banned = 1, ban_reason = ? WHERE server_id = ? AND username = ?').run(reason, req.params.id, req.params.username);
     db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'ban', ?)`).run(req.params.id, req.params.username, reason);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+function writeOpsFile(serverId, ops) {
+  try {
+    const opsPath = path.join(DATA_PATH, 'servers', serverId, 'server', 'ops.json');
+    fs.writeFileSync(opsPath, JSON.stringify(ops, null, 2));
+  } catch {}
+}
+
+function readOpsFile(serverId) {
+  try {
+    const opsPath = path.join(DATA_PATH, 'servers', serverId, 'server', 'ops.json');
+    if (!fs.existsSync(opsPath)) return [];
+    return JSON.parse(fs.readFileSync(opsPath, 'utf8'));
+  } catch { return []; }
+}
+
+// POST /api/servers/:id/players/:username/op
+router.post('/:id/players/:username/op', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+    const username = req.params.username;
+    const rcon = require('../services/rcon');
+    if (server.status === 'running') {
+      await rcon.sendCommand(server, `op ${username}`).catch(() => {});
+    }
+    // Mettre à jour ops.json directement pour rester cohérent avec syncOpsFromFile
+    const ops = readOpsFile(req.params.id);
+    if (!ops.some(o => o.name?.toLowerCase() === username.toLowerCase())) {
+      ops.push({ uuid: '', name: username, level: 4, bypassesPlayerLimit: false });
+      writeOpsFile(req.params.id, ops);
+    }
+    db.prepare('UPDATE players SET is_op = 1 WHERE server_id = ? AND username = ?').run(req.params.id, username);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/servers/:id/players/:username/op
+router.delete('/:id/players/:username/op', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+    const username = req.params.username;
+    const rcon = require('../services/rcon');
+    if (server.status === 'running') {
+      await rcon.sendCommand(server, `deop ${username}`).catch(() => {});
+    }
+    // Retirer du ops.json immédiatement pour que syncOpsFromFile ne remette pas is_op=1
+    const ops = readOpsFile(req.params.id).filter(o => o.name?.toLowerCase() !== username.toLowerCase());
+    writeOpsFile(req.params.id, ops);
+    db.prepare('UPDATE players SET is_op = 0 WHERE server_id = ? AND username = ?').run(req.params.id, username);
     res.json({ ok: true });
   } catch (err) { next(err); }
 });

@@ -58,17 +58,28 @@ function detectNeoForgeVersionFromStartScript(serverDir) {
     }
   } catch {}
 
+  const found = [];
   for (const dir of dirsToSearch) {
     for (const script of scripts) {
       try {
         const content = fs.readFileSync(path.join(dir, script), 'utf8');
-        // Match: NEOFORGE_VERSION=26.1.2.12-beta  ou  NEOFORGE_VERSION="26.1.2.12-beta"
         const m = content.match(/NEOFORGE_VERSION\s*=\s*["']?([0-9][^\s"']+)["']?/);
-        if (m) return m[1].trim();
+        if (m) found.push(m[1].trim());
       } catch {}
     }
   }
-  return null;
+  if (!found.length) return null;
+  // Pick highest version (semver-like numeric sort, handles "26.1.2.12-beta" style)
+  found.sort((a, b) => {
+    const nums = v => v.replace(/-.*$/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const av = nums(a), bv = nums(b);
+    for (let i = 0; i < Math.max(av.length, bv.length); i++) {
+      const diff = (av[i] || 0) - (bv[i] || 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  });
+  return found[found.length - 1];
 }
 
 /**

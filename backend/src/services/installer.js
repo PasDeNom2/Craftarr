@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const axios = require('axios');
 const AdmZip = require('adm-zip');
 const { getDb } = require('../config/database');
@@ -549,4 +550,48 @@ async function installModsOnly(server, serverDir, modsDir) {
   }
 }
 
-module.exports = { installServer, installModsOnly, setIo };
+/**
+ * Installe un modpack à partir de zéro dans serverDir (wipe complet puis réinstallation fraîche).
+ * N'écrit pas les données monde/joueur — elles sont gérées par l'appelant (applyUpdate).
+ * Ne crée pas de container Docker.
+ */
+async function freshInstallModpack(server, serverDir) {
+  const db = getDb();
+  const sourceRow = db.prepare('SELECT * FROM api_sources WHERE id = ?').get(server.modpack_source);
+  if (!sourceRow) throw new Error('Source introuvable: ' + server.modpack_source);
+  const apiKey = getSourceApiKey(sourceRow);
+
+  // Wipe complet du répertoire serveur (mods, configs, ServerFiles-*, libraries, markers)
+  if (fs.existsSync(serverDir)) fs.rmSync(serverDir, { recursive: true });
+  fs.mkdirSync(serverDir, { recursive: true });
+  const modsDir = path.join(serverDir, 'mods');
+  fs.mkdirSync(modsDir, { recursive: true });
+
+  if (server.modpack_source === 'curseforge') {
+    if (!apiKey) throw new Error('Clé API CurseForge manquante');
+    await installCurseForgeModpack(server, serverDir, modsDir, apiKey, server.mc_version);
+  } else if (server.modpack_source === 'modrinth') {
+    const versions = await modrinth.getVersions(apiKey, server.modpack_id);
+    let selectedVersion = versions[0];
+    if (server.modpack_version_id) {
+      selectedVersion = versions.find(v => v.id === server.modpack_version_id) || versions[0];
+    }
+    if (!selectedVersion) throw new Error('Version Modrinth introuvable');
+    const primaryFile = selectedVersion.files.find(f => f.primary) || selectedVersion.files[0];
+    if (!primaryFile?.url) throw new Error('Aucun fichier .mrpack trouvé');
+    const mrpackPath = path.join(DATA_PATH, 'servers', server.id, 'update.mrpack');
+    await downloadFile(primaryFile.url, mrpackPath);
+    await installMrpack(server, mrpackPath, serverDir, apiKey);
+    fs.unlinkSync(mrpackPath);
+  } else {
+    throw new Error('Source non supportée: ' + server.modpack_source);
+  }
+}
+
+/** @deprecated Use freshInstallModpack via applyUpdate instead */
+async function updateModpackMods(server) {
+  const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+  await freshInstallModpack(server, serverDir);
+}
+
+module.exports = { installServer, installModsOnly, updateModpackMods, freshInstallModpack, setIo };

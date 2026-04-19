@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPlayers, getPlayerEvents, kickPlayer, warnPlayer, banPlayer, unbanPlayer } from '../../services/api';
+import { getPlayers, getPlayerEvents, kickPlayer, warnPlayer, banPlayer, unbanPlayer, opPlayer, deopPlayer } from '../../services/api';
 import { getSocket } from '../../hooks/useSocket';
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
-import { formatDistanceToNow } from 'date-fns';
-import { fr, enUS, de, es, pt, it, nl, pl, cs, sv, ru, uk, ja, ko, zhCN, ar, tr } from 'date-fns/locale';
+import { format } from 'date-fns';
 import {
   Users, ChevronRight, ChevronLeft, Search, AlertTriangle, Ban,
-  LogOut, MessageSquareWarning, ShieldCheck, Clock, Hash,
+  LogOut, MessageSquareWarning, ShieldCheck, Clock, Hash, Crown,
 } from 'lucide-react';
 import clsx from 'clsx';
 
-const DATE_FNS_LOCALES = { fr, en: enUS, de, es, pt, it, nl, pl, cs, sv, ru, uk, ja, ko, zh: zhCN, ar, tr };
+
 
 function PlayerAvatar({ username, size = 32, className = '' }) {
   const [err, setErr] = useState(false);
@@ -76,8 +75,7 @@ function ActionModal({ title, placeholder, onConfirm, onClose, confirmLabel, con
 }
 
 function PlayerEvents({ server, player, onBack }) {
-  const { t, lang } = useI18n();
-  const dateFnsLocale = DATE_FNS_LOCALES[lang] || enUS;
+  const { t } = useI18n();
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['player-events', server.id, player.username],
@@ -135,7 +133,7 @@ function PlayerEvents({ server, player, onBack }) {
                   </div>
                 </div>
                 <span className="text-[11px] text-[#4A4A55] shrink-0">
-                  {(() => { try { return formatDistanceToNow(new Date(ev.timestamp.replace(' ', 'T') + 'Z'), { locale: dateFnsLocale, addSuffix: true }); } catch { return ev.timestamp; } })()}
+                  {(() => { try { return format(new Date(ev.timestamp.replace(' ', 'T') + 'Z'), 'dd/MM/yyyy HH:mm'); } catch { return ev.timestamp; } })()}
                 </span>
               </div>
             );
@@ -147,9 +145,8 @@ function PlayerEvents({ server, player, onBack }) {
 }
 
 export default function PlayersPanel({ server }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const qc = useQueryClient();
-  const dateFnsLocale = DATE_FNS_LOCALES[locale] || enUS;
   const [search, setSearch] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [modal, setModal] = useState(null); // { type: 'kick'|'warn'|'ban', player }
@@ -191,6 +188,16 @@ export default function PlayersPanel({ server }) {
   const unbanMut = useMutation({
     mutationFn: ({ username }) => unbanPlayer(server.id, username),
     onSuccess: () => { toast.success(t('players.unbanSuccess')); qc.invalidateQueries({ queryKey: ['players', server.id] }); },
+    onError: () => toast.error(t('players.actionError')),
+  });
+  const opMut = useMutation({
+    mutationFn: ({ username }) => opPlayer(server.id, username),
+    onSuccess: () => { toast.success(t('players.opSuccess')); qc.invalidateQueries({ queryKey: ['players', server.id] }); },
+    onError: () => toast.error(t('players.actionError')),
+  });
+  const deopMut = useMutation({
+    mutationFn: ({ username }) => deopPlayer(server.id, username),
+    onSuccess: () => { toast.success(t('players.deopSuccess')); qc.invalidateQueries({ queryKey: ['players', server.id] }); },
     onError: () => toast.error(t('players.actionError')),
   });
 
@@ -266,6 +273,12 @@ export default function PlayersPanel({ server }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-[#F0F0F0]">{player.username}</span>
+                  {player.is_op === 1 && (
+                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
+                      <Crown size={9} strokeWidth={2} />
+                      {t('players.op')}
+                    </span>
+                  )}
                   {player.is_banned === 1 && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(248,113,113,0.1)', color: '#F87171' }}>
                       {t('players.banned')}
@@ -280,7 +293,7 @@ export default function PlayersPanel({ server }) {
                   {player.last_seen && (
                     <span className="flex items-center gap-1">
                       <Clock size={10} />
-                      {formatDistanceToNow(new Date(player.last_seen), { locale: dateFnsLocale, addSuffix: true })}
+                      {format(new Date(player.last_seen), 'dd/MM/yyyy HH:mm')}
                     </span>
                   )}
                   {player.is_banned === 1 && player.ban_reason && (
@@ -313,6 +326,29 @@ export default function PlayersPanel({ server }) {
                     <ChevronRight size={11} strokeWidth={1.5} />
                     {t('players.logs')}
                   </button>
+                  {player.is_banned !== 1 && (
+                    player.is_op === 1 ? (
+                      <button
+                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        onClick={() => deopMut.mutate({ username: player.username })}
+                        disabled={deopMut.isPending}
+                        title={t('players.deop')}
+                        style={{ color: '#FBBF24' }}
+                      >
+                        <Crown size={11} strokeWidth={1.5} />
+                      </button>
+                    ) : (
+                      <button
+                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        onClick={() => opMut.mutate({ username: player.username })}
+                        disabled={opMut.isPending}
+                        title={t('players.op')}
+                        style={{ color: '#6B6B76' }}
+                      >
+                        <Crown size={11} strokeWidth={1.5} />
+                      </button>
+                    )
+                  )}
                   {server.status === 'running' && player.is_banned !== 1 && (
                     <>
                       <button

@@ -86,6 +86,8 @@ export const kickPlayer = (serverId, username, reason) => api.post(`/servers/${s
 export const warnPlayer = (serverId, username, reason) => api.post(`/servers/${serverId}/players/${encodeURIComponent(username)}/warn`, { reason }).then(r => r.data);
 export const banPlayer = (serverId, username, reason) => api.post(`/servers/${serverId}/players/${encodeURIComponent(username)}/ban`, { reason }).then(r => r.data);
 export const unbanPlayer = (serverId, username) => api.delete(`/servers/${serverId}/players/${encodeURIComponent(username)}/ban`).then(r => r.data);
+export const opPlayer = (serverId, username) => api.post(`/servers/${serverId}/players/${encodeURIComponent(username)}/op`).then(r => r.data);
+export const deopPlayer = (serverId, username) => api.delete(`/servers/${serverId}/players/${encodeURIComponent(username)}/op`).then(r => r.data);
 
 // Whitelist
 export const getWhitelist = (serverId) => api.get(`/servers/${serverId}/whitelist`).then(r => r.data);

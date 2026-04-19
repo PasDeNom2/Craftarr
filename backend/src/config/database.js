@@ -57,6 +57,7 @@ function initDb() {
     "ALTER TABLE players ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE players ADD COLUMN ban_reason TEXT",
     "ALTER TABLE players ADD COLUMN is_online INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE players ADD COLUMN is_op INTEGER NOT NULL DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* colonne déjà présente */ }

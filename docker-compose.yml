@@ -17,7 +17,7 @@ services:
       # - CURSEFORGE_API_KEY=
       # - MODRINTH_API_KEY=
       # - UPDATE_CHECK_INTERVAL_HOURS=6
-      # - UI_PORT=8080
+      # - UI_PORT=1024
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
@@ -35,7 +35,7 @@ services:
     container_name: craftarr-frontend
     restart: unless-stopped
     ports:
-      - "${UI_PORT:-8080}:80"
+      - "${UI_PORT:-1024}:80"
     depends_on:
       backend:
         condition: service_healthy

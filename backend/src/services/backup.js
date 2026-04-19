@@ -8,7 +8,7 @@ const { getDb } = require('../config/database');
 const DATA_PATH = process.env.DATA_PATH || '/data';
 
 const WORLD_DIRS = ['world', 'world_nether', 'world_the_end'];
-const CONFIG_FILES = ['ops.json', 'whitelist.json', 'banned-players.json', 'banned-ips.json', 'server.properties'];
+const CONFIG_FILES = ['ops.json', 'whitelist.json', 'banned-players.json', 'banned-ips.json', 'server.properties', 'usercache.json'];
 const CONFIG_DIRS = ['plugins', 'config'];
 
 async function createBackup(server, trigger = 'manual') {
@@ -21,7 +21,28 @@ async function createBackup(server, trigger = 'manual') {
   const filename = `backup-${trigger}-${timestamp}.zip`;
   const backupPath = path.join(backupsDir, filename);
 
-  await createZipBackup(serverDir, backupPath);
+  // Si le serveur tourne, forcer une sauvegarde complète avant de zipper
+  const isRunning = server.status === 'running' && server.container_id;
+  if (isRunning) {
+    const rcon = require('./rcon');
+    try {
+      await rcon.sendCommand(server, 'save-all flush');
+      // Laisser 2s pour que Minecraft finisse d'écrire les fichiers
+      await new Promise(r => setTimeout(r, 2000));
+      await rcon.sendCommand(server, 'save-off');
+    } catch {
+      // RCON indisponible (serveur en démarrage) — on continue quand même
+    }
+  }
+
+  try {
+    await createZipBackup(serverDir, backupPath);
+  } finally {
+    if (isRunning) {
+      const rcon = require('./rcon');
+      try { await rcon.sendCommand(server, 'save-on'); } catch {}
+    }
+  }
 
   const stats = fs.statSync(backupPath);
   const id = uuidv4();
