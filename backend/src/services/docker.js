@@ -83,6 +83,32 @@ function detectNeoForgeVersionFromStartScript(serverDir) {
 }
 
 /**
+ * Détecte la version NeoForge déjà installée dans libraries/net/neoforged/neoforge/.
+ * Utilisé après un setup thin pack (ServerStarter) pour passer la version exacte à itzg
+ * et éviter une réinstallation inutile du loader.
+ */
+function detectInstalledNeoForgeVersion(serverDir) {
+  try {
+    const nfDir = path.join(serverDir, 'libraries', 'net', 'neoforged', 'neoforge');
+    if (!fs.existsSync(nfDir)) return null;
+    const versions = fs.readdirSync(nfDir).filter(v => {
+      return fs.statSync(path.join(nfDir, v)).isDirectory();
+    });
+    if (!versions.length) return null;
+    versions.sort((a, b) => {
+      const an = a.replace(/-.*/, '').split('.').map(Number);
+      const bn = b.replace(/-.*/, '').split('.').map(Number);
+      for (let i = 0; i < Math.max(an.length, bn.length); i++) {
+        const d = (an[i] || 0) - (bn[i] || 0);
+        if (d !== 0) return d;
+      }
+      return 0;
+    });
+    return versions[versions.length - 1];
+  } catch { return null; }
+}
+
+/**
  * Détecte le JAR d'installation NeoForge bundlé dans le server pack.
  * ATM11 et d'autres packs incluent leur propre installer (ex: neoforge-26.1.2.10-beta-installer.jar).
  * Retourne le chemin absolu du JAR dans DATA_PATH (pour le bind-mount /data) ou null.
@@ -145,13 +171,15 @@ function buildEnvVars(server) {
   const setupConfigPath = path.join(serverDir, 'server-setup-config.yaml');
   const hasSetupConfig = fs.existsSync(setupConfigPath);
 
-  // Détecte thin pack (ServerFiles-*/startserver.sh sans JARs dans mods/)
-  const thinPackScript = server.loader_type === 'neoforge'
-    ? detectThinPackStartScript(serverDir)
+  // Si NeoForge est déjà installé (thin pack setup via ServerStarter), utiliser cette version
+  // pour éviter qu'itzg réinstalle un loader différent.
+  const runShExists = fs.existsSync(path.join(serverDir, 'run.sh'));
+  const installedNeoForgeVersion = (server.loader_type === 'neoforge' && runShExists)
+    ? detectInstalledNeoForgeVersion(serverDir)
     : null;
 
   // Détecte la version NeoForge depuis startserver.sh/bat (ATM11 et packs similaires)
-  const neoForgeVersionFromScript = server.loader_type === 'neoforge'
+  const neoForgeVersionFromScript = (!installedNeoForgeVersion && server.loader_type === 'neoforge')
     ? detectNeoForgeVersionFromStartScript(serverDir)
     : null;
 
@@ -166,15 +194,9 @@ function buildEnvVars(server) {
 
   const loaderType = server.loader_type?.toLowerCase() || 'forge';
 
-  // Thin pack : TYPE=CUSTOM + CUSTOM_SERVER pointe vers startserver.sh
-  // Le script gère lui-même NeoForge + mods via ServerStarter — on ne surcharge pas itzg
-  if (thinPackScript) {
-    console.log(`[Docker] Thin pack détecté — TYPE=CUSTOM, script: ${thinPackScript}`);
-  }
-
   const env = [
     'EULA=TRUE',
-    thinPackScript ? 'TYPE=CUSTOM' : `TYPE=${loaderType === 'vanilla' ? 'VANILLA' : loaderType.toUpperCase()}`,
+    `TYPE=${loaderType === 'vanilla' ? 'VANILLA' : loaderType.toUpperCase()}`,
     `MAX_MEMORY=${server.ram_mb}M`,
     `INIT_MEMORY=${Math.min(1024, Math.floor(server.ram_mb / 2))}M`,
     `MAX_PLAYERS=${server.max_players}`,
@@ -185,10 +207,10 @@ function buildEnvVars(server) {
     `MOTD=${server.motd || `${server.name} — Powered by Craftarr`}`,
   ];
 
-  if (thinPackScript) {
-    // Thin pack : laisser le startserver.sh gérer NeoForge et les mods
-    env.push(`CUSTOM_SERVER=${thinPackScript}`);
-    // Passer la version MC pour que itzg choisisse la bonne image Java
+  if (installedNeoForgeVersion) {
+    // NeoForge déjà installé par ServerStarter — passer la version exacte pour qu'itzg ne réinstalle pas
+    console.log(`[Docker] NeoForge déjà installé (libraries/) : ${installedNeoForgeVersion}`);
+    env.push(`NEOFORGE_VERSION=${installedNeoForgeVersion}`);
     if (server.mc_version && /^1\.\d{1,2}(\.\d)?$/.test(server.mc_version)) {
       env.push(`VERSION=${server.mc_version}`);
     }
@@ -565,6 +587,8 @@ async function removeContainerAndImage(containerId) {
 }
 
 module.exports = {
+  docker,
+  detectThinPackStartScript,
   createServerContainer,
   startContainer,
   stopContainer,

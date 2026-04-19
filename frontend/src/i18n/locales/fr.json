@@ -120,7 +120,8 @@
       "backup": "Sauvegarder",
       "importWorld": "Importer monde",
       "delete": "Supprimer",
-      "installMods": "Installer les mods"
+      "installMods": "Installer les mods",
+      "reinstall": "Réinstaller"
     },
     "status": {
       "running": "En ligne",
@@ -138,6 +139,7 @@
     "needsRecreate": "Recréation requise",
     "deleted": "Serveur supprimé",
     "installModsLaunched": "Téléchargement lancé — surveille la console...",
+    "reinstallLaunched": "Réinstallation lancée — surveille la console...",
     "deleteConfirm": "Supprimer définitivement \"{name}\" et toutes ses données ?",
     "settings": {
       "runningWarning": "Certains paramètres nécessitent un redémarrage pour être appliqués.",

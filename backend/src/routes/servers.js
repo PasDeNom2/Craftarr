@@ -173,6 +173,27 @@ router.post('/:id/install-mods', authMiddleware, async (req, res, next) => {
   }
 });
 
+// POST /api/servers/:id/reinstall — Relance l'installation depuis zéro (pour les serveurs en erreur sans container)
+router.post('/:id/reinstall', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+    if (server.status !== 'error') return res.status(400).json({ error: 'Le serveur doit être en erreur pour être réinstallé' });
+
+    db.prepare("UPDATE servers SET status = 'installing', container_id = NULL WHERE id = ?").run(server.id);
+    const updatedServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
+    res.json({ ok: true });
+
+    installer.installServer(updatedServer).catch(err => {
+      console.error(`[reinstall] Erreur pour ${server.id}:`, err.message);
+      db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/servers/:id/recreate — Recrée le container Docker (ex: après changement de RAM/port ou pour forcer le téléchargement des mods)
 router.post('/:id/recreate', authMiddleware, async (req, res, next) => {
   try {

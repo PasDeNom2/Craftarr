@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getServer, startServer, stopServer, restartServer, deleteServer,
   updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods,
-  uploadServerIcon, getServerIconUrl,
+  reinstallServer, uploadServerIcon, getServerIconUrl,
 } from '../services/api';
 import { useServerStore, useIconStore } from '../store';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -568,6 +568,12 @@ export default function ServerDetailPage() {
     onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
+  const reinstallMut = useMutation({
+    mutationFn: () => reinstallServer(id),
+    onSuccess: () => { toast.success(t('server.reinstallLaunched')); qc.invalidateQueries({ queryKey: ['server', id] }); },
+    onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
+  });
+
   if (isLoading) return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center space-y-3">
@@ -697,7 +703,12 @@ export default function ServerDetailPage() {
 
           {/* Right: action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            {canStart && (
+            {server.status === 'error' && !server.container_id ? (
+              <button className="btn-primary text-sm py-1.5 px-4 gap-2" onClick={() => reinstallMut.mutate()} disabled={reinstallMut.isPending}>
+                <RotateCcw size={13} strokeWidth={1.5} />
+                {t('server.actions.reinstall')}
+              </button>
+            ) : canStart && (
               <button className="btn-primary text-sm py-1.5 px-4 gap-2" onClick={() => startMut.mutate()} disabled={isBusy}>
                 <Play size={13} strokeWidth={1.5} />
                 {t('server.actions.start')}

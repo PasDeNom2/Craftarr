@@ -34,6 +34,14 @@ const PORT = process.env.PORT || 3000;
 // ─── Init DB ────────────────────────────────────────────────
 initDb();
 
+// Reset stuck installs/updates from a previous process crash
+{
+  const { getDb } = require('./config/database');
+  const db = getDb();
+  const stuck = db.prepare("UPDATE servers SET status = 'error' WHERE status IN ('installing', 'updating')").run();
+  if (stuck.changes > 0) console.log(`[Startup] ${stuck.changes} serveur(s) bloqué(s) en installing/updating → réinitialisés à 'error'`);
+}
+
 // ─── Express ────────────────────────────────────────────────
 const app = express();
 const server = http.createServer(app);

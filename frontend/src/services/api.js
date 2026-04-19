@@ -64,6 +64,7 @@ export const importWorld = (id, file) => {
 export const patchServer = (id, data) => api.patch(`/servers/${id}`, data).then(r => r.data);
 export const recreateContainer = (id) => api.post(`/servers/${id}/recreate`).then(r => r.data);
 export const installMods = (id) => api.post(`/servers/${id}/install-mods`).then(r => r.data);
+export const reinstallServer = (id) => api.post(`/servers/${id}/reinstall`).then(r => r.data);
 export const confirmClientPack = (id) => api.post(`/servers/${id}/install/confirm-client-pack`).then(r => r.data);
 export const cancelInstall = (id) => api.post(`/servers/${id}/install/cancel`).then(r => r.data);
 export const uploadServerIcon = (id, file) => {

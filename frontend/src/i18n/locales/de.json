@@ -120,7 +120,8 @@
       "backup": "Backup",
       "importWorld": "Welt importieren",
       "delete": "Löschen",
-      "installMods": "Mods installieren"
+      "installMods": "Mods installieren",
+      "reinstall": "Reinstall"
     },
     "status": {
       "running": "Online",
@@ -137,6 +138,7 @@
     "restarted": "Server restarted",
     "deleted": "Server deleted",
     "installModsLaunched": "Download started — watch the console...",
+    "reinstallLaunched": "Reinstallation started — watch the console...",
     "deleteConfirm": "Permanently delete \"{name}\" and all its data?",
     "settings": {
       "runningWarning": "Some settings require a restart to take effect.",

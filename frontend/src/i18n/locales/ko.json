@@ -120,7 +120,8 @@
       "backup": "백업",
       "importWorld": "월드 가져오기",
       "delete": "삭제",
-      "installMods": "모드 설치"
+      "installMods": "모드 설치",
+      "reinstall": "Reinstall"
     },
     "status": {
       "running": "온라인",
@@ -137,6 +138,7 @@
     "restarted": "Server restarted",
     "deleted": "Server deleted",
     "installModsLaunched": "Download started — watch the console...",
+    "reinstallLaunched": "Reinstallation started — watch the console...",
     "deleteConfirm": "Permanently delete \"{name}\" and all its data?",
     "settings": {
       "runningWarning": "Some settings require a restart to take effect.",

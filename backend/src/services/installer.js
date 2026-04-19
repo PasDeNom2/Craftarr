@@ -10,6 +10,7 @@ const curseforge = require('./curseforge');
 const modrinth = require('./modrinth');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
+const HOST_DATA_PATH = process.env.HOST_DATA_PATH || DATA_PATH;
 
 let io;
 function setIo(ioInstance) { io = ioInstance; }
@@ -47,6 +48,101 @@ function emit(serverId, event, data) {
 function progress(serverId, step, message, percent) {
   emit(serverId, 'install:progress', { step, message, percent });
   console.log(`[Installer][${serverId.slice(0, 8)}] ${step}: ${message}`);
+}
+
+/**
+ * Lance le startserver.sh du thin pack dans un container temporaire eclipse-temurin:21-jdk.
+ * Utilise dockerode (socket Docker) — pas besoin du binaire docker dans le container backend.
+ * Le script (ServerStarter) installe NeoForge + mods, puis démarre le serveur.
+ * On stoppe le container dès que le serveur affiche "Done" — tout est installé à ce stade.
+ * Renomme ensuite server-setup-config.yaml pour qu'itzg ne relance pas ServerStarter.
+ */
+async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
+  progress(server.id, 'thin_setup', 'Thin pack détecté — lancement de ServerStarter (installe NeoForge + mods)...', 30);
+
+  fs.writeFileSync(path.join(serverDir, 'eula.txt'), 'eula=true\n');
+
+  const hostServerDir = serverDir.replace(DATA_PATH, HOST_DATA_PATH);
+  const scriptRelPath = thinScriptDataPath.replace('/data/', '');
+  const scriptDir = path.dirname(scriptRelPath);
+  const workDir = scriptDir === '.' ? '/data' : `/data/${scriptDir}`;
+
+  const cfKey = process.env.CURSEFORGE_API_KEY || '';
+  const env = ['EULA=TRUE'];
+  if (cfKey) env.push(`CF_API_KEY=${cfKey}`);
+
+  const { docker } = dockerService;
+
+  // Pull image si absente (silencieux si déjà présente)
+  progress(server.id, 'thin_setup', 'Vérification image eclipse-temurin:21-jdk...', 31);
+  await new Promise((res) => {
+    docker.pull('eclipse-temurin:21-jdk', (err, stream) => {
+      if (err || !stream) return res();
+      docker.modem.followProgress(stream,
+        () => res(),
+        (evt) => { if (evt.status === 'Downloading') progress(server.id, 'thin_setup', `Pull JDK: ${evt.id || ''}`, 32); }
+      );
+    });
+  });
+
+  const container = await docker.createContainer({
+    Image: 'eclipse-temurin:21-jdk',
+    Cmd: ['bash', thinScriptDataPath],
+    WorkingDir: workDir,
+    Env: env,
+    AttachStdout: true,
+    AttachStderr: true,
+    HostConfig: {
+      Binds: [`${hostServerDir}:/data`],
+      AutoRemove: true,
+      NetworkMode: 'bridge',
+    },
+  });
+
+  const logStream = await container.attach({ stream: true, stdout: true, stderr: true });
+  let done = false;
+  let setupContainer = container;
+
+  container.modem = docker.modem;
+  docker.modem.demuxStream(logStream, {
+    write: (chunk) => {
+      const lines = chunk.toString().split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        emit(server.id, 'log', { line, timestamp: Date.now() });
+        if (!done && (line.includes(']: Done (') || line.includes(': Done ('))) {
+          done = true;
+          progress(server.id, 'thin_setup', 'Serveur démarré — arrêt du container de setup...', 73);
+          setupContainer.stop({ t: 5 }).catch(() => {});
+        }
+      }
+    }
+  }, {
+    write: (chunk) => {
+      const lines = chunk.toString().split('\n');
+      for (const line of lines) {
+        if (line.trim()) emit(server.id, 'log', { line, timestamp: Date.now() });
+      }
+    }
+  });
+
+  await container.start();
+
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      setupContainer.stop({ t: 5 }).catch(() => {});
+      reject(new Error('Timeout: setup ServerStarter > 30 min'));
+    }, 30 * 60 * 1000);
+
+    container.wait((err, result) => {
+      clearTimeout(timeout);
+      if (err && !done) return reject(err);
+      const yamlSrc = path.join(serverDir, 'server-setup-config.yaml');
+      if (fs.existsSync(yamlSrc)) fs.renameSync(yamlSrc, yamlSrc + '.done');
+      progress(server.id, 'thin_setup_done', 'Installation ServerStarter terminée — NeoForge + mods prêts', 75);
+      resolve();
+    });
+  });
 }
 
 async function installServer(server) {
@@ -205,9 +301,12 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
       return;
     }
 
-    // Thin server pack (ex: Craftoria, ATM) — ServerStarter gère NeoForge + mods au premier démarrage.
-    // Le container itzg sera lancé en TYPE=CUSTOM avec startserver.sh pour tout installer.
-    progress(server.id, 'mods_done', 'Thin server pack — les mods seront téléchargés au premier démarrage via ServerStarter', 80);
+    // Thin server pack (ex: Craftoria, ATM) — on lance startserver.sh dans un container temporaire
+    // pour installer NeoForge + mods. itzg démarrera ensuite normalement avec run.sh déjà créé.
+    const thinScript = dockerService.detectThinPackStartScript(serverDir);
+    if (thinScript) {
+      await runThinPackSetup(server, serverDir, thinScript);
+    }
     return;
   }
 

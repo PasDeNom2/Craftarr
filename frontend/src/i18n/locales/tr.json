@@ -120,7 +120,8 @@
       "backup": "Yedekle",
       "importWorld": "Dünya içe aktar",
       "delete": "Sil",
-      "installMods": "Mod yükle"
+      "installMods": "Mod yükle",
+      "reinstall": "Reinstall"
     },
     "status": {
       "running": "Çevrimiçi",
@@ -137,6 +138,7 @@
     "restarted": "Server restarted",
     "deleted": "Server deleted",
     "installModsLaunched": "Download started — watch the console...",
+    "reinstallLaunched": "Reinstallation started — watch the console...",
     "deleteConfirm": "Permanently delete \"{name}\" and all its data?",
     "settings": {
       "runningWarning": "Some settings require a restart to take effect.",
