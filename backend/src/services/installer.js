@@ -422,12 +422,13 @@ async function installMrpack(server, mrpackPath, serverDir, apiKey) {
     }
   });
 
-  // Filtrer les fichiers compatibles serveur
+  // Inclure tous les fichiers sauf ceux explicitement client-only ET sans aucun côté serveur déclaré.
+  // On garde les "unsupported" car certains mods (ex: JEI) sont marqués client-only dans l'index
+  // mais sont requis comme dépendances par d'autres mods côté serveur.
   const serverFiles = (index.files || []).filter(f => {
     const env = f.env || {};
-    // Garder si env.server est "required" ou "optional" (exclure "unsupported")
-    if (env.server === 'unsupported') return false;
-    // Si pas de contrainte env, on garde (comportement par défaut)
+    // Exclure uniquement si client=required ET server=unsupported (purement client-only)
+    if (env.client === 'required' && env.server === 'unsupported') return false;
     return true;
   });
 
