@@ -41,11 +41,13 @@ export function useServerSocket(serverId, containerId, handlers = {}) {
       socket.emit('logs:subscribe', { serverId });
     }
 
-    // Abonnement initial
-    subscribe();
-
     // Si le socket se reconnecte (perte réseau, restart backend…), se ré-abonner
     socket.on('connect', subscribe);
+
+    // Abonnement initial — uniquement si déjà connecté, sinon le 'connect' s'en charge
+    if (socket.connected) {
+      subscribe();
+    }
 
     const entries = Object.entries(handlers);
     entries.forEach(([event, handler]) => socket.on(event, handler));

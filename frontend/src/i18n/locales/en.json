@@ -195,6 +195,7 @@
     "send": "Send",
     "connecting": "Connecting...",
     "noLogs": "Waiting for logs...",
+    "installing": "Installing...",
     "rconError": "Error sending command",
     "clear": "Clear",
     "autoScroll": "Auto-scroll",

@@ -194,6 +194,7 @@
     "send": "发送",
     "connecting": "连接中...",
     "noLogs": "等待日志...",
+    "installing": "安装中...",
     "rconError": "发送命令时出错",
     "clear": "清空",
     "autoScroll": "自动滚动",

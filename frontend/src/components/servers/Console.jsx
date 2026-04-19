@@ -20,13 +20,15 @@ function classifyLine(line) {
 export default function Console({ server }) {
   const { t } = useI18n();
   const { logs, appendLog, clearLogs } = useLogsStore();
-  const lines = logs[server.id] || [];
+  const rawLines = logs[server.id] || [];
+  const lines = rawLines.filter(line => !line.includes('RCON'));
   const [command, setCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
   const [sending, setSending] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [unread, setUnread] = useState(0);
+  const [installProgress, setInstallProgress] = useState(null);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const lastScrolledCount = useRef(0);
@@ -36,7 +38,16 @@ export default function Console({ server }) {
     appendLog(serverId, line);
   }, [server.id, appendLog]);
 
-  useServerSocket(server.id, server.container_id, { log: handleLog });
+  const handleInstallProgress = useCallback(({ serverId, step, message, percent }) => {
+    if (serverId !== server.id) return;
+    setInstallProgress({ step, message, percent });
+  }, [server.id]);
+
+  useServerSocket(server.id, server.container_id, { log: handleLog, 'install:progress': handleInstallProgress });
+
+  useEffect(() => {
+    if (server.status !== 'installing') setInstallProgress(null);
+  }, [server.status]);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -149,6 +160,29 @@ export default function Console({ server }) {
           </button>
         </div>
       </div>
+
+      {/* Install progress bar */}
+      {server.status === 'installing' && (
+        <div className="flex-shrink-0 px-4 py-2" style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-mono text-[#6B6B76] truncate max-w-[80%]">
+              {installProgress?.message ?? t('console.installing')}
+            </span>
+            <span className="text-[11px] font-mono ml-2 flex-shrink-0" style={{ color: 'var(--accent)' }}>
+              {installProgress?.percent != null ? `${installProgress.percent}%` : '…'}
+            </span>
+          </div>
+          <div className="w-full rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${installProgress?.percent ?? 0}%`,
+                background: 'var(--accent)',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Logs */}
       <div

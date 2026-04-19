@@ -194,6 +194,7 @@
     "send": "送信",
     "connecting": "接続中...",
     "noLogs": "ログを待機中...",
+    "installing": "インストール中...",
     "rconError": "コマンド送信エラー",
     "clear": "クリア",
     "autoScroll": "自動スクロール",

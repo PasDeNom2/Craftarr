@@ -194,6 +194,7 @@
     "send": "Odeslat",
     "connecting": "Připojování...",
     "noLogs": "Čekám na logy...",
+    "installing": "Instalace...",
     "rconError": "Chyba odeslání příkazu",
     "clear": "Vymazat",
     "autoScroll": "Automatické posouvání",

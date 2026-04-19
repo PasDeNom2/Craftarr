@@ -195,6 +195,7 @@
     "send": "Envoyer",
     "connecting": "Connexion...",
     "noLogs": "En attente des logs...",
+    "installing": "Installation en cours...",
     "rconError": "Erreur d'envoi de commande",
     "clear": "Vider",
     "autoScroll": "Auto-scroll",

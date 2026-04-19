@@ -194,6 +194,7 @@
     "send": "Invia",
     "connecting": "Connessione...",
     "noLogs": "In attesa dei log...",
+    "installing": "Installazione in corso...",
     "rconError": "Errore nell'invio del comando",
     "clear": "Svuota",
     "autoScroll": "Auto-scroll",

@@ -194,6 +194,7 @@
     "send": "전송",
     "connecting": "연결 중...",
     "noLogs": "로그 대기 중...",
+    "installing": "설치 중...",
     "rconError": "명령어 전송 오류",
     "clear": "지우기",
     "autoScroll": "자동 스크롤",

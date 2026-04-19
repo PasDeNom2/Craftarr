@@ -194,6 +194,7 @@
     "send": "Skicka",
     "connecting": "Ansluter...",
     "noLogs": "Väntar på loggar...",
+    "installing": "Installerar...",
     "rconError": "Fel vid sändning av kommando",
     "clear": "Rensa",
     "autoScroll": "Autoskroll",

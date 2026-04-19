@@ -194,6 +194,7 @@
     "send": "Wyślij",
     "connecting": "Łączenie...",
     "noLogs": "Oczekiwanie na logi...",
+    "installing": "Instalowanie...",
     "rconError": "Błąd wysyłania polecenia",
     "clear": "Wyczyść",
     "autoScroll": "Auto-przewijanie",

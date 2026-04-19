@@ -194,6 +194,7 @@
     "send": "Senden",
     "connecting": "Verbinde...",
     "noLogs": "Warte auf Logs...",
+    "installing": "Installation läuft...",
     "rconError": "Fehler beim Senden des Befehls",
     "clear": "Leeren",
     "autoScroll": "Auto-Scroll",

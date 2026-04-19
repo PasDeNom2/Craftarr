@@ -194,6 +194,7 @@
     "send": "Verzenden",
     "connecting": "Verbinden...",
     "noLogs": "Wachten op logs...",
+    "installing": "Installeren...",
     "rconError": "Fout bij verzenden opdracht",
     "clear": "Wissen",
     "autoScroll": "Auto-scroll",

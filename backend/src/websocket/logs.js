@@ -97,15 +97,18 @@ function setupLogsSocket(io) {
   io.on('connection', socket => {
     socket.on('logs:subscribe', async ({ serverId }) => {
       if (!serverId) return;
+      const alreadySubscribed = socket.rooms.has(`server:${serverId}`);
       socket.join(`server:${serverId}`);
 
-      // Envoie les 200 dernières lignes à ce seul client (catch-up historique)
-      const db = getDb();
-      const srv = db.prepare('SELECT container_id FROM servers WHERE id = ?').get(serverId);
-      if (srv?.container_id) {
-        dockerService.getRecentLogs(srv.container_id, 200).then(lines => {
-          lines.forEach(line => socket.emit('log', { serverId, line, timestamp: Date.now() }));
-        }).catch(() => {});
+      // Envoie les 200 dernières lignes uniquement au premier abonnement (évite les doublons)
+      if (!alreadySubscribed) {
+        const db = getDb();
+        const srv = db.prepare('SELECT container_id FROM servers WHERE id = ?').get(serverId);
+        if (srv?.container_id) {
+          dockerService.getRecentLogs(srv.container_id, 200).then(lines => {
+            lines.forEach(line => socket.emit('log', { serverId, line, timestamp: Date.now() }));
+          }).catch(() => {});
+        }
       }
 
       // Lance (ou attend) le stream si pas encore actif

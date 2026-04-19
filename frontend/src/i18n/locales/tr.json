@@ -194,6 +194,7 @@
     "send": "Gönder",
     "connecting": "Bağlanıyor...",
     "noLogs": "Günlükler bekleniyor...",
+    "installing": "Yükleniyor...",
     "rconError": "Komut gönderme hatası",
     "clear": "Temizle",
     "autoScroll": "Otomatik kaydır",
