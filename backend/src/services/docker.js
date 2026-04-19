@@ -106,12 +106,48 @@ function detectNeoForgeInstallerFromPack(serverDir) {
   }
 }
 
+/**
+ * Détecte un thin server pack (ServerStarter) : contient ServerFiles-*\/startserver.sh
+ * mais aucun JAR dans mods/ (les mods sont téléchargés par ServerStarter au premier démarrage).
+ * Retourne le chemin /data-relatif du startserver.sh, ou null si ce n'est pas un thin pack.
+ */
+function detectThinPackStartScript(serverDir) {
+  try {
+    const modsDir = path.join(serverDir, 'mods');
+    const jarCount = fs.existsSync(modsDir)
+      ? fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length
+      : 0;
+    // S'il y a des JARs dans mods/, c'est un fat pack — pas un thin pack
+    if (jarCount > 0) return null;
+
+    // Chercher le dossier ServerFiles-* le plus récent avec un startserver.sh
+    let latest = null;
+    for (const entry of fs.readdirSync(serverDir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || !entry.name.startsWith('ServerFiles-')) continue;
+      const sh = path.join(serverDir, entry.name, 'startserver.sh');
+      if (fs.existsSync(sh)) {
+        if (!latest || entry.name > latest.name) latest = entry;
+      }
+    }
+    if (!latest) return null;
+    // Retourne le chemin relatif vu depuis /data dans le container
+    return `/data/${latest.name}/startserver.sh`;
+  } catch {
+    return null;
+  }
+}
+
 function buildEnvVars(server) {
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
 
   // Détecte server-setup-config.yaml en premier — ServerStarter gère tout (NeoForge inclus)
   const setupConfigPath = path.join(serverDir, 'server-setup-config.yaml');
   const hasSetupConfig = fs.existsSync(setupConfigPath);
+
+  // Détecte thin pack (ServerFiles-*/startserver.sh sans JARs dans mods/)
+  const thinPackScript = server.loader_type === 'neoforge'
+    ? detectThinPackStartScript(serverDir)
+    : null;
 
   // Détecte la version NeoForge depuis startserver.sh/bat (ATM11 et packs similaires)
   const neoForgeVersionFromScript = server.loader_type === 'neoforge'
@@ -128,9 +164,16 @@ function buildEnvVars(server) {
     : null;
 
   const loaderType = server.loader_type?.toLowerCase() || 'forge';
+
+  // Thin pack : TYPE=CUSTOM + CUSTOM_SERVER pointe vers startserver.sh
+  // Le script gère lui-même NeoForge + mods via ServerStarter — on ne surcharge pas itzg
+  if (thinPackScript) {
+    console.log(`[Docker] Thin pack détecté — TYPE=CUSTOM, script: ${thinPackScript}`);
+  }
+
   const env = [
     'EULA=TRUE',
-    `TYPE=${loaderType === 'vanilla' ? 'VANILLA' : loaderType.toUpperCase()}`,
+    thinPackScript ? 'TYPE=CUSTOM' : `TYPE=${loaderType === 'vanilla' ? 'VANILLA' : loaderType.toUpperCase()}`,
     `MAX_MEMORY=${server.ram_mb}M`,
     `INIT_MEMORY=${Math.min(1024, Math.floor(server.ram_mb / 2))}M`,
     `MAX_PLAYERS=${server.max_players}`,
@@ -141,7 +184,14 @@ function buildEnvVars(server) {
     `MOTD=${server.motd || `${server.name} — Powered by Craftarr`}`,
   ];
 
-  if (neoForgeVersionFromScript) {
+  if (thinPackScript) {
+    // Thin pack : laisser le startserver.sh gérer NeoForge et les mods
+    env.push(`CUSTOM_SERVER=${thinPackScript}`);
+    // Passer la version MC pour que itzg choisisse la bonne image Java
+    if (server.mc_version && /^1\.\d{1,2}(\.\d)?$/.test(server.mc_version)) {
+      env.push(`VERSION=${server.mc_version}`);
+    }
+  } else if (neoForgeVersionFromScript) {
     // Le server pack fournit son propre startserver.sh avec la version NeoForge exacte
     // (ex: ATM11 → NEOFORGE_VERSION=26.1.2.12-beta)
     console.log(`[Docker] NeoForge version (startserver script) : ${neoForgeVersionFromScript}`);

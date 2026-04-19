@@ -14,6 +14,18 @@ const DATA_PATH = process.env.DATA_PATH || '/data';
 let io;
 function setIo(ioInstance) { io = ioInstance; }
 
+// Map serverId → { resolve, reject } pour attendre la confirmation utilisateur (no server pack)
+const pendingClientPackConfirm = new Map();
+
+function confirmClientPack(serverId) {
+  const p = pendingClientPackConfirm.get(serverId);
+  if (p) { pendingClientPackConfirm.delete(serverId); p.resolve(); }
+}
+function cancelClientPack(serverId) {
+  const p = pendingClientPackConfirm.get(serverId);
+  if (p) { pendingClientPackConfirm.delete(serverId); p.reject(new Error('Installation annulée par l\'utilisateur')); }
+}
+
 function startLogStreamImmediate(ioInstance, serverId, containerId) {
   dockerService.streamContainerLogs(
     containerId,
@@ -133,16 +145,33 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
     serverPackFile = serverPacks[0];
   }
 
+  // Si aucun server pack disponible, demander confirmation à l'utilisateur avant de continuer avec le client pack
+  if (!serverPackFile) {
+    progress(server.id, 'warn', 'Aucun server pack disponible pour cette version', 22);
+    if (io) io.to(`server:${server.id}`).emit('install:no-server-pack', {
+      serverId: server.id,
+      modpackName: clientFile.displayName || clientFile.fileName,
+    });
+    // Attendre la confirmation (max 5 minutes)
+    await new Promise((resolve, reject) => {
+      pendingClientPackConfirm.set(server.id, { resolve, reject });
+      setTimeout(() => {
+        if (pendingClientPackConfirm.has(server.id)) {
+          pendingClientPackConfirm.delete(server.id);
+          reject(new Error('Délai dépassé — installation annulée (aucune réponse)'));
+        }
+      }, 5 * 60 * 1000);
+    });
+    progress(server.id, 'info', 'Installation avec le pack client confirmée', 24);
+  }
+
   const targetFile = serverPackFile || clientFile;
   const isUsingServerPack = !!serverPackFile;
   console.log(`[Installer] Utilisation du ${isUsingServerPack ? 'SERVER PACK' : 'client pack'} : ${targetFile.displayName || targetFile.id}`);
 
-  // CurseForge peut retourner downloadUrl: null — fallback CDN
-  const packUrl = targetFile.downloadUrl || buildCurseForgeUrl(targetFile.id, targetFile.fileName);
   // Déduire mc_version et loader depuis le client pack (plus fiable car le server pack peut ne pas les lister)
-  const refFile = clientFile;
-  const loaderType = detectLoader(refFile.gameVersions);
-  const resolvedMcVersion = extractMcVer(refFile.gameVersions) || mcVersion;
+  const loaderType = detectLoader(clientFile.gameVersions);
+  const resolvedMcVersion = extractMcVer(clientFile.gameVersions) || mcVersion;
 
   db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
     .run(resolvedMcVersion, loaderType,
@@ -150,21 +179,23 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
       String(clientFile.id),
       server.id);
 
-  const packLabel = isUsingServerPack ? 'server pack' : 'pack client (manifest)';
-  progress(server.id, 'download', `Téléchargement du ${packLabel}`, 25);
-  const zipPath = path.join(DATA_PATH, 'servers', server.id, 'pack.zip');
-  await downloadFile(packUrl, zipPath, pct =>
-    progress(server.id, 'download', `Téléchargement ${packLabel} : ${pct}%`, 25 + Math.floor(pct * 0.1))
-  );
+  // CurseForge peut retourner downloadUrl: null — fallback CDN
+  const packUrl = targetFile.downloadUrl || buildCurseForgeUrl(targetFile.id, targetFile.fileName);
 
-  // Server pack : extraction directe (contient déjà les JARs prêts pour le serveur)
+  progress(server.id, 'download', `Téléchargement du server pack`, 25);
+  const zipPath = path.join(DATA_PATH, 'servers', server.id, 'pack.zip');
+
   if (isUsingServerPack) {
+    await downloadFile(packUrl, zipPath, pct =>
+      progress(server.id, 'download', `Server pack : ${pct}%`, 25 + Math.floor(pct * 0.1))
+    );
+
     progress(server.id, 'extract', 'Extraction du server pack', 60);
     const zip = new AdmZip(zipPath);
     zip.extractAllTo(serverDir, true);
     fs.unlinkSync(zipPath);
 
-    // Vérifier si le server pack est "fat" (contient des mods) ou "thin" (délègue à ServerStarter)
+    // Vérifier si le server pack est "fat" (contient des mods) ou "thin" (structure ServerStarter sans JARs)
     const jarCount = fs.existsSync(modsDir)
       ? fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length
       : 0;
@@ -174,20 +205,17 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
       return;
     }
 
-    // Thin server pack (ex: Craftoria) — aucun mod dans le zip.
-    // Le container itzg ne lancera pas ServerStarter car NeoForge est déjà détecté comme installé.
-    // On télécharge le client pack pour extraire les mods via notre propre downloader.
-    progress(server.id, 'info', 'Thin server pack détecté — téléchargement des mods via le client pack', 62);
-    const clientPackUrl = clientFile.downloadUrl || buildCurseForgeUrl(clientFile.id, clientFile.fileName);
-    const clientZipPath = path.join(DATA_PATH, 'servers', server.id, 'pack.zip');
-    await downloadFile(clientPackUrl, clientZipPath, pct =>
-      progress(server.id, 'download', `Client pack : ${pct}%`, 62 + Math.floor(pct * 0.08))
-    );
-    await downloadModsFromClientPack(server, clientZipPath, serverDir, modsDir, apiKey);
+    // Thin server pack (ex: Craftoria, ATM) — ServerStarter gère NeoForge + mods au premier démarrage.
+    // Le container itzg sera lancé en TYPE=CUSTOM avec startserver.sh pour tout installer.
+    progress(server.id, 'mods_done', 'Thin server pack — les mods seront téléchargés au premier démarrage via ServerStarter', 80);
     return;
   }
 
-  // Client pack : parser le manifest et télécharger les mods via l'API
+  // Pas de server pack (confirmé par l'utilisateur) : client pack uniquement
+  progress(server.id, 'download', `Téléchargement du pack client`, 25);
+  await downloadFile(packUrl, zipPath, pct =>
+    progress(server.id, 'download', `Pack client : ${pct}%`, 25 + Math.floor(pct * 0.1))
+  );
   progress(server.id, 'parse', 'Lecture du manifest', 36);
   await downloadModsFromClientPack(server, zipPath, serverDir, modsDir, apiKey);
 }
@@ -595,4 +623,4 @@ async function updateModpackMods(server) {
   await freshInstallModpack(server, serverDir);
 }
 
-module.exports = { installServer, installModsOnly, updateModpackMods, freshInstallModpack, setIo };
+module.exports = { installServer, installModsOnly, updateModpackMods, freshInstallModpack, confirmClientPack, cancelClientPack, setIo };

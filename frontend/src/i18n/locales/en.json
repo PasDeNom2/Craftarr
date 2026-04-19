@@ -200,7 +200,10 @@
     "clear": "Clear",
     "autoScroll": "Auto-scroll",
     "newLines": "{count} new lines",
-    "stoppedPlaceholder": "Server stopped"
+    "stoppedPlaceholder": "Server stopped",
+    "noServerPack": "No server pack available",
+    "noServerPackDesc": "This modpack does not provide a server pack. Install anyway using the client pack (downloads mods via manifest)?",
+    "useClientPack": "Install with client pack"
   },
   "metrics": {
     "cpu": "CPU",

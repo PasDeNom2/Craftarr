@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useServerSocket } from '../../hooks/useSocket';
-import { sendRcon } from '../../services/api';
+import { sendRcon, confirmClientPack, cancelInstall } from '../../services/api';
 import { useLogsStore } from '../../store';
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
-import { Terminal, ChevronDown, Trash2 } from 'lucide-react';
+import { Terminal, ChevronDown, Trash2, AlertTriangle } from 'lucide-react';
 
 function classifyLine(line) {
   const l = line.toLowerCase();
@@ -29,6 +29,8 @@ export default function Console({ server }) {
   const [autoScroll, setAutoScroll] = useState(true);
   const [unread, setUnread] = useState(0);
   const [installProgress, setInstallProgress] = useState(null);
+  const [noServerPack, setNoServerPack] = useState(null); // { modpackName }
+  const [confirming, setConfirming] = useState(false);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const lastScrolledCount = useRef(0);
@@ -43,11 +45,30 @@ export default function Console({ server }) {
     setInstallProgress({ step, message, percent });
   }, [server.id]);
 
-  useServerSocket(server.id, server.container_id, { log: handleLog, 'install:progress': handleInstallProgress });
+  const handleNoServerPack = useCallback(({ serverId, modpackName }) => {
+    if (serverId !== server.id) return;
+    setNoServerPack({ modpackName });
+  }, [server.id]);
+
+  useServerSocket(server.id, server.container_id, {
+    log: handleLog,
+    'install:progress': handleInstallProgress,
+    'install:no-server-pack': handleNoServerPack,
+  });
 
   useEffect(() => {
-    if (server.status !== 'installing') setInstallProgress(null);
+    if (server.status !== 'installing') { setInstallProgress(null); setNoServerPack(null); }
   }, [server.status]);
+
+  async function handleConfirmClientPack() {
+    setConfirming(true);
+    try { await confirmClientPack(server.id); setNoServerPack(null); } catch {}
+    setConfirming(false);
+  }
+
+  async function handleCancelInstall() {
+    try { await cancelInstall(server.id); setNoServerPack(null); } catch {}
+  }
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -162,7 +183,7 @@ export default function Console({ server }) {
       </div>
 
       {/* Install progress bar */}
-      {server.status === 'installing' && (
+      {server.status === 'installing' && !noServerPack && (
         <div className="flex-shrink-0 px-4 py-2" style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-mono text-[#6B6B76] truncate max-w-[80%]">
@@ -180,6 +201,38 @@ export default function Console({ server }) {
                 background: 'var(--accent)',
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* No server pack — demande confirmation */}
+      {noServerPack && (
+        <div
+          className="flex-shrink-0 px-4 py-3 flex flex-col gap-2"
+          style={{ background: 'rgba(251,191,36,0.06)', borderBottom: '1px solid rgba(251,191,36,0.15)' }}
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={14} strokeWidth={1.5} className="text-[#FBBF24] mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-[12px] font-semibold text-[#FBBF24]">{t('console.noServerPack')}</p>
+              <p className="text-[11px] text-[#6B6B76] mt-0.5">{t('console.noServerPackDesc')}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button
+              className="btn-primary text-xs py-1.5 px-3"
+              onClick={handleConfirmClientPack}
+              disabled={confirming}
+            >
+              {confirming ? '…' : t('console.useClientPack')}
+            </button>
+            <button
+              className="btn-secondary text-xs py-1.5 px-3"
+              onClick={handleCancelInstall}
+              disabled={confirming}
+            >
+              {t('common.cancel')}
+            </button>
           </div>
         </div>
       )}

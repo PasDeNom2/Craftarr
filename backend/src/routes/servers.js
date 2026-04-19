@@ -125,6 +125,18 @@ router.post('/', authMiddleware, async (req, res, next) => {
   }
 });
 
+// POST /api/servers/:id/install/confirm-client-pack — Confirme l'installation sans server pack
+router.post('/:id/install/confirm-client-pack', authMiddleware, (req, res) => {
+  installer.confirmClientPack(req.params.id);
+  res.json({ ok: true });
+});
+
+// POST /api/servers/:id/install/cancel — Annule une installation en attente de confirmation
+router.post('/:id/install/cancel', authMiddleware, (req, res) => {
+  installer.cancelClientPack(req.params.id);
+  res.json({ ok: true });
+});
+
 // POST /api/servers/:id/install-mods — Télécharge les mods manquants sans recréer le container
 router.post('/:id/install-mods', authMiddleware, async (req, res, next) => {
   try {

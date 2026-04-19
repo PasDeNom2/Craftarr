@@ -200,7 +200,10 @@
     "clear": "Vider",
     "autoScroll": "Auto-scroll",
     "newLines": "{count} nouvelles lignes",
-    "stoppedPlaceholder": "Serveur arrêté"
+    "stoppedPlaceholder": "Serveur arrêté",
+    "noServerPack": "Aucun server pack disponible",
+    "noServerPackDesc": "Ce modpack ne propose pas de server pack. Installer quand même avec le pack client (téléchargement des mods via le manifest) ?",
+    "useClientPack": "Installer avec le pack client"
   },
   "metrics": {
     "cpu": "CPU",
