@@ -107,20 +107,21 @@ function detectNeoForgeInstallerFromPack(serverDir) {
 }
 
 /**
- * Détecte un thin server pack (ServerStarter) : contient ServerFiles-*\/startserver.sh
- * mais aucun JAR dans mods/ (les mods sont téléchargés par ServerStarter au premier démarrage).
+ * Détecte un thin server pack (ServerStarter) à deux endroits :
+ *  1. server-setup-config.yaml à la racine + startserver.sh → Craftoria / packs modernes
+ *  2. ServerFiles-*\/startserver.sh → ATM et packs plus anciens
  * Retourne le chemin /data-relatif du startserver.sh, ou null si ce n'est pas un thin pack.
  */
 function detectThinPackStartScript(serverDir) {
   try {
-    const modsDir = path.join(serverDir, 'mods');
-    const jarCount = fs.existsSync(modsDir)
-      ? fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length
-      : 0;
-    // S'il y a des JARs dans mods/, c'est un fat pack — pas un thin pack
-    if (jarCount > 0) return null;
+    // Cas 1 : startserver.sh ET server-setup-config.yaml à la racine
+    const rootSh = path.join(serverDir, 'startserver.sh');
+    const rootCfg = path.join(serverDir, 'server-setup-config.yaml');
+    if (fs.existsSync(rootSh) && fs.existsSync(rootCfg)) {
+      return '/data/startserver.sh';
+    }
 
-    // Chercher le dossier ServerFiles-* le plus récent avec un startserver.sh
+    // Cas 2 : ServerFiles-*/startserver.sh (ATM, etc.) — prendre le dossier le plus récent
     let latest = null;
     for (const entry of fs.readdirSync(serverDir, { withFileTypes: true })) {
       if (!entry.isDirectory() || !entry.name.startsWith('ServerFiles-')) continue;
@@ -129,9 +130,9 @@ function detectThinPackStartScript(serverDir) {
         if (!latest || entry.name > latest.name) latest = entry;
       }
     }
-    if (!latest) return null;
-    // Retourne le chemin relatif vu depuis /data dans le container
-    return `/data/${latest.name}/startserver.sh`;
+    if (latest) return `/data/${latest.name}/startserver.sh`;
+
+    return null;
   } catch {
     return null;
   }
