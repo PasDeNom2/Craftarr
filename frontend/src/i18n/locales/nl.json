@@ -96,7 +96,7 @@
     "worldImportHint": "— optionele zip",
     "worldImportClick": "Klik om een .zip te selecteren",
     "worldRemove": "Verwijderen",
-    "onlineMode": "Premium-modus (officiële Minecraft-accounts)",
+    "onlineMode": "Premium accountmodus",
     "onlineModeOn": "Ingeschakeld — echte skins, Mojang-auth. Gecrackede accounts kunnen niet verbinden.",
     "onlineModeOff": "Uitgeschakeld — cracked-modus, alle spelers geaccepteerd (geen officiële skins).",
     "deploying": "Aanmaken...",
@@ -119,6 +119,7 @@
       "update": "Bijwerken",
       "backup": "Back-up",
       "importWorld": "Wereld importeren",
+      "downloadWorld": "Wereld downloaden",
       "delete": "Verwijderen",
       "installMods": "Mods installeren",
       "reinstall": "Reinstall"
@@ -126,6 +127,7 @@
     "status": {
       "running": "Online",
       "stopped": "Gestopt",
+      "starting": "Starten",
       "installing": "Installeren",
       "updating": "Bijwerken",
       "error": "Fout"
@@ -306,7 +308,7 @@
     "curseforgeDesc": "Haal uw sleutel op via console.curseforge.com — vereist voor de CurseForge-catalogus",
     "modrinthDesc": "Verbetert de snelheidslimiet voor Modrinth-zoekopdrachten. Beschikbaar op modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API-sleutel (optioneel)",
-    "appearance": "Uiterlijk"
+    "appearance": "Minecraft-uiterlijk"
   },
   "sources": {
     "title": "Bronnen",

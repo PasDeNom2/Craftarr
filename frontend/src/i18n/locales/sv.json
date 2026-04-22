@@ -96,7 +96,7 @@
     "worldImportHint": "— valfri zip",
     "worldImportClick": "Klicka för att välja .zip",
     "worldRemove": "Ta bort",
-    "onlineMode": "Premiumläge (officiella Minecraft-konton)",
+    "onlineMode": "Premiumkontoläge",
     "onlineModeOn": "Aktiverat — riktiga skins, Mojang-auth. Crackade konton kan inte ansluta.",
     "onlineModeOff": "Inaktiverat — crackat läge, alla spelare accepteras (inga officiella skins).",
     "deploying": "Skapar...",
@@ -119,6 +119,7 @@
       "update": "Uppdatera",
       "backup": "Säkerhetskopia",
       "importWorld": "Importera värld",
+      "downloadWorld": "Ladda ner värld",
       "delete": "Ta bort",
       "installMods": "Installera mods",
       "reinstall": "Reinstall"
@@ -126,6 +127,7 @@
     "status": {
       "running": "Online",
       "stopped": "Stoppad",
+      "starting": "Startar",
       "installing": "Installerar",
       "updating": "Uppdaterar",
       "error": "Fel"
@@ -306,7 +308,7 @@
     "curseforgeDesc": "Hämta din nyckel på console.curseforge.com — krävs för CurseForge-katalogen",
     "modrinthDesc": "Förbättrar hastighetsgränsen för Modrinth-sökningar. Tillgänglig på modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API-nyckel (valfri)",
-    "appearance": "Utseende"
+    "appearance": "Minecraft-utseende"
   },
   "sources": {
     "title": "Källor",

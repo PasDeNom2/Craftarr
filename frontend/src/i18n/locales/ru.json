@@ -96,7 +96,7 @@
     "worldImportHint": "— необязательный zip",
     "worldImportClick": "Нажмите для выбора .zip",
     "worldRemove": "Удалить",
-    "onlineMode": "Премиум режим (официальные аккаунты Minecraft)",
+    "onlineMode": "Режим премиум-аккаунта",
     "onlineModeOn": "Включено — настоящие скины, аут. Mojang. Взломанные аккаунты не могут подключиться.",
     "onlineModeOff": "Отключено — cracked-режим, все игроки приняты (без официальных скинов).",
     "deploying": "Создание...",
@@ -119,6 +119,7 @@
       "update": "Обновить",
       "backup": "Резервная копия",
       "importWorld": "Импорт мира",
+      "downloadWorld": "Скачать мир",
       "delete": "Удалить",
       "installMods": "Установить моды",
       "reinstall": "Reinstall"
@@ -126,6 +127,7 @@
     "status": {
       "running": "Онлайн",
       "stopped": "Остановлен",
+      "starting": "Запуск",
       "installing": "Установка",
       "updating": "Обновление",
       "error": "Ошибка"
@@ -306,7 +308,7 @@
     "curseforgeDesc": "Получите ключ на console.curseforge.com — необходим для каталога CurseForge",
     "modrinthDesc": "Улучшает лимит запросов для поиска Modrinth. Доступно на modrinth.com/settings/pats",
     "modrinthOptional": "Ключ API Modrinth (необязательно)",
-    "appearance": "Внешний вид"
+    "appearance": "Внешний вид Minecraft"
   },
   "sources": {
     "title": "Источники",

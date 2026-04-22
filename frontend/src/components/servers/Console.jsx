@@ -186,11 +186,8 @@ export default function Console({ server }) {
       {server.status === 'installing' && !noServerPack && (
         <div className="flex-shrink-0 px-4 py-2" style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-mono text-[#6B6B76] truncate max-w-[80%]">
+            <span className="text-[11px] font-mono text-[#6B6B76] truncate">
               {installProgress?.message ?? t('console.installing')}
-            </span>
-            <span className="text-[11px] font-mono ml-2 flex-shrink-0" style={{ color: 'var(--accent)' }}>
-              {installProgress?.percent != null ? `${installProgress.percent}%` : '…'}
             </span>
           </div>
           <div className="w-full rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>

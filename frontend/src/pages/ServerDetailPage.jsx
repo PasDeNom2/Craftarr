@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useI18n } from '../i18n';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getSocket } from '../hooks/useSocket';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getServer, startServer, stopServer, restartServer, deleteServer,
   updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods,
-  reinstallServer, uploadServerIcon, getServerIconUrl,
+  reinstallServer, uploadServerIcon, getServerIconUrl, downloadWorld,
 } from '../services/api';
 import { useServerStore, useIconStore } from '../store';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -19,7 +20,7 @@ import clsx from 'clsx';
 import {
   Terminal, Activity, HardDrive, FolderOpen, Settings as SettingsIcon,
   Play, Square, RotateCcw, Upload, Trash2, ArrowUp, Package, Globe,
-  AlertTriangle, Save, Users, Pencil,
+  AlertTriangle, Save, Users, Pencil, Download,
 } from 'lucide-react';
 import PlayersPanel from '../components/servers/PlayersPanel';
 import WhitelistPanel from '../components/servers/WhitelistPanel';
@@ -216,8 +217,9 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
   const [iconPreview, setIconPreview] = useState(null);
   const [iconFile, setIconFile] = useState(null);
   const [iconUploading, setIconUploading] = useState(false);
-  const [iconKey, setIconKey] = useState(Date.now());
+  const iconKey = useIconStore(s => s.versions[server.id] || 1);
   const [recreating, setRecreating] = useState(false);
+  const [downloadingWorld, setDownloadingWorld] = useState(false);
 
   const isRunning = server.status === 'running' || server.status === 'starting';
   const isStopped = server.status === 'stopped' || server.status === 'error';
@@ -270,8 +272,6 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
     try {
       const resized = await resizeTo64(iconFile);
       await uploadServerIcon(server.id, resized);
-      const v = Date.now();
-      setIconKey(v);
       bumpIcon(server.id);
       toast.success(t('server.settings.iconUpdated'));
       setIconPreview(null);
@@ -299,18 +299,14 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
       )}
 
       <div className="space-y-3">
-        <SectionTitle>{t('server.settings.identity')}</SectionTitle>
-        <div>
-          <label className="label">{t('server.settings.serverName')}</label>
-          <input className="input" value={form.name} onChange={e => set('name', e.target.value)} />
-        </div>
-      </div>
-
-      <div className="space-y-3">
         <SectionTitle>{t('server.settings.appearance')}</SectionTitle>
         <div className="card space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 flex flex-col items-center gap-1">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-shrink-0">
+              <input
+                type="file" accept="image/png,image/jpeg" id="settings-icon-input"
+                className="hidden" onChange={handleIconChange}
+              />
               <div
                 className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center"
                 style={{ background: '#1C1C21', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -332,22 +328,22 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
                   {server.name?.[0]?.toUpperCase() || 'S'}
                 </span>
               </div>
-              <span className="text-[10px] text-[#4A4A55]">64×64 PNG</span>
+              <label
+                htmlFor="settings-icon-input"
+                className="cursor-pointer absolute flex items-center justify-center rounded-full"
+                style={{ width: 18, height: 18, bottom: -4, right: -4, background: 'var(--accent)', border: '2px solid #0D0D10' }}
+              >
+                <Pencil size={9} strokeWidth={2.5} style={{ color: '#000' }} />
+              </label>
             </div>
-            <div className="flex-1 space-y-2">
-              <label className="label">{t('server.settings.icon')}</label>
-              <input
-                type="file" accept="image/png,image/jpeg"
-                onChange={handleIconChange}
-                className="block w-full text-sm text-[#6B6B76] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-[#1C1C21] file:text-[#6B6B76] hover:file:text-[#F0F0F0] cursor-pointer"
-              />
+            <div className="space-y-1.5">
+              <p className="text-xs text-[#6B6B76]">64×64 px</p>
               {iconFile && (
                 <button className="btn-primary text-xs py-1.5 px-3 gap-1.5" onClick={handleIconUpload} disabled={iconUploading}>
                   <Upload size={11} strokeWidth={1.5} />
                   {iconUploading ? t('server.settings.uploading') : t('server.settings.upload')}
                 </button>
               )}
-              <p className="text-[11px] text-[#4A4A55]">{t('server.settings.iconHint')}</p>
             </div>
           </div>
 
@@ -384,12 +380,6 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
               onChange={e => set('max_players', +e.target.value)} />
           </div>
         </div>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" className="w-4 h-4 rounded" checked={form.whitelist_enabled}
-            onChange={e => set('whitelist_enabled', e.target.checked)}
-            style={{ accentColor: '#4ADE80' }} />
-          <span className="text-sm text-[#6B6B76]">{t('server.settings.whitelist')}</span>
-        </label>
       </div>
 
       <div className="space-y-3">
@@ -488,6 +478,19 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
             <Globe size={14} strokeWidth={1.5} />
             {t('server.actions.importWorld')}
           </button>
+          <button
+            className="btn-secondary text-sm gap-2"
+            disabled={downloadingWorld}
+            onClick={async () => {
+              setDownloadingWorld(true);
+              try { await downloadWorld(server.id, server.name); }
+              catch { toast.error(t('common.error')); }
+              finally { setDownloadingWorld(false); }
+            }}
+          >
+            <Download size={14} strokeWidth={1.5} />
+            {downloadingWorld ? '…' : t('server.actions.downloadWorld')}
+          </button>
         </div>
         <p className="text-[11px] text-[#4A4A55]">{t('server.settings.downloadModsHint')}</p>
       </div>
@@ -528,15 +531,39 @@ export default function ServerDetailPage() {
   const [showWorldImport, setShowWorldImport] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [headerName, setHeaderName] = useState('');
-  const [headerIconKey, setHeaderIconKey] = useState(Date.now());
   const { updateServer: patchStore, removeServer } = useServerStore();
   const bumpIcon = useIconStore(s => s.bumpIcon);
+  const headerIconKey = useIconStore(s => s.versions[id] || 1);
+
+  const transientStatuses = ['installing', 'starting', 'updating'];
 
   const { data: server, isLoading, isError } = useQuery({
     queryKey: ['server', id],
     queryFn: () => getServer(id),
-    refetchInterval: 10000,
+    refetchInterval: (data) => transientStatuses.includes(data?.status) ? 3000 : 10000,
   });
+
+  useEffect(() => {
+    const socket = getSocket();
+    const patch = (status, extra = {}) =>
+      qc.setQueryData(['server', id], old => old ? { ...old, status, ...extra } : old);
+
+    const onStatus     = ({ serverId, status }) => { if (serverId === id) patch(status); };
+    const onDone       = ({ serverId })         => { if (serverId === id) patch('running'); };
+    const onError      = ({ serverId })         => { if (serverId === id) patch('error'); };
+    const onUpdateDone = ({ serverId, version })=> { if (serverId === id) patch('running', { modpack_version: version }); };
+
+    socket.on('server:status',     onStatus);
+    socket.on('install:done',      onDone);
+    socket.on('install:error',     onError);
+    socket.on('server:update-done', onUpdateDone);
+    return () => {
+      socket.off('server:status',     onStatus);
+      socket.off('install:done',      onDone);
+      socket.off('install:error',     onError);
+      socket.off('server:update-done', onUpdateDone);
+    };
+  }, [id, qc]);
 
   const startMut = useMutation({
     mutationFn: () => startServer(id),
@@ -612,8 +639,6 @@ export default function ServerDetailPage() {
                   try {
                     const resized = await resizeTo64(file);
                     await uploadServerIcon(server.id, resized);
-                    const v = Date.now();
-                    setHeaderIconKey(v);
                     bumpIcon(server.id);
                     toast.success(t('server.settings.iconUpdated'));
                   } catch (err) {
@@ -679,7 +704,7 @@ export default function ServerDetailPage() {
                     title={t('server.settings.serverName')}
                   >
                     {server.name}
-                    <Pencil size={11} strokeWidth={1.5} className="text-[#4A4A55] opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                    <Pencil size={11} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
                   </h1>
                 )}
                 <StatusBadge status={server.status} />

@@ -96,7 +96,7 @@
     "worldImportHint": "— optionales ZIP",
     "worldImportClick": "Klicken Sie, um eine .zip auszuwählen",
     "worldRemove": "Entfernen",
-    "onlineMode": "Premium-Modus (offizielle Minecraft-Konten)",
+    "onlineMode": "Premium-Kontomodus",
     "onlineModeOn": "Aktiviert — echte Skins, Mojang-Auth. Geknackte Konten können nicht verbinden.",
     "onlineModeOff": "Deaktiviert — Cracked-Modus, alle Spieler akzeptiert (keine offiziellen Skins).",
     "deploying": "Wird erstellt...",
@@ -119,6 +119,7 @@
       "update": "Aktualisieren",
       "backup": "Backup",
       "importWorld": "Welt importieren",
+      "downloadWorld": "Welt herunterladen",
       "delete": "Löschen",
       "installMods": "Mods installieren",
       "reinstall": "Reinstall"
@@ -306,7 +307,7 @@
     "curseforgeDesc": "Schlüssel auf console.curseforge.com — erforderlich für den CurseForge-Katalog",
     "modrinthDesc": "Verbessert das Rate-Limit für Modrinth-Suchen. Auf modrinth.com/settings/pats verfügbar",
     "modrinthOptional": "Modrinth API-Schlüssel (optional)",
-    "appearance": "Erscheinungsbild"
+    "appearance": "Minecraft-Erscheinungsbild"
   },
   "sources": {
     "title": "Quellen",

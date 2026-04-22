@@ -50,7 +50,7 @@ export default function IconPicker({ value, onChange, label }) {
       </label>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-[#6B6B76]">{label || t('server.settings.icon')}</p>
-        <p className="text-[11px] text-[#4A4A55] mt-0.5">{t('server.settings.iconHint')}</p>
+        <p className="text-[11px] text-[#4A4A55] mt-0.5">64×64 px</p>
         {preview && (
           <button type="button" onClick={handleRemove} className="flex items-center gap-1 text-[11px] text-[#F87171] mt-1 hover:opacity-80 transition-opacity">
             <X size={10} strokeWidth={2} /> {t('deploy.worldRemove')}

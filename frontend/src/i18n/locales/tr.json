@@ -96,7 +96,7 @@
     "worldImportHint": "— isteğe bağlı zip",
     "worldImportClick": ".zip seçmek için tıklayın",
     "worldRemove": "Kaldır",
-    "onlineMode": "Premium Mod (resmi Minecraft hesapları)",
+    "onlineMode": "Premium hesap modu",
     "onlineModeOn": "Etkin — gerçek skinler, Mojang kimlik doğrulama. Kırık hesaplar bağlanamaz.",
     "onlineModeOff": "Devre dışı — cracked modu, tüm oyuncular kabul edilir (resmi skin yok).",
     "deploying": "Oluşturuluyor...",
@@ -119,6 +119,7 @@
       "update": "Güncelle",
       "backup": "Yedekle",
       "importWorld": "Dünya içe aktar",
+      "downloadWorld": "Dünyayı indir",
       "delete": "Sil",
       "installMods": "Mod yükle",
       "reinstall": "Reinstall"
@@ -126,6 +127,7 @@
     "status": {
       "running": "Çevrimiçi",
       "stopped": "Durduruldu",
+      "starting": "Başlatılıyor",
       "installing": "Yükleniyor",
       "updating": "Güncelleniyor",
       "error": "Hata"
@@ -306,7 +308,7 @@
     "curseforgeDesc": "console.curseforge.com'dan anahtar alın — CurseForge kataloğu için gerekli",
     "modrinthDesc": "Modrinth aramaları için hız sınırını artırır. modrinth.com/settings/pats'ta mevcut",
     "modrinthOptional": "Modrinth API anahtarı (isteğe bağlı)",
-    "appearance": "Görünüm"
+    "appearance": "Minecraft Görünümü"
   },
   "sources": {
     "title": "Kaynaklar",

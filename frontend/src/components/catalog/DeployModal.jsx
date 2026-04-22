@@ -99,8 +99,6 @@ export default function DeployModal({ modpack, onClose }) {
       <div className="p-6">
         <form onSubmit={handleDeploy} className="space-y-5">
 
-          <IconPicker value={iconFile} onChange={setIconFile} />
-
           {/* Version selector */}
           <div>
             <label className="label">{t('deploy.version')}</label>
@@ -124,34 +122,13 @@ export default function DeployModal({ modpack, onClose }) {
             )}
           </div>
 
-          {/* Auto-detected loader info */}
-          {selectedVersion && (detectedLoaders.length > 0 || detectedMcVersions.length > 0) && (
-            <div className="flex gap-2 flex-wrap">
-              {detectedMcVersions.length > 0 && (
-                <span
-                  className="text-xs px-2 py-1 rounded-md text-[#6B6B76]"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
-                >
-                  MC {detectedMcVersions.slice(0, 2).join(', ')}
-                </span>
-              )}
-              {detectedLoaders.map(l => (
-                <span
-                  key={l}
-                  className="text-xs px-2 py-1 rounded-md text-[#6B6B76]"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
-                >
-                  {LOADER_LABELS[l] || l}
-                </span>
-              ))}
-              <span className="text-xs text-[#4A4A55] self-center">{t('deploy.loaderAuto')}</span>
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">{t('deploy.serverName')}</label>
-              <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required />
+              <div className="flex items-center gap-2">
+                <IconPicker value={iconFile} onChange={setIconFile} />
+                <input className="input flex-1" value={form.name} onChange={e => set('name', e.target.value)} required />
+              </div>
             </div>
             <div>
               <label className="label">{t('deploy.port')}</label>
@@ -223,24 +200,20 @@ export default function DeployModal({ modpack, onClose }) {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 rounded" checked={form.whitelist_enabled}
-              onChange={e => set('whitelist_enabled', e.target.checked)}
-              style={{ accentColor: '#4ADE80' }} />
-            <span className="text-sm text-[#6B6B76]">{t('deploy.whitelist')}</span>
-          </label>
-
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 rounded" checked={form.online_mode}
-              onChange={e => set('online_mode', e.target.checked)}
-              style={{ accentColor: '#4ADE80' }} />
-            <div className="flex flex-col">
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded" checked={form.whitelist_enabled}
+                onChange={e => set('whitelist_enabled', e.target.checked)}
+                style={{ accentColor: '#4ADE80' }} />
+              <span className="text-sm text-[#6B6B76]">{t('deploy.whitelist')}</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer ml-auto">
+              <input type="checkbox" className="w-4 h-4 rounded" checked={form.online_mode}
+                onChange={e => set('online_mode', e.target.checked)}
+                style={{ accentColor: '#4ADE80' }} />
               <span className="text-sm text-[#6B6B76]">{t('deploy.onlineMode')}</span>
-              <span className="text-[11px] text-[#4A4A55]">
-                {form.online_mode ? t('deploy.onlineModeOn') : t('deploy.onlineModeOff')}
-              </span>
-            </div>
-          </label>
+            </label>
+          </div>
 
           <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying}>
             <Rocket size={14} strokeWidth={1.5} />

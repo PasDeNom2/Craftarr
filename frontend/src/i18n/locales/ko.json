@@ -126,6 +126,7 @@
     "status": {
       "running": "온라인",
       "stopped": "중지됨",
+      "starting": "시작 중",
       "installing": "설치 중",
       "updating": "업데이트 중",
       "error": "오류"

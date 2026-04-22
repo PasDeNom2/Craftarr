@@ -96,7 +96,7 @@
     "worldImportHint": "— zip opcional",
     "worldImportClick": "Clique para selecionar um .zip",
     "worldRemove": "Remover",
-    "onlineMode": "Modo Premium (contas oficiais do Minecraft)",
+    "onlineMode": "Modo conta premium",
     "onlineModeOn": "Ativado — skins reais, auth Mojang. Contas pirateadas não podem se conectar.",
     "onlineModeOff": "Desativado — modo cracked, todos os jogadores aceitos (sem skins oficiais).",
     "deploying": "Criando...",
@@ -119,6 +119,7 @@
       "update": "Atualizar",
       "backup": "Backup",
       "importWorld": "Importar mundo",
+      "downloadWorld": "Baixar mundo",
       "delete": "Excluir",
       "installMods": "Instalar mods",
       "reinstall": "Reinstall"
@@ -126,6 +127,7 @@
     "status": {
       "running": "Online",
       "stopped": "Parado",
+      "starting": "Iniciando",
       "installing": "Instalando",
       "updating": "Atualizando",
       "error": "Erro"
@@ -306,7 +308,7 @@
     "curseforgeDesc": "Obtenha sua chave em console.curseforge.com — necessária para o catálogo CurseForge",
     "modrinthDesc": "Melhora o limite de requisições para pesquisas Modrinth. Disponível em modrinth.com/settings/pats",
     "modrinthOptional": "Chave API Modrinth (opcional)",
-    "appearance": "Aparência"
+    "appearance": "Aparência Minecraft"
   },
   "sources": {
     "title": "Fontes",

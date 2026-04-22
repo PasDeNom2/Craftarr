@@ -461,6 +461,34 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
   });
 });
 
+// GET /api/servers/:id/world-download — Télécharger le dossier world en ZIP
+router.get('/:id/world-download', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+
+    const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip();
+
+    let hasWorld = false;
+    for (const dir of ['world', 'world_nether', 'world_the_end']) {
+      const p = path.join(serverDir, dir);
+      if (fs.existsSync(p)) { zip.addLocalFolder(p, dir); hasWorld = true; }
+    }
+
+    if (!hasWorld) return res.status(404).json({ error: 'Aucun dossier world trouvé' });
+
+    const buf = zip.toBuffer();
+    const filename = `${server.name.replace(/[^a-z0-9_-]/gi, '_')}_world.zip`;
+    res.set('Content-Type', 'application/zip');
+    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    res.set('Content-Length', buf.length);
+    res.send(buf);
+  } catch (err) { next(err); }
+});
+
 // PATCH /api/servers/:id — Modifier les paramètres du serveur
 // Champs qui nécessitent une recréation du container (port bindings, env vars Docker)
 const CONTAINER_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);

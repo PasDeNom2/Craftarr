@@ -61,6 +61,18 @@ export const importWorld = (id, file) => {
   }).then(r => r.data);
 };
 
+export const downloadWorld = async (id, serverName) => {
+  const res = await api.get(`/servers/${id}/world-download`, { responseType: 'blob' });
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${serverName}_world.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 export const patchServer = (id, data) => api.patch(`/servers/${id}`, data).then(r => r.data);
 export const recreateContainer = (id) => api.post(`/servers/${id}/recreate`).then(r => r.data);
 export const installMods = (id) => api.post(`/servers/${id}/install-mods`).then(r => r.data);

@@ -147,12 +147,13 @@ export default function VanillaModal({ open, onClose }) {
             )}
           </div>
 
-          <IconPicker value={iconFile} onChange={setIconFile} />
-
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">{t('deploy.serverName')}</label>
-              <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required />
+              <div className="flex items-center gap-2">
+                <IconPicker value={iconFile} onChange={setIconFile} />
+                <input className="input flex-1" value={form.name} onChange={e => set('name', e.target.value)} required />
+              </div>
             </div>
             <div>
               <label className="label">{t('deploy.port')}</label>
@@ -253,24 +254,18 @@ export default function VanillaModal({ open, onClose }) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 rounded" checked={form.whitelist_enabled}
                 onChange={e => set('whitelist_enabled', e.target.checked)}
                 style={{ accentColor: 'var(--accent)' }} />
               <span className="text-sm text-[#6B6B76]">{t('deploy.whitelist')}</span>
             </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer ml-auto">
               <input type="checkbox" className="w-4 h-4 rounded" checked={form.online_mode}
                 onChange={e => set('online_mode', e.target.checked)}
                 style={{ accentColor: 'var(--accent)' }} />
-              <div className="flex flex-col">
-                <span className="text-sm text-[#6B6B76]">{t('deploy.onlineMode')}</span>
-                <span className="text-[11px] text-[#4A4A55]">
-                  {form.online_mode ? t('deploy.onlineModeOn') : t('deploy.onlineModeOff')}
-                </span>
-              </div>
+              <span className="text-sm text-[#6B6B76]">{t('deploy.onlineMode')}</span>
             </label>
           </div>
 

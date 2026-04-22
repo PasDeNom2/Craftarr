@@ -96,7 +96,7 @@
     "worldImportHint": "— volitelný zip",
     "worldImportClick": "Klikněte pro výběr .zip",
     "worldRemove": "Odstranit",
-    "onlineMode": "Prémiový režim (officiální účty Minecraft)",
+    "onlineMode": "Režim prémiovího účtu",
     "onlineModeOn": "Povoleno — skutečné skiny, auth Mojang. Cracknuté účty se nemohou připojit.",
     "onlineModeOff": "Zakázáno — cracked režim, všichni hráči přijati (žádné officiální skiny).",
     "deploying": "Vytváření...",
@@ -119,6 +119,7 @@
       "update": "Aktualizovat",
       "backup": "Záloha",
       "importWorld": "Importovat svět",
+      "downloadWorld": "Stáhnout svět",
       "delete": "Smazat",
       "installMods": "Nainstalovat módy",
       "reinstall": "Reinstall"
@@ -126,6 +127,7 @@
     "status": {
       "running": "Online",
       "stopped": "Zastaven",
+      "starting": "Spouštění",
       "installing": "Instalace",
       "updating": "Aktualizace",
       "error": "Chyba"
@@ -306,7 +308,7 @@
     "curseforgeDesc": "Získejte klíč na console.curseforge.com — vyžadováno pro CurseForge katalog",
     "modrinthDesc": "Zvyšuje limit požadavků pro vyhledávání Modrinth. Dostupné na modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API klíč (volitelný)",
-    "appearance": "Vzhled"
+    "appearance": "Vzhled Minecraft"
   },
   "sources": {
     "title": "Zdroje",
