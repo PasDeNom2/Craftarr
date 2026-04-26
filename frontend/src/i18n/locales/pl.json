@@ -57,7 +57,9 @@
     "noResults": "Nie znaleziono modpaków",
     "noResultsHint": "Spróbuj innego wyszukiwania",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Utwórz serwer Minecraft Vanilla"
+    "vanillaHint": "Utwórz serwer Minecraft Vanilla",
+    "filters": "Filtry", "filtersClear": "Wyczyść wszystko", "filterVersion": "Wersja MC", "filterCategory": "Kategoria", "filterSource": "Źródło",
+    "category": { "adventure": "Przygoda i RPG", "technology": "Technologia", "magic": "Magia", "exploration": "Eksploracja", "combat": "Walka / PvP", "quests": "Questy", "multiplayer": "Multiplayer", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Lekki", "sci-fi": "Sci-Fi" }
   },
   "modpack": {
     "deploy": "Wdróż",
@@ -66,7 +68,8 @@
     "source": "Źródło",
     "versions": "Wersje",
     "close": "Zamknij",
-    "openPage": "Otwórz stronę"
+    "openPage": "Otwórz stronę",
+    "tabOverview": "Przegląd", "tabMods": "Mody", "officialSite": "Oficjalna strona", "by": "Przez", "noDescription": "Brak opisu.", "searchMod": "Szukaj moda…", "modsLoading": "Pobieranie listy modów…", "modsLoadingHint": "Modpack jest pobierany i analizowany, może to potrwać kilka sekund.", "modsError": "Nie można pobrać listy", "modsErrorHint": "Modpack może nie używać standardowego formatu (mrpack / manifest.json).", "modsCount": "{count} modów w tym modpacku", "modsResults": "{count} wynik(ów) z {total} modów", "modsNoMatch": "Brak modów pasujących do \"{search}\"", "modsEmpty": "Nie znaleziono modów w tym modpacku."
   },
   "deploy": {
     "title": "Wdróż",

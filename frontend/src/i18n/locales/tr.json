@@ -57,7 +57,9 @@
     "noResults": "Modpack bulunamadı",
     "noResultsHint": "Farklı bir arama terimi deneyin",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Vanilla Minecraft sunucusu oluştur"
+    "vanillaHint": "Vanilla Minecraft sunucusu oluştur",
+    "filters": "Filtreler", "filtersClear": "Tümünü temizle", "filterVersion": "MC Sürümü", "filterCategory": "Kategori", "filterSource": "Kaynak",
+    "category": { "adventure": "Macera ve RPG", "technology": "Teknoloji", "magic": "Büyü", "exploration": "Keşif", "combat": "Savaş / PvP", "quests": "Görevler", "multiplayer": "Çok Oyunculu", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Hafif", "sci-fi": "Bilim Kurgu" }
   },
   "modpack": {
     "deploy": "Dağıt",
@@ -66,7 +68,8 @@
     "source": "Kaynak",
     "versions": "Sürümler",
     "close": "Kapat",
-    "openPage": "Sayfayı aç"
+    "openPage": "Sayfayı aç",
+    "tabOverview": "Genel Bakış", "tabMods": "Modlar", "officialSite": "Resmi site", "by": "Tarafından", "noDescription": "Açıklama mevcut değil.", "searchMod": "Mod ara…", "modsLoading": "Mod listesi alınıyor…", "modsLoadingHint": "Modpack indiriliyor ve analiz ediliyor, bu birkaç saniye sürebilir.", "modsError": "Liste alınamıyor", "modsErrorHint": "Modpack standart format kullanmıyor olabilir (mrpack / manifest.json).", "modsCount": "Bu modpackte {count} mod var", "modsResults": "{total} moddan {count} sonuç", "modsNoMatch": "\"{search}\" ile eşleşen mod yok", "modsEmpty": "Bu modpackte mod bulunamadı."
   },
   "deploy": {
     "title": "Dağıt",

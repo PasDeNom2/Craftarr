@@ -57,7 +57,9 @@
     "noResults": "Inga modpaket hittades",
     "noResultsHint": "Prova ett annat sökord",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Skapa en Vanilla Minecraft-server"
+    "vanillaHint": "Skapa en Vanilla Minecraft-server",
+    "filters": "Filter", "filtersClear": "Rensa alla", "filterVersion": "MC-version", "filterCategory": "Kategori", "filterSource": "Källa",
+    "category": { "adventure": "Äventyr & RPG", "technology": "Teknik", "magic": "Magi", "exploration": "Utforskning", "combat": "Strid / PvP", "quests": "Uppdrag", "multiplayer": "Flerspelare", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Lätt", "sci-fi": "Sci-Fi" }
   },
   "modpack": {
     "deploy": "Driftsätt",
@@ -66,7 +68,8 @@
     "source": "Källa",
     "versions": "Versioner",
     "close": "Stäng",
-    "openPage": "Visa sida"
+    "openPage": "Visa sida",
+    "tabOverview": "Översikt", "tabMods": "Mods", "officialSite": "Officiell sida", "by": "Av", "noDescription": "Ingen beskrivning tillgänglig.", "searchMod": "Sök en mod…", "modsLoading": "Hämtar modlista…", "modsLoadingHint": "Modpaketet laddas ned och analyseras, det kan ta några sekunder.", "modsError": "Kan inte hämta listan", "modsErrorHint": "Modpaketet kanske inte använder standardformat (mrpack / manifest.json).", "modsCount": "{count} mods i detta modpaket", "modsResults": "{count} resultat av {total} mods", "modsNoMatch": "Ingen mod matchar \"{search}\"", "modsEmpty": "Inga mods hittades i detta modpaket."
   },
   "deploy": {
     "title": "Driftsätt",

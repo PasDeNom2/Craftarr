@@ -57,7 +57,9 @@
     "noResults": "Modpackが見つかりません",
     "noResultsHint": "別の検索語を試してください",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "バニラ Minecraft サーバーを作成"
+    "vanillaHint": "バニラ Minecraft サーバーを作成",
+    "filters": "フィルター", "filtersClear": "すべてクリア", "filterVersion": "MCバージョン", "filterCategory": "カテゴリ", "filterSource": "ソース",
+    "category": { "adventure": "アドベンチャー＆RPG", "technology": "テクノロジー", "magic": "マジック", "exploration": "探索", "combat": "戦闘/PvP", "quests": "クエスト", "multiplayer": "マルチプレイヤー", "challenging": "ハードコア", "kitchen-sink": "キッチンシンク", "lightweight": "軽量", "sci-fi": "SF" }
   },
   "modpack": {
     "deploy": "デプロイ",
@@ -66,7 +68,8 @@
     "source": "ソース",
     "versions": "バージョン",
     "close": "閉じる",
-    "openPage": "ページを開く"
+    "openPage": "ページを開く",
+    "tabOverview": "概要", "tabMods": "MOD", "officialSite": "公式サイト", "by": "作者", "noDescription": "説明はありません。", "searchMod": "MODを検索…", "modsLoading": "MODリストを取得中…", "modsLoadingHint": "モッドパックをダウンロードして分析しています。数秒かかる場合があります。", "modsError": "リストを取得できませんでした", "modsErrorHint": "このモッドパックは標準形式（mrpack / manifest.json）を使用していない可能性があります。", "modsCount": "このモッドパックには{count}個のMOD", "modsResults": "{total}個のMODから{count}件の結果", "modsNoMatch": "「{search}」に一致するMODなし", "modsEmpty": "このモッドパックにMODが見つかりません。"
   },
   "deploy": {
     "title": "デプロイ",

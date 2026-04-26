@@ -57,7 +57,9 @@
     "noResults": "모드팩 없음",
     "noResultsHint": "다른 검색어를 시도해보세요",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "바닐라 Minecraft 서버 만들기"
+    "vanillaHint": "바닐라 Minecraft 서버 만들기",
+    "filters": "필터", "filtersClear": "모두 지우기", "filterVersion": "MC 버전", "filterCategory": "카테고리", "filterSource": "소스",
+    "category": { "adventure": "어드벤처 & RPG", "technology": "기술", "magic": "마법", "exploration": "탐험", "combat": "전투 / PvP", "quests": "퀘스트", "multiplayer": "멀티플레이어", "challenging": "하드코어", "kitchen-sink": "키친 싱크", "lightweight": "경량", "sci-fi": "SF" }
   },
   "modpack": {
     "deploy": "배포",
@@ -66,7 +68,8 @@
     "source": "소스",
     "versions": "버전",
     "close": "닫기",
-    "openPage": "페이지 열기"
+    "openPage": "페이지 열기",
+    "tabOverview": "개요", "tabMods": "모드", "officialSite": "공식 사이트", "by": "제작자", "noDescription": "설명이 없습니다.", "searchMod": "모드 검색…", "modsLoading": "모드 목록 가져오는 중…", "modsLoadingHint": "모드팩을 다운로드하고 분석하는 중입니다. 몇 초가 걸릴 수 있습니다.", "modsError": "목록을 가져올 수 없습니다", "modsErrorHint": "이 모드팩은 표준 형식(mrpack / manifest.json)을 사용하지 않을 수 있습니다.", "modsCount": "이 모드팩에는 {count}개의 모드", "modsResults": "{total}개 모드 중 {count}개 결과", "modsNoMatch": "\"{search}\"에 일치하는 모드 없음", "modsEmpty": "이 모드팩에서 모드를 찾을 수 없습니다."
   },
   "deploy": {
     "title": "배포",

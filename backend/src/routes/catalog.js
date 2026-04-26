@@ -1,5 +1,6 @@
 const express = require('express');
-const { aggregateSearch, getModpackDetail, getModpackVersions } = require('../services/sourceAggregator');
+const { aggregateSearch, getModpackDetail, getModpackVersions, getSourceApiKey } = require('../services/sourceAggregator');
+const { getDb } = require('../config/database');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
@@ -7,10 +8,13 @@ const router = express.Router();
 // GET /api/catalog?query=&mcVersion=&limit=&offset=
 router.get('/', authMiddleware, async (req, res, next) => {
   try {
-    const { query = '', mcVersion, limit = 20, offset = 0 } = req.query;
+    const { query = '', mcVersion, loader, category, source, limit = 20, offset = 0 } = req.query;
     const results = await aggregateSearch({
       query,
       mcVersion,
+      loader,
+      category,
+      source: source || undefined,
       pageSize: Number(limit),
       index: Number(offset),
       limit: Number(limit),
@@ -28,6 +32,29 @@ router.get('/:source/:id', authMiddleware, async (req, res, next) => {
     const detail = await getModpackDetail(source, id);
     if (!detail) return res.status(404).json({ error: 'Modpack introuvable' });
     res.json(detail);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/catalog/:source/:id/mods
+router.get('/:source/:id/mods', authMiddleware, async (req, res, next) => {
+  try {
+    const { source, id } = req.params;
+    const db = getDb();
+    const sourceRow = db.prepare('SELECT * FROM api_sources WHERE id = ?').get(source);
+    if (!sourceRow) return res.status(404).json({ error: 'Source inconnue' });
+    const apiKey = getSourceApiKey(sourceRow);
+
+    let mods = [];
+    if (source === 'modrinth') {
+      const modrinth = require('../services/modrinth');
+      mods = await modrinth.getModList(apiKey, id);
+    } else if (source === 'curseforge') {
+      const curseforge = require('../services/curseforge');
+      mods = await curseforge.getModList(apiKey, id);
+    }
+    res.json({ mods, total: mods.length });
   } catch (err) {
     next(err);
   }

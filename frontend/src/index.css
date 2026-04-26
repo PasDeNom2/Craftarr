@@ -186,3 +186,37 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .card-in { animation: card-in 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── CurseForge HTML description ── */
+.cf-description h1, .cf-description h2, .cf-description h3, .cf-description h4 {
+  color: #D0D0D8;
+  font-weight: 600;
+  margin: 1rem 0 0.4rem;
+  line-height: 1.3;
+}
+.cf-description h1 { font-size: 1.1rem; }
+.cf-description h2 { font-size: 1rem; }
+.cf-description h3 { font-size: 0.9rem; }
+.cf-description p  { margin: 0.4rem 0; }
+.cf-description ul, .cf-description ol {
+  padding-left: 1.25rem;
+  margin: 0.4rem 0;
+}
+.cf-description li { margin: 0.15rem 0; }
+.cf-description a  { color: var(--accent); text-decoration: none; }
+.cf-description a:hover { text-decoration: underline; }
+.cf-description img { max-width: 100%; border-radius: 8px; margin: 0.5rem 0; }
+.cf-description hr  { border-color: rgba(255,255,255,0.08); margin: 1rem 0; }
+.cf-description strong { color: #E0E0E8; }
+.cf-description code {
+  background: rgba(255,255,255,0.06);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.cf-description blockquote {
+  border-left: 3px solid rgba(255,255,255,0.12);
+  padding-left: 0.75rem;
+  color: #4A4A55;
+  margin: 0.5rem 0;
+}

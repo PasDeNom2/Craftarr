@@ -38,6 +38,7 @@ export const getMe = () => api.get('/auth/me').then(r => r.data);
 export const getCatalog = (params) => api.get('/catalog', { params }).then(r => r.data);
 export const getModpackDetail = (source, id) => api.get(`/catalog/${source}/${id}`).then(r => r.data);
 export const getModpackVersions = (source, id) => api.get(`/catalog/${source}/${id}/versions`).then(r => r.data);
+export const getModpackMods     = (source, id) => api.get(`/catalog/${source}/${id}/mods`).then(r => r.data);
 
 // Servers
 export const getServers = () => api.get('/servers').then(r => r.data);

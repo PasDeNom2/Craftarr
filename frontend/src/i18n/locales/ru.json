@@ -57,7 +57,9 @@
     "noResults": "Модпаки не найдены",
     "noResultsHint": "Попробуйте другой поисковый запрос",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Создать Vanilla-сервер Minecraft"
+    "vanillaHint": "Создать Vanilla-сервер Minecraft",
+    "filters": "Фильтры", "filtersClear": "Очистить всё", "filterVersion": "Версия MC", "filterCategory": "Категория", "filterSource": "Источник",
+    "category": { "adventure": "Приключения и RPG", "technology": "Технологии", "magic": "Магия", "exploration": "Исследование", "combat": "Бой / PvP", "quests": "Квесты", "multiplayer": "Мультиплеер", "challenging": "Хардкор", "kitchen-sink": "Kitchen Sink", "lightweight": "Лёгкий", "sci-fi": "Sci-Fi" }
   },
   "modpack": {
     "deploy": "Развернуть",
@@ -66,7 +68,8 @@
     "source": "Источник",
     "versions": "Версии",
     "close": "Закрыть",
-    "openPage": "Открыть страницу"
+    "openPage": "Открыть страницу",
+    "tabOverview": "Обзор", "tabMods": "Моды", "officialSite": "Официальный сайт", "by": "Автор", "noDescription": "Описание недоступно.", "searchMod": "Поиск мода…", "modsLoading": "Получение списка модов…", "modsLoadingHint": "Модпак загружается и анализируется, это может занять несколько секунд.", "modsError": "Не удалось получить список", "modsErrorHint": "Модпак может не использовать стандартный формат (mrpack / manifest.json).", "modsCount": "{count} модов в этом модпаке", "modsResults": "{count} результат(ов) из {total} модов", "modsNoMatch": "Нет модов, соответствующих \"{search}\"", "modsEmpty": "Моды в этом модпаке не найдены."
   },
   "deploy": {
     "title": "Развернуть",

@@ -57,7 +57,9 @@
     "noResults": "Žádné modpacky nenalezeny",
     "noResultsHint": "Zkuste jiný výraz",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Vytvořit Vanilla Minecraft server"
+    "vanillaHint": "Vytvořit Vanilla Minecraft server",
+    "filters": "Filtry", "filtersClear": "Vymazat vše", "filterVersion": "Verze MC", "filterCategory": "Kategorie", "filterSource": "Zdroj",
+    "category": { "adventure": "Dobrodružství a RPG", "technology": "Technologie", "magic": "Magie", "exploration": "Průzkum", "combat": "Boj / PvP", "quests": "Úkoly", "multiplayer": "Multiplayer", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Lehký", "sci-fi": "Sci-Fi" }
   },
   "modpack": {
     "deploy": "Nasadit",
@@ -66,7 +68,8 @@
     "source": "Zdroj",
     "versions": "Verze",
     "close": "Zavřít",
-    "openPage": "Zobrazit stránku"
+    "openPage": "Zobrazit stránku",
+    "tabOverview": "Přehled", "tabMods": "Mody", "officialSite": "Oficiální stránka", "by": "Od", "noDescription": "Žádný popis k dispozici.", "searchMod": "Hledat mod…", "modsLoading": "Načítání seznamu modů…", "modsLoadingHint": "Modpack se stahuje a analyzuje, může to trvat několik sekund.", "modsError": "Nelze načíst seznam", "modsErrorHint": "Modpack nemusí používat standardní formát (mrpack / manifest.json).", "modsCount": "{count} modů v tomto modpacku", "modsResults": "{count} výsledek/výsledků z {total} modů", "modsNoMatch": "Žádný mod neodpovídá \"{search}\"", "modsEmpty": "V tomto modpacku nebyly nalezeny žádné mody."
   },
   "deploy": {
     "title": "Nasadit",

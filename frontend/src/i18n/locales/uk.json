@@ -57,7 +57,9 @@
     "noResults": "Модпаки не знайдено",
     "noResultsHint": "Спробуйте інший пошуковий запит",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Створити Vanilla-сервер Minecraft"
+    "vanillaHint": "Створити Vanilla-сервер Minecraft",
+    "filters": "Фільтри", "filtersClear": "Очистити все", "filterVersion": "Версія MC", "filterCategory": "Категорія", "filterSource": "Джерело",
+    "category": { "adventure": "Пригоди та RPG", "technology": "Технології", "magic": "Магія", "exploration": "Дослідження", "combat": "Бій / PvP", "quests": "Квести", "multiplayer": "Мультиплеєр", "challenging": "Хардкор", "kitchen-sink": "Kitchen Sink", "lightweight": "Легкий", "sci-fi": "Sci-Fi" }
   },
   "modpack": {
     "deploy": "Розгорнути",
@@ -66,7 +68,8 @@
     "source": "Джерело",
     "versions": "Версії",
     "close": "Закрити",
-    "openPage": "Відкрити сторінку"
+    "openPage": "Відкрити сторінку",
+    "tabOverview": "Огляд", "tabMods": "Моди", "officialSite": "Офіційний сайт", "by": "Автор", "noDescription": "Опис недоступний.", "searchMod": "Пошук мода…", "modsLoading": "Отримання списку модів…", "modsLoadingHint": "Модпак завантажується та аналізується, це може зайняти кілька секунд.", "modsError": "Не вдалося отримати список", "modsErrorHint": "Модпак може не використовувати стандартний формат (mrpack / manifest.json).", "modsCount": "{count} модів у цьому модпаку", "modsResults": "{count} результат(ів) з {total} модів", "modsNoMatch": "Немає модів, що відповідають \"{search}\"", "modsEmpty": "Моди в цьому модпаку не знайдено."
   },
   "deploy": {
     "title": "Розгорнути",

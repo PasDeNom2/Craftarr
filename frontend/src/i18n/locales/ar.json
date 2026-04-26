@@ -57,7 +57,9 @@
     "noResults": "لم يتم العثور على حزم تعديل",
     "noResultsHint": "جرب مصطلح بحث آخر",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "إنشاء خادم Minecraft Vanilla"
+    "vanillaHint": "إنشاء خادم Minecraft Vanilla",
+    "filters": "فلاتر", "filtersClear": "مسح الكل", "filterVersion": "إصدار MC", "filterCategory": "الفئة", "filterSource": "المصدر",
+    "category": { "adventure": "مغامرة و RPG", "technology": "تقنية", "magic": "سحر", "exploration": "استكشاف", "combat": "قتال / PvP", "quests": "مهام", "multiplayer": "متعدد اللاعبين", "challenging": "صعب", "kitchen-sink": "Kitchen Sink", "lightweight": "خفيف", "sci-fi": "خيال علمي" }
   },
   "modpack": {
     "deploy": "نشر",
@@ -66,7 +68,8 @@
     "source": "المصدر",
     "versions": "الإصدارات",
     "close": "إغلاق",
-    "openPage": "عرض الصفحة"
+    "openPage": "عرض الصفحة",
+    "tabOverview": "نظرة عامة", "tabMods": "الإضافات", "officialSite": "الموقع الرسمي", "by": "بواسطة", "noDescription": "لا يوجد وصف.", "searchMod": "البحث عن إضافة…", "modsLoading": "جارٍ جلب قائمة الإضافات…", "modsLoadingHint": "يتم تنزيل حزمة الإضافات وتحليلها، قد يستغرق ذلك بضع ثوانٍ.", "modsError": "تعذّر جلب القائمة", "modsErrorHint": "قد لا تستخدم حزمة الإضافات تنسيقاً قياسياً (mrpack / manifest.json).", "modsCount": "{count} إضافة في هذه الحزمة", "modsResults": "{count} نتيجة من أصل {total} إضافة", "modsNoMatch": "لا توجد إضافات مطابقة لـ\"{search}\"", "modsEmpty": "لم يتم العثور على إضافات في هذه الحزمة."
   },
   "deploy": {
     "title": "نشر",

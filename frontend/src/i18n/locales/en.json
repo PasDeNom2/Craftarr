@@ -57,7 +57,13 @@
     "noResults": "No modpacks found",
     "noResultsHint": "Try a different search term",
     "vanilla": "+ Vanilla",
-    "vanillaHint": "Create a Vanilla Minecraft server"
+    "vanillaHint": "Create a Vanilla Minecraft server",
+    "filters": "Filters",
+    "filtersClear": "Clear all",
+    "filterVersion": "MC Version",
+    "filterCategory": "Category",
+    "filterSource": "Source",
+    "category": { "adventure": "Adventure & RPG", "technology": "Technology", "magic": "Magic", "exploration": "Exploration", "combat": "Combat / PvP", "quests": "Quests", "multiplayer": "Multiplayer", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Lightweight", "sci-fi": "Sci-Fi" }
   },
   "modpack": {
     "deploy": "Deploy",
@@ -66,7 +72,21 @@
     "source": "Source",
     "versions": "Versions",
     "close": "Close",
-    "openPage": "View page"
+    "openPage": "View page",
+    "tabOverview": "Overview",
+    "tabMods": "Mods",
+    "officialSite": "Official site",
+    "by": "By",
+    "noDescription": "No description available.",
+    "searchMod": "Search a mod…",
+    "modsLoading": "Fetching mod list…",
+    "modsLoadingHint": "The modpack is being downloaded and analysed, this may take a few seconds.",
+    "modsError": "Unable to fetch the list",
+    "modsErrorHint": "The modpack may not use a standard format (mrpack / manifest.json).",
+    "modsCount": "{count} mods in this modpack",
+    "modsResults": "{count} result(s) out of {total} mods",
+    "modsNoMatch": "No mod matching \"{search}\"",
+    "modsEmpty": "No mods found in this modpack."
   },
   "deploy": {
     "title": "Deploy",
