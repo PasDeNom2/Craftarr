@@ -47,8 +47,8 @@ router.get('/', authMiddleware, async (req, res, next) => {
     const db = getDb();
     const servers = db.prepare('SELECT * FROM servers ORDER BY created_at DESC').all();
 
-    // Mise à jour statut depuis Docker
-    const updated = await Promise.all(servers.map(async s => {
+    // Mise à jour statut depuis Docker — toujours retourner les serveurs même si Docker échoue
+    const updated = await Promise.allSettled(servers.map(async s => {
       if (!s.container_id) return formatServer(s);
       try {
         const status = await dockerService.getContainerStatus(s.container_id);
@@ -61,9 +61,16 @@ router.get('/', authMiddleware, async (req, res, next) => {
       return formatServer(s);
     }));
 
-    res.json(updated);
+    res.json(updated.map((r, i) => r.status === 'fulfilled' ? r.value : formatServer(servers[i])));
   } catch (err) {
-    next(err);
+    // En dernier recours, retourner les serveurs bruts de la DB sans vérification Docker
+    try {
+      const db = getDb();
+      const servers = db.prepare('SELECT * FROM servers ORDER BY created_at DESC').all();
+      return res.json(servers.map(formatServer));
+    } catch {
+      next(err);
+    }
   }
 });
 

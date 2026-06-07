@@ -1,33 +1,39 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { useAuthStore } from '../store';
 
 let globalSocket = null;
 
 export function getSocket() {
-  const token = localStorage.getItem('mcm_token');
-  if (!globalSocket || !globalSocket.connected) {
-    if (globalSocket) globalSocket.disconnect();
+  // Ne jamais recréer le socket s'il existe déjà — Socket.IO gère la reconnexion automatiquement.
+  // Recréer pendant une reconnexion tuerait les listeners de Layout.jsx et casserait le store.
+  if (!globalSocket) {
+    const token = localStorage.getItem('mcm_token');
     globalSocket = io('/', {
       auth: { token },
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
   }
   return globalSocket;
 }
 
-export function useSocket() {
-  const socketRef = useRef(null);
-  const token = useAuthStore(s => s.token);
+// Permet de forcer une réinitialisation du socket (ex: logout)
+export function resetSocket() {
+  if (globalSocket) {
+    globalSocket.disconnect();
+    globalSocket = null;
+  }
+}
 
+export function useSocket() {
+  const token = useAuthStore(s => s.token);
   useEffect(() => {
     if (!token) return;
-    socketRef.current = getSocket();
-    return () => {};
+    getSocket();
   }, [token]);
-
-  return socketRef.current;
 }
 
 export function useServerSocket(serverId, containerId, handlers = {}) {
@@ -41,10 +47,8 @@ export function useServerSocket(serverId, containerId, handlers = {}) {
       socket.emit('logs:subscribe', { serverId });
     }
 
-    // Si le socket se reconnecte (perte réseau, restart backend…), se ré-abonner
     socket.on('connect', subscribe);
 
-    // Abonnement initial — uniquement si déjà connecté, sinon le 'connect' s'en charge
     if (socket.connected) {
       subscribe();
     }

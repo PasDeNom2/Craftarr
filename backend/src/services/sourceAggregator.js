@@ -48,7 +48,11 @@ async function fetchFromSource(source, searchParams) {
 }
 
 async function aggregateSearch(searchParams = {}) {
-  const sources = getActiveSources();
+  let sources = getActiveSources();
+  // Filtre par source si spécifié
+  if (searchParams.source) {
+    sources = sources.filter(s => s.id === searchParams.source);
+  }
   const results = await Promise.allSettled(
     sources.map(source => fetchFromSource(source, searchParams))
   );

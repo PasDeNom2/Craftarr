@@ -99,6 +99,24 @@ export default function DeployModal({ modpack, onClose }) {
       <div className="p-6">
         <form onSubmit={handleDeploy} className="space-y-5">
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="label">{t('deploy.serverName')}</label>
+              <div className="flex items-center gap-2">
+                <IconPicker value={iconFile} onChange={setIconFile} />
+                <input className="input flex-1" value={form.name} onChange={e => set('name', e.target.value)} required />
+              </div>
+            </div>
+            <div>
+              <label className="label">{t('deploy.port')}</label>
+              <input className="input" type="number" min="1024" max="65535" value={form.port} onChange={e => set('port', +e.target.value)} />
+            </div>
+            <div>
+              <label className="label">{t('deploy.maxPlayers')}</label>
+              <input className="input" type="number" min="1" max="100" value={form.max_players} onChange={e => set('max_players', +e.target.value)} />
+            </div>
+          </div>
+
           {/* Version selector */}
           <div>
             <label className="label">{t('deploy.version')}</label>
@@ -120,24 +138,6 @@ export default function DeployModal({ modpack, onClose }) {
                 })}
               </select>
             )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">{t('deploy.serverName')}</label>
-              <div className="flex items-center gap-2">
-                <IconPicker value={iconFile} onChange={setIconFile} />
-                <input className="input flex-1" value={form.name} onChange={e => set('name', e.target.value)} required />
-              </div>
-            </div>
-            <div>
-              <label className="label">{t('deploy.port')}</label>
-              <input className="input" type="number" min="1024" max="65535" value={form.port} onChange={e => set('port', +e.target.value)} />
-            </div>
-            <div>
-              <label className="label">{t('deploy.maxPlayers')}</label>
-              <input className="input" type="number" min="1" max="100" value={form.max_players} onChange={e => set('max_players', +e.target.value)} />
-            </div>
           </div>
 
           {/* RAM slider */}

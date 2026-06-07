@@ -2,3 +2,13 @@ node_modules/
 data/
 *.env
 .env
+
+# Build output
+dist/
+frontend/dist/
+
+# Local Claude Code config
+.claude/
+
+# One-off / local dev scripts
+add_i18n.js

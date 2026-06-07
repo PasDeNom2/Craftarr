@@ -13,52 +13,65 @@ export default function Layout() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    getServers().then(setServers).catch(console.error);
+    // Merge les serveurs reçus avec le store existant pour ne jamais effacer les
+    // serveurs déjà présents en cas de réponse partielle ou d'erreur réseau transitoire.
+    function mergeServers(fresh) {
+      if (!Array.isArray(fresh) || fresh.length === 0) return;
+      setServers(fresh);
+    }
+
+    function refreshServers() {
+      getServers().then(mergeServers).catch(console.error);
+    }
+
+    refreshServers();
 
     const socket = getSocket();
 
     // Re-fetch la liste des serveurs à chaque reconnexion (rebuild backend, perte réseau…)
-    socket.on('connect', () => {
-      getServers().then(setServers).catch(console.error);
-    });
+    const onConnect = () => refreshServers();
+    socket.on('connect', onConnect);
 
-    socket.on('server:update-available', ({ serverId, serverName, latestVersion }) => {
+    socket.on('server:update-available', ({ serverName, latestVersion }) => {
       toast(`Mise à jour disponible pour ${serverName} → ${latestVersion}`, { duration: 8000 });
     });
 
-    socket.on('server:update-done', ({ serverId, version }) => {
-      updateServer(serverId, { status: 'running', modpack_version: version });
-    });
-
-    const applyStatus = (serverId, status) => {
-      updateServer(serverId, { status });
-      qc.setQueryData(['server', serverId], old => old ? { ...old, status } : old);
+    const applyStatus = (serverId, status, extra = {}) => {
+      updateServer(serverId, { status, ...extra });
+      qc.setQueryData(['server', serverId], old => old ? { ...old, status, ...extra } : old);
     };
 
-    socket.on('install:done', ({ serverId }) => applyStatus(serverId, 'running'));
-    socket.on('install:error', ({ serverId }) => applyStatus(serverId, 'error'));
-    socket.on('server:update-done', ({ serverId, version }) => {
-      updateServer(serverId, { status: 'running', modpack_version: version });
-      qc.setQueryData(['server', serverId], old => old ? { ...old, status: 'running' } : old);
-    });
-    socket.on('server:status', ({ serverId, status }) => applyStatus(serverId, status));
+    const onInstallDone    = ({ serverId }) => applyStatus(serverId, 'running');
+    const onInstallError   = ({ serverId }) => applyStatus(serverId, 'error');
+    const onUpdateDone     = ({ serverId, version }) => applyStatus(serverId, 'running', { modpack_version: version });
+    const onServerStatus   = ({ serverId, status }) => applyStatus(serverId, status);
+    const onServerCreated  = (server) => {
+      // Ajout immédiat si pas déjà dans le store (ex: créé depuis un autre client)
+      const { servers } = useServerStore.getState();
+      if (!servers.find(s => s.id === server.id)) addServer(server);
+    };
+
+    socket.on('install:done',       onInstallDone);
+    socket.on('install:error',      onInstallError);
+    socket.on('server:update-done', onUpdateDone);
+    socket.on('server:status',      onServerStatus);
+    socket.on('server:created',     onServerCreated);
 
     return () => {
-      socket.off('connect');
+      socket.off('connect',           onConnect);
+      socket.off('install:done',      onInstallDone);
+      socket.off('install:error',     onInstallError);
+      socket.off('server:update-done', onUpdateDone);
+      socket.off('server:status',     onServerStatus);
+      socket.off('server:created',    onServerCreated);
       socket.off('server:update-available');
-      socket.off('server:update-done');
-      socket.off('install:done');
-      socket.off('install:error');
-      socket.off('server:status');
     };
-
   }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar with language switcher */}
         <div
           className="flex items-center justify-end px-4 py-2 shrink-0"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
