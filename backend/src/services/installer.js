@@ -480,6 +480,8 @@ async function installGenericModpack(server, serverDir) {
   let mcVersion = server.mc_version;
   let loaderType = server.loader_type;
   let downloadUrl = null;
+  let modpackVersion = server.modpack_version;
+  let modpackVersionId = server.modpack_version_id;
 
   if (server.modpack_source === 'modrinth') {
     // Récupère la version sélectionnée (ou la plus récente)
@@ -497,6 +499,8 @@ async function installGenericModpack(server, serverDir) {
     const primaryFile = selectedVersion.files.find(f => f.primary) || selectedVersion.files[0];
     if (!primaryFile?.url) throw new Error('Aucun fichier .mrpack trouvé pour la version ' + selectedVersion.id);
     downloadUrl = primaryFile.url;
+    modpackVersion = selectedVersion.versionNumber;
+    modpackVersionId = selectedVersion.id;
 
     progress(server.id, 'download', `Téléchargement du modpack Modrinth`, 30);
     const mrpackPath = path.join(DATA_PATH, 'servers', server.id, 'modpack.mrpack');
@@ -510,10 +514,7 @@ async function installGenericModpack(server, serverDir) {
   }
 
   db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
-    .run(mcVersion, loaderType, downloadUrl,
-      selectedVersion.versionNumber,
-      selectedVersion.id,
-      server.id);
+    .run(mcVersion, loaderType, downloadUrl, modpackVersion, modpackVersionId, server.id);
 }
 
 /**
