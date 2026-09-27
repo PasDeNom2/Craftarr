@@ -265,7 +265,12 @@
     "restoreSuccess": "Återställning startad",
     "deleteSuccess": "Säkerhetskopia borttagen",
     "createSuccess": "Säkerhetskopia skapad",
-    "error": "Fel"
+    "error": "Fel",
+    "available": "säkerhetskopior tillgängliga",
+    "triggerManual": "Manuell",
+    "triggerPreUpdate": "Före uppdatering",
+    "triggerScheduled": "Schemalagd",
+    "triggerPreImport": "Före import"
   },
   "files": {
     "title": "Filer",

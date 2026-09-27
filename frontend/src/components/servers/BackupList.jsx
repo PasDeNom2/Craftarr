@@ -21,6 +21,7 @@ export default function BackupList({ server }) {
     manual:       t('backups.triggerManual'),
     'pre-update': t('backups.triggerPreUpdate'),
     scheduled:    t('backups.triggerScheduled'),
+    'pre-import': t('backups.triggerPreImport'),
   };
 
   const { data: backups = [], isLoading } = useQuery({

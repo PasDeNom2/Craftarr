@@ -48,30 +48,11 @@ async function createBackup(server, trigger = 'manual') {
   const filename = `backup-${trigger}-${timestamp}.zip`;
   const backupPath = path.join(backupsDir, filename);
 
-  // Si le serveur tourne, forcer une sauvegarde complète avant de zipper
-  const isRunning = server.status === 'running' && server.container_id;
-  if (isRunning) {
-    const rcon = require('./rcon');
-    try {
-      await rcon.sendCommand(server, 'save-all flush');
-      // Laisser 2s pour que Minecraft finisse d'écrire les fichiers
-      await new Promise(r => setTimeout(r, 2000));
-      await rcon.sendCommand(server, 'save-off');
-    } catch {
-      // RCON indisponible (serveur en démarrage) — on continue quand même
-    }
-  }
-
   try {
-    await createZipBackup(serverDir, backupPath);
+    await withWorldFlushed(server, () => createZipBackup(serverDir, backupPath));
   } catch (err) {
     try { fs.unlinkSync(backupPath); } catch {}
     throw err;
-  } finally {
-    if (isRunning) {
-      const rcon = require('./rcon');
-      try { await rcon.sendCommand(server, 'save-on'); } catch {}
-    }
   }
 
   const stats = fs.statSync(backupPath);
@@ -85,6 +66,32 @@ async function createBackup(server, trigger = 'manual') {
   console.log(`[Backup] ${trigger} backup créé pour serveur ${server.id}: ${filename} (${Math.round(stats.size / 1024 / 1024)}MB)`);
 
   return db.prepare('SELECT * FROM backups WHERE id = ?').get(id);
+}
+
+/**
+ * Exécute fn() avec un monde cohérent sur le disque : si le serveur tourne, "save-all flush"
+ * puis "save-off" (Minecraft n'écrit plus pendant la copie), et "save-on" quoi qu'il arrive.
+ */
+async function withWorldFlushed(server, fn) {
+  const isRunning = server.status === 'running' && server.container_id;
+  const rcon = require('./rcon');
+  if (isRunning) {
+    try {
+      await rcon.sendCommand(server, 'save-all flush');
+      // Laisser 2s pour que Minecraft finisse d'écrire les fichiers
+      await new Promise(r => setTimeout(r, 2000));
+      await rcon.sendCommand(server, 'save-off');
+    } catch {
+      // RCON indisponible (serveur en démarrage) — on continue quand même
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    if (isRunning) {
+      try { await rcon.sendCommand(server, 'save-on'); } catch {}
+    }
+  }
 }
 
 function createZipBackup(serverDir, outputPath) {
@@ -179,11 +186,16 @@ async function restoreBackup(server, backup) {
   console.log(`[Backup] Restore effectué pour serveur ${server.id} depuis ${backup.filename}`);
 }
 
-async function cleanOldBackups(serverId, keepCount = 10) {
+/**
+ * Ne garde que les keepCount backups les plus récents d'un type donné (scheduled, pre-update…).
+ * Toujours filtré par type : la rétention des backups automatiques ne doit jamais
+ * emporter un backup manuel.
+ */
+async function cleanOldBackups(serverId, keepCount, trigger) {
   const db = getDb();
   const backups = db.prepare(
-    'SELECT * FROM backups WHERE server_id = ? ORDER BY created_at DESC'
-  ).all(serverId);
+    'SELECT * FROM backups WHERE server_id = ? AND trigger = ? ORDER BY created_at DESC'
+  ).all(serverId, trigger);
 
   if (backups.length <= keepCount) return;
   const toDelete = backups.slice(keepCount);
@@ -192,7 +204,59 @@ async function cleanOldBackups(serverId, keepCount = 10) {
     try { fs.unlinkSync(b.path); } catch {}
     db.prepare('DELETE FROM backups WHERE id = ?').run(b.id);
   }
-  console.log(`[Backup] ${toDelete.length} anciens backups supprimés pour ${serverId}`);
+  console.log(`[Backup] ${toDelete.length} ancien(s) backup(s) "${trigger}" supprimé(s) pour ${serverId}`);
+}
+
+// ─── Backups planifiés ───────────────────────────────────────
+// BACKUP_INTERVAL_HOURS (défaut 6, 0 = désactivé) et BACKUP_KEEP (défaut 8 → 2 jours à 6 h).
+const running = new Set(); // serveurs en cours de backup (pas de backups concurrents)
+
+/** Espace libre (octets) sur le volume des backups, ou null si inconnu. */
+function freeSpaceBytes(dir) {
+  try {
+    const s = fs.statfsSync(dir);
+    return s.bavail * s.bsize;
+  } catch { return null; }
+}
+
+async function runScheduledBackups() {
+  const db = getDb();
+  const keep = Math.max(1, parseInt(process.env.BACKUP_KEEP || '8', 10));
+  // Seuls les serveurs en marche changent : inutile de re-sauvegarder un serveur arrêté
+  const servers = db.prepare("SELECT * FROM servers WHERE status = 'running' AND container_id IS NOT NULL").all();
+
+  for (const server of servers) {
+    if (running.has(server.id)) continue;
+    running.add(server.id);
+    try {
+      // Garde-fou disque : il faut au moins 2× la taille du dernier backup de libre
+      fs.mkdirSync(backupsDirFor(server.id), { recursive: true });
+      const last = db.prepare('SELECT size_bytes FROM backups WHERE server_id = ? ORDER BY created_at DESC LIMIT 1').get(server.id);
+      const free = freeSpaceBytes(backupsDirFor(server.id));
+      if (last && free !== null && free < last.size_bytes * 2) {
+        console.warn(`[Backup] Backup planifié ignoré pour ${server.name} : espace disque insuffisant (${Math.round(free / 1e9)} Go libres)`);
+        continue;
+      }
+      await createBackup(server, 'scheduled');
+      await cleanOldBackups(server.id, keep, 'scheduled');
+    } catch (err) {
+      console.error(`[Backup] Échec du backup planifié de ${server.name} :`, err.message);
+    } finally {
+      running.delete(server.id);
+    }
+  }
+}
+
+function scheduleBackups() {
+  const hours = parseInt(process.env.BACKUP_INTERVAL_HOURS || '6', 10);
+  if (!(hours > 0)) {
+    console.log('[Backup] Backups planifiés désactivés (BACKUP_INTERVAL_HOURS=0)');
+    return;
+  }
+  const cron = require('node-cron');
+  // Décalé de 30 min par rapport au check des mises à jour (minute 0) pour ne pas se chevaucher
+  cron.schedule(`30 */${hours} * * *`, runScheduledBackups);
+  console.log(`[Backup] Backups planifiés toutes les ${hours} h (rétention : ${process.env.BACKUP_KEEP || 8})`);
 }
 
 /**
@@ -219,6 +283,6 @@ function migrateBackupLocation() {
 }
 
 module.exports = {
-  createBackup, restoreBackup, cleanOldBackups, migrateBackupLocation,
+  createBackup, restoreBackup, cleanOldBackups, migrateBackupLocation, scheduleBackups, runScheduledBackups, withWorldFlushed,
   backupsDirFor, getWorldDirs, readLevelName, swapInFromStaging,
 };

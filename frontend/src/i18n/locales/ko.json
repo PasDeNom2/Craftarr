@@ -264,7 +264,12 @@
     "restoreSuccess": "복원 시작됨",
     "deleteSuccess": "백업 삭제됨",
     "createSuccess": "백업 생성됨",
-    "error": "오류"
+    "error": "오류",
+    "available": "개의 백업",
+    "triggerManual": "수동",
+    "triggerPreUpdate": "업데이트 전",
+    "triggerScheduled": "예약됨",
+    "triggerPreImport": "가져오기 전"
   },
   "files": {
     "title": "파일",

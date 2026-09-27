@@ -265,7 +265,12 @@
     "restoreSuccess": "Restauração iniciada",
     "deleteSuccess": "Backup excluído",
     "createSuccess": "Backup criado",
-    "error": "Erro"
+    "error": "Erro",
+    "available": "backup(s) disponível(is)",
+    "triggerManual": "Manual",
+    "triggerPreUpdate": "Antes da atualização",
+    "triggerScheduled": "Agendado",
+    "triggerPreImport": "Antes da importação"
   },
   "files": {
     "title": "Arquivos",

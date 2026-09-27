@@ -264,7 +264,12 @@
     "restoreSuccess": "Przywracanie rozpoczęte",
     "deleteSuccess": "Kopia usunięta",
     "createSuccess": "Kopia utworzona",
-    "error": "Błąd"
+    "error": "Błąd",
+    "available": "kopii dostępnych",
+    "triggerManual": "Ręczna",
+    "triggerPreUpdate": "Przed aktualizacją",
+    "triggerScheduled": "Zaplanowana",
+    "triggerPreImport": "Przed importem"
   },
   "files": {
     "title": "Pliki",

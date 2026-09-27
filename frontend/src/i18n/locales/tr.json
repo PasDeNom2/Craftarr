@@ -265,7 +265,12 @@
     "restoreSuccess": "Geri yükleme başladı",
     "deleteSuccess": "Yedek silindi",
     "createSuccess": "Yedek oluşturuldu",
-    "error": "Hata"
+    "error": "Hata",
+    "available": "yedek mevcut",
+    "triggerManual": "Manuel",
+    "triggerPreUpdate": "Güncelleme öncesi",
+    "triggerScheduled": "Zamanlanmış",
+    "triggerPreImport": "İçe aktarma öncesi"
   },
   "files": {
     "title": "Dosyalar",

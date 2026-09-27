@@ -264,7 +264,12 @@
     "restoreSuccess": "Wiederherstellung gestartet",
     "deleteSuccess": "Backup gelöscht",
     "createSuccess": "Backup erstellt",
-    "error": "Fehler"
+    "error": "Fehler",
+    "available": "Sicherung(en) verfügbar",
+    "triggerManual": "Manuell",
+    "triggerPreUpdate": "Vor Update",
+    "triggerScheduled": "Geplant",
+    "triggerPreImport": "Vor Import"
   },
   "files": {
     "title": "Dateien",

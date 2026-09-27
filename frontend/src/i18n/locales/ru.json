@@ -265,7 +265,12 @@
     "restoreSuccess": "Восстановление начато",
     "deleteSuccess": "Копия удалена",
     "createSuccess": "Копия создана",
-    "error": "Ошибка"
+    "error": "Ошибка",
+    "available": "резервных копий",
+    "triggerManual": "Вручную",
+    "triggerPreUpdate": "Перед обновлением",
+    "triggerScheduled": "По расписанию",
+    "triggerPreImport": "Перед импортом"
   },
   "files": {
     "title": "Файлы",

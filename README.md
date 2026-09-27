@@ -88,6 +88,8 @@ docker compose logs backend | grep -i "jeton"
 | `CURSEFORGE_API_KEY` | — | CurseForge API key (required for CurseForge catalogue) |
 | `MODRINTH_API_KEY` | — | Modrinth API key (optional) |
 | `UPDATE_CHECK_INTERVAL_HOURS` | `6` | How often Craftarr checks for modpack updates |
+| `BACKUP_INTERVAL_HOURS` | `6` | Automatic backups of running servers (`0` = disabled) |
+| `BACKUP_KEEP` | `8` | Number of automatic backups kept per server (manual backups are never pruned) |
 
 > Secrets (JWT secret, encryption key) are **auto-generated** on first start and stored in `data/secrets.json`. Never commit this file.
 
@@ -175,6 +177,12 @@ server {
 ```bash
 docker exec -it craftarr-backend node src/scripts/reset-password.js [username] [new-password]
 ```
+
+**Simple Voice Chat doesn't work**  
+→ Craftarr publishes the voice chat on the **same port number as the server, in UDP**. Forward that port in **UDP** on your router (in addition to TCP), then click **Recreate** on the server once.
+
+**Lag, rubber-banding or high ping on Windows (Docker Desktop)**  
+→ Docker Desktop relays every connection through a userspace proxy, which adds latency and hides players' real IPs. Enabling WSL mirrored networking removes it: add `networkingMode=mirrored` under `[wsl2]` in `%UserProfile%.wslconfig`, then run `wsl --shutdown` and restart Docker Desktop (this stops every container).
 
 **CurseForge modpacks don't appear**  
 → Check that `CURSEFORGE_API_KEY` is set and valid in `.env` or in Settings → API Sources.

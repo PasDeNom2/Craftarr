@@ -263,7 +263,12 @@
     "restoreSuccess": "还原已开始",
     "deleteSuccess": "备份已删除",
     "createSuccess": "备份已创建",
-    "error": "错误"
+    "error": "错误",
+    "available": "个可用备份",
+    "triggerManual": "手动",
+    "triggerPreUpdate": "更新前",
+    "triggerScheduled": "定时",
+    "triggerPreImport": "导入前"
   },
   "files": {
     "title": "文件",

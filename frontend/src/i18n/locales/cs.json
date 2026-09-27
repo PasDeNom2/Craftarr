@@ -265,7 +265,12 @@
     "restoreSuccess": "Obnova zahájena",
     "deleteSuccess": "Záloha smazána",
     "createSuccess": "Záloha vytvořena",
-    "error": "Chyba"
+    "error": "Chyba",
+    "available": "záloh k dispozici",
+    "triggerManual": "Ruční",
+    "triggerPreUpdate": "Před aktualizací",
+    "triggerScheduled": "Plánovaná",
+    "triggerPreImport": "Před importem"
   },
   "files": {
     "title": "Soubory",

@@ -19,6 +19,18 @@ function getSourceApiKey(source) {
   return decrypt(source.api_key_encrypted) || '';
 }
 
+/**
+ * Clé CurseForge effective : celle saisie dans l'UI (Réglages → Sources), sinon CURSEFORGE_API_KEY.
+ * Utilisée aussi pour ServerStarter et itzg (CF_API_KEY), qui ne lisaient que la variable d'env.
+ */
+function getCurseForgeKey() {
+  try {
+    const row = getDb().prepare("SELECT * FROM api_sources WHERE id = 'curseforge'").get();
+    if (row) return getSourceApiKey(row);
+  } catch {}
+  return process.env.CURSEFORGE_API_KEY || '';
+}
+
 async function fetchFromSource(source, searchParams) {
   const apiKey = getSourceApiKey(source);
 
@@ -110,4 +122,4 @@ async function getModpackVersions(sourceId, modpackId) {
   return [];
 }
 
-module.exports = { aggregateSearch, getModpackDetail, getModpackVersions, getActiveSources, getSourceApiKey };
+module.exports = { aggregateSearch, getModpackDetail, getModpackVersions, getActiveSources, getSourceApiKey, getCurseForgeKey };

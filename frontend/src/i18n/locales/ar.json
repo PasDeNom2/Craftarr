@@ -263,7 +263,12 @@
     "restoreSuccess": "بدأت الاستعادة",
     "deleteSuccess": "تم حذف النسخة الاحتياطية",
     "createSuccess": "تم إنشاء النسخة الاحتياطية",
-    "error": "خطأ"
+    "error": "خطأ",
+    "available": "نسخ احتياطية متاحة",
+    "triggerManual": "يدوي",
+    "triggerPreUpdate": "قبل التحديث",
+    "triggerScheduled": "مجدول",
+    "triggerPreImport": "قبل الاستيراد"
   },
   "files": {
     "title": "الملفات",

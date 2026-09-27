@@ -5,7 +5,7 @@ const axios = require('axios');
 const AdmZip = require('adm-zip');
 const { getDb } = require('../config/database');
 const dockerService = require('./docker');
-const { getSourceApiKey } = require('./sourceAggregator');
+const { getSourceApiKey, getCurseForgeKey } = require('./sourceAggregator');
 const curseforge = require('./curseforge');
 const modrinth = require('./modrinth');
 const { startLogStream } = require('../websocket/logs');
@@ -68,7 +68,7 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
   const scriptDir = path.dirname(scriptRelPath);
   const workDir = scriptDir === '.' ? '/data' : `/data/${scriptDir}`;
 
-  const cfKey = process.env.CURSEFORGE_API_KEY || '';
+  const cfKey = getCurseForgeKey(); // clé de l'UI, sinon env
   const env = ['EULA=TRUE'];
   if (cfKey) env.push(`CF_API_KEY=${cfKey}`);
 
@@ -189,6 +189,13 @@ async function installServer(server) {
     }
 
     const updatedServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
+
+    // Alerte RAM : un gros pack avec trop peu de mémoire = lag, GC en boucle ou crash OutOfMemory
+    const advice = ramAdvice(modsDir, updatedServer.ram_mb);
+    if (advice) {
+      progress(server.id, 'warn', advice, 81);
+      emit(server.id, 'log', { line: `[Craftarr] ${advice}`, timestamp: Date.now() }); // reste visible dans la console
+    }
 
     progress(server.id, 'container', 'Téléchargement de l\'image Java (première fois uniquement)...', 82);
     const { containerId, containerName } = await dockerService.createServerContainer(updatedServer,
@@ -753,6 +760,20 @@ function writePackMeta(serverDir, meta) {
   } catch (err) {
     console.warn('[Installer] Impossible d\'écrire .craftarr-pack.json :', err.message);
   }
+}
+
+/**
+ * RAM conseillée selon le nombre de mods (ordre de grandeur usuel des modpacks) :
+ * < 50 mods → 4 Go, < 150 → 6 Go, < 250 → 8 Go, au-delà → 10 Go.
+ * Retourne un message d'avertissement si le serveur en a moins, sinon null.
+ */
+function ramAdvice(modsDir, ramMb) {
+  let mods = 0;
+  try { mods = fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length; } catch {}
+  const recommendedGb = mods < 50 ? 4 : mods < 150 ? 6 : mods < 250 ? 8 : 10;
+  if (!ramMb || ramMb >= recommendedGb * 1024) return null;
+  return `⚠ ${mods} mods pour ${Math.round(ramMb / 1024 * 10) / 10} Go de RAM : ${recommendedGb} Go recommandés `
+    + '(Paramètres du serveur → RAM, puis recréer le container). Risque de lag ou de crash.';
 }
 
 /** Formate une liste d'échecs pour un message d'erreur lisible. */

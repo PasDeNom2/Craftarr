@@ -264,7 +264,12 @@
     "restoreSuccess": "復元を開始しました",
     "deleteSuccess": "バックアップを削除しました",
     "createSuccess": "バックアップを作成しました",
-    "error": "エラー"
+    "error": "エラー",
+    "available": "件のバックアップ",
+    "triggerManual": "手動",
+    "triggerPreUpdate": "更新前",
+    "triggerScheduled": "定期",
+    "triggerPreImport": "インポート前"
   },
   "files": {
     "title": "ファイル",

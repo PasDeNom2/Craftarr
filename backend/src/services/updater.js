@@ -162,8 +162,8 @@ async function applyUpdate(server, updateInfo) {
 
     db.prepare('UPDATE update_history SET status = ? WHERE id = ?').run('success', histId);
 
-    // 6. Nettoyage des anciens backups (garde les 15 derniers)
-    await backupService.cleanOldBackups(server.id, 15);
+    // 6. Nettoyage des anciens backups pré-update (garde les 15 derniers)
+    await backupService.cleanOldBackups(server.id, 15, 'pre-update');
 
     if (io) io.to(`server:${server.id}`).emit('server:update-done', {
       serverId: server.id,

@@ -265,7 +265,12 @@
     "restoreSuccess": "Restauración iniciada",
     "deleteSuccess": "Copia eliminada",
     "createSuccess": "Copia creada",
-    "error": "Error"
+    "error": "Error",
+    "available": "copia(s) disponible(s)",
+    "triggerManual": "Manual",
+    "triggerPreUpdate": "Antes de actualizar",
+    "triggerScheduled": "Programada",
+    "triggerPreImport": "Antes de importar"
   },
   "files": {
     "title": "Archivos",

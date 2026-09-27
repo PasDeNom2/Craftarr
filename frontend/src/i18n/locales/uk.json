@@ -265,7 +265,12 @@
     "restoreSuccess": "Відновлення розпочато",
     "deleteSuccess": "Копію видалено",
     "createSuccess": "Копію створено",
-    "error": "Помилка"
+    "error": "Помилка",
+    "available": "резервних копій",
+    "triggerManual": "Вручну",
+    "triggerPreUpdate": "Перед оновленням",
+    "triggerScheduled": "За розкладом",
+    "triggerPreImport": "Перед імпортом"
   },
   "files": {
     "title": "Файли",

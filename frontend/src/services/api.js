@@ -65,16 +65,16 @@ export const importWorld = (id, file) => {
   }).then(r => r.data);
 };
 
+// Téléchargement natif du navigateur via un lien signé à usage unique : le zip est streamé
+// directement sur le disque (pas de blob en mémoire, pas de timeout axios sur les gros mondes).
 export const downloadWorld = async (id, serverName) => {
-  const res = await api.get(`/servers/${id}/world-download`, { responseType: 'blob' });
-  const url = URL.createObjectURL(res.data);
+  const { url } = await api.post(`/servers/${id}/world-download-token`).then(r => r.data);
   const a = document.createElement('a');
   a.href = url;
   a.download = `${serverName}_world.zip`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 };
 
 export const patchServer = (id, data) => api.patch(`/servers/${id}`, data).then(r => r.data);

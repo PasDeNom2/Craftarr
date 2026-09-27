@@ -269,7 +269,12 @@
     "restoreSuccess": "Restauration lancée",
     "deleteSuccess": "Sauvegarde supprimée",
     "createSuccess": "Sauvegarde créée",
-    "error": "Erreur"
+    "error": "Erreur",
+    "available": "sauvegarde(s) disponible(s)",
+    "triggerManual": "Manuelle",
+    "triggerPreUpdate": "Avant mise à jour",
+    "triggerScheduled": "Automatique",
+    "triggerPreImport": "Avant import"
   },
   "files": {
     "title": "Fichiers",

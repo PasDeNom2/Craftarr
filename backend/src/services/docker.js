@@ -246,6 +246,9 @@ function buildEnvVars(server) {
     // mc-server-runner attend STOP_DURATION s après "stop" avant de tuer Java (défaut 60 s) :
     // on l'aligne juste sous le délai Docker pour que la sauvegarde puisse se terminer
     `STOP_DURATION=${STOP_TIMEOUT - 10}`,
+    // Flags G1 d'Aikar (mcflags.emc.gs) : pauses GC plus courtes que le G1 par défaut.
+    // itzg les écrit aussi dans user_jvm_args.txt pour les run.sh Forge/NeoForge.
+    'USE_AIKAR_FLAGS=true',
   ];
 
   if (installedNeoForgeVersion) {
@@ -299,7 +302,7 @@ function buildEnvVars(server) {
   env.push(`VIEW_DISTANCE=${server.view_distance || 10}`);
   env.push(`SPAWN_PROTECTION=${server.spawn_protection ?? 16}`);
   // CurseForge API key pour ServerStarter et mc-image-helper
-  const cfKey = process.env.CURSEFORGE_API_KEY;
+  const cfKey = require('./sourceAggregator').getCurseForgeKey(); // clé de l'UI, sinon env
   if (cfKey) env.push(`CF_API_KEY=${cfKey}`);
 
   // server-setup-config.yaml → ServerStarter (NE PAS combiner avec MODPACK)
@@ -406,21 +409,26 @@ async function createServerContainer(server, onProgress) {
   console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'}${neoforgeVersion ? ` / NeoForge ${neoforgeVersion}` : ''} : ${image}`);
   await ensureImage(image, onProgress);
 
+  const exposedPorts = { '25565/tcp': {} };
+  // RCON (25575) volontairement NON publié sur l'hôte : le backend y accède via le réseau
+  // Docker interne (rcon.js → container_name:25575). Le publier exposait la console du
+  // serveur à tout le réseau, protégée uniquement par le mot de passe RCON.
+  const portBindings = { '25565/tcp': [{ HostPort: String(server.port) }] };
+  if (hasVoiceChatMod(serverDir)) {
+    // Simple Voice Chat : même numéro que le serveur, en UDP (voir ensureVoiceChatPort)
+    exposedPorts[`${server.port}/udp`] = {};
+    portBindings[`${server.port}/udp`] = [{ HostPort: String(server.port) }];
+    console.log(`[Docker] Simple Voice Chat détecté — port UDP ${server.port} publié`);
+  }
+
   const container = await docker.createContainer({
     name: containerName,
     Image: image,
     Env: buildEnvVars(server),
-    ExposedPorts: {
-      '25565/tcp': {},
-    },
+    ExposedPorts: exposedPorts,
     HostConfig: {
       Binds: [`${hostServerDir}:/data`],
-      // RCON (25575) volontairement NON publié sur l'hôte : le backend y accède via le réseau
-      // Docker interne (rcon.js → container_name:25575). Le publier exposait la console du
-      // serveur à tout le réseau, protégée uniquement par le mot de passe RCON.
-      PortBindings: {
-        '25565/tcp': [{ HostPort: String(server.port) }],
-      },
+      PortBindings: portBindings,
       RestartPolicy: { Name: 'unless-stopped' },
       Memory: server.ram_mb * 1024 * 1024 * 2,
     },
@@ -477,8 +485,49 @@ function ensureRconInDefaultServerProperties(server) {
   }
 }
 
+/** Simple Voice Chat installé ? (jar "voicechat-*.jar" dans mods/) */
+function hasVoiceChatMod(serverDir) {
+  try {
+    return fs.readdirSync(path.join(serverDir, 'mods')).some(f => /^voicechat-.*\.jar$/i.test(f));
+  } catch { return false; }
+}
+
+/**
+ * Simple Voice Chat écoute en UDP (24454 par défaut) — port jamais publié jusqu'ici, donc
+ * chat vocal muet. On le fait écouter sur le MÊME numéro que le serveur Minecraft, en UDP
+ * (pas de conflit avec le TCP) : createServerContainer publie ce port UDP, et les joueurs
+ * n'ont rien à configurer (le client utilise l'adresse du serveur + ce port).
+ */
+function ensureVoiceChatPort(server) {
+  if (!server?.id || !server?.port) return;
+  const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+  if (!hasVoiceChatMod(serverDir)) return;
+  const file = path.join(serverDir, 'config', 'voicechat', 'voicechat-server.properties');
+  try {
+    let content = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+    const line = `port=${server.port}`;
+    if (/^port\s*=.*$/m.test(content)) {
+      const updated = content.replace(/^port\s*=.*$/gm, line);
+      if (updated === content) return;
+      content = updated;
+    } else {
+      // Fichier absent (premier démarrage) : le mod complétera les autres clés
+      if (content.length && !content.endsWith('\n')) content += '\n';
+      content += `${line}\n`;
+    }
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content, 'utf8');
+    console.log(`[Docker] Simple Voice Chat configuré sur le port UDP ${server.port} pour ${server.id}`);
+  } catch (e) {
+    console.warn(`[Docker] Impossible de configurer Simple Voice Chat : ${e.message}`);
+  }
+}
+
 async function startContainer(containerId, server = null) {
-  if (server) ensureRconInDefaultServerProperties(server);
+  if (server) {
+    ensureRconInDefaultServerProperties(server);
+    ensureVoiceChatPort(server);
+  }
   const container = docker.getContainer(containerId);
   await container.start();
 }
@@ -489,7 +538,10 @@ async function stopContainer(containerId, timeout = STOP_TIMEOUT) {
 }
 
 async function restartContainer(containerId, server = null) {
-  if (server) ensureRconInDefaultServerProperties(server);
+  if (server) {
+    ensureRconInDefaultServerProperties(server);
+    ensureVoiceChatPort(server);
+  }
   const container = docker.getContainer(containerId);
   await container.restart({ t: STOP_TIMEOUT });
 }

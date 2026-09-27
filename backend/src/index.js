@@ -149,6 +149,7 @@ server.listen(PORT, async () => {
   await reconcileServerStates();
   metrics.startPolling();
   updater.scheduleUpdater();
+  require('./services/backup').scheduleBackups();
 });
 
 // ─── Arrêt propre ───────────────────────────────────────────

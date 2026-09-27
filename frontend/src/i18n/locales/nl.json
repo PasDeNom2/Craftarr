@@ -265,7 +265,12 @@
     "restoreSuccess": "Herstel gestart",
     "deleteSuccess": "Back-up verwijderd",
     "createSuccess": "Back-up gemaakt",
-    "error": "Fout"
+    "error": "Fout",
+    "available": "back-up(s) beschikbaar",
+    "triggerManual": "Handmatig",
+    "triggerPreUpdate": "Voor update",
+    "triggerScheduled": "Gepland",
+    "triggerPreImport": "Voor import"
   },
   "files": {
     "title": "Bestanden",

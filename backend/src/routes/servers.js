@@ -505,32 +505,60 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
   });
 });
 
-// GET /api/servers/:id/world-download — Télécharger le dossier world en ZIP
-router.get('/:id/world-download', authMiddleware, async (req, res, next) => {
+// ─── Téléchargement du monde ────────────────────────────────
+// Le navigateur télécharge nativement (streaming disque, pas de limite de temps ni de RAM) via
+// un lien signé : un navigateur ne peut pas joindre le header Authorization à un simple lien.
+// 1) POST /world-download-token (authentifié) → jeton 5 min, usage unique, limité à ce serveur
+// 2) GET  /world-download?token=… → zip streamé (jamais chargé entièrement en mémoire)
+const usedDownloadTokens = new Map(); // jti → expiration (ms)
+
+router.post('/:id/world-download-token', authMiddleware, (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const { getJwtSecret } = require('../config/secrets');
+  const token = jwt.sign({ purpose: 'world-download', serverId: req.params.id, jti: uuidv4() }, getJwtSecret(), { expiresIn: '5m' });
+  res.json({ url: `/api/servers/${req.params.id}/world-download?token=${encodeURIComponent(token)}` });
+});
+
+router.get('/:id/world-download', async (req, res, next) => {
   try {
+    const jwt = require('jsonwebtoken');
+    const { getJwtSecret } = require('../config/secrets');
+    let claims;
+    try { claims = jwt.verify(String(req.query.token || ''), getJwtSecret()); } catch { claims = null; }
+    const now = Date.now();
+    for (const [jti, exp] of usedDownloadTokens) if (exp < now) usedDownloadTokens.delete(jti);
+    if (!claims || claims.purpose !== 'world-download' || claims.serverId !== req.params.id || usedDownloadTokens.has(claims.jti)) {
+      return res.status(401).json({ error: 'Lien de téléchargement invalide ou expiré' });
+    }
+    usedDownloadTokens.set(claims.jti, claims.exp * 1000);
+
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
     const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
-    const AdmZip = require('adm-zip');
-    const zip = new AdmZip();
+    const worldDirs = backupService.getWorldDirs(serverDir).filter(d => fs.existsSync(path.join(serverDir, d)));
+    if (!worldDirs.length) return res.status(404).json({ error: 'Aucun dossier world trouvé' });
 
-    let hasWorld = false;
-    for (const dir of backupService.getWorldDirs(serverDir)) {
-      const p = path.join(serverDir, dir);
-      if (fs.existsSync(p)) { zip.addLocalFolder(p, dir); hasWorld = true; }
-    }
-
-    if (!hasWorld) return res.status(404).json({ error: 'Aucun dossier world trouvé' });
-
-    const buf = zip.toBuffer();
     const filename = `${server.name.replace(/[^a-z0-9_-]/gi, '_')}_world.zip`;
     res.set('Content-Type', 'application/zip');
     res.set('Content-Disposition', `attachment; filename="${filename}"`);
-    res.set('Content-Length', buf.length);
-    res.send(buf);
-  } catch (err) { next(err); }
+
+    // Monde cohérent (save-all + save-off) pendant la copie ; les .mca sont déjà compressés → niveau 1
+    await backupService.withWorldFlushed(server, () => new Promise((resolve, reject) => {
+      const archiver = require('archiver');
+      const archive = archiver('zip', { zlib: { level: 1 } });
+      req.on('close', () => { if (!res.writableFinished) archive.abort(); resolve(); });
+      archive.on('error', reject);
+      res.on('finish', resolve);
+      archive.pipe(res);
+      for (const dir of worldDirs) archive.directory(path.join(serverDir, dir), dir);
+      archive.finalize();
+    }));
+  } catch (err) {
+    if (res.headersSent) { console.error('[world-download]', err.message); res.destroy(); return; }
+    next(err);
+  }
 });
 
 // PATCH /api/servers/:id — Modifier les paramètres du serveur

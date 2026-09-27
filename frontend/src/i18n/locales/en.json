@@ -269,7 +269,12 @@
     "restoreSuccess": "Restore started",
     "deleteSuccess": "Backup deleted",
     "createSuccess": "Backup created",
-    "error": "Error"
+    "error": "Error",
+    "available": "backup(s) available",
+    "triggerManual": "Manual",
+    "triggerPreUpdate": "Before update",
+    "triggerScheduled": "Scheduled",
+    "triggerPreImport": "Before import"
   },
   "files": {
     "title": "Files",
