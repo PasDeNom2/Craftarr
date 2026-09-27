@@ -125,26 +125,4 @@ function stopPolling() {
   if (rconTimer) { clearInterval(rconTimer); rconTimer = null; }
 }
 
-async function collectServerMetrics(server) {
-  const metrics = {
-    serverId: server.id,
-    timestamp: Date.now(),
-    cpu: 0, memUsed: 0, memLimit: 0, memPercent: 0,
-    players: { online: 0, max: server.max_players },
-    tps: null, uptime: null,
-  };
-  if (server.container_id) {
-    try {
-      const stats = await dockerService.getContainerStats(server.container_id);
-      if (stats) Object.assign(metrics, stats);
-    } catch {}
-  }
-  if (server.status === 'running') {
-    const { players, tps } = await rcon.getServerStats(server);
-    metrics.players = players;
-    metrics.tps = tps;
-  }
-  return metrics;
-}
-
-module.exports = { setIo, startPolling, stopPolling, collectServerMetrics, pushImmediate };
+module.exports = { setIo, startPolling, stopPolling, pushImmediate };

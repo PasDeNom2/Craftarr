@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Nutné znovu vytvořit"
   },
   "console": {
     "placeholder": "Zadejte příkaz...",
@@ -237,7 +238,10 @@
     "clear": "Vymazat",
     "autoScroll": "Automatické posouvání",
     "newLines": "{count} nových řádků",
-    "stoppedPlaceholder": "Server zastaven"
+    "stoppedPlaceholder": "Server zastaven",
+    "noServerPack": "Server pack není k dispozici",
+    "noServerPackDesc": "Tento modpack nemá server pack. Přesto nainstalovat pomocí klientského packu (módy se stáhnou podle manifestu)?",
+    "useClientPack": "Instalovat s klientským packem"
   },
   "metrics": {
     "cpu": "CPU",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Nastavení",
-    "subtitle": "Globální konfigurace MCManager",
+    "subtitle": "Globální konfigurace Craftarr",
     "apiKeys": "API klíče",
     "apiSources": "API zdroje",
     "save": "Uložit",
@@ -402,5 +406,43 @@
     "removed": "{{name}} odebrán z whitelistu",
     "remove": "Odebrat",
     "empty": "Na whitelistu nejsou žádní hráči"
+  },
+  "players": {
+    "title": "Hráči",
+    "totalPlayers": "známých hráčů",
+    "search": "Hledat...",
+    "connections": "připojení",
+    "noPlayers": "Zatím žádní hráči",
+    "noPlayersHint": "Hráči se zobrazí po prvním připojení.",
+    "noResults": "Žádné výsledky",
+    "banned": "Zabanován",
+    "viewLogs": "Zobrazit historii",
+    "logs": "Historie",
+    "backToList": "Zpět",
+    "events": "událostí",
+    "noEvents": "Žádné zaznamenané události",
+    "kick": "Vyhodit",
+    "warn": "Varovat",
+    "ban": "Zabanovat",
+    "unban": "Odbanovat",
+    "reasonPlaceholder": "Důvod (volitelný)",
+    "kickSuccess": "Hráč vyhozen",
+    "warnSuccess": "Varování odesláno",
+    "banSuccess": "Hráč zabanován",
+    "unbanSuccess": "Hráč odbanován",
+    "op": "OP",
+    "deop": "Odebrat OP",
+    "opSuccess": "Hráč je nyní OP",
+    "deopSuccess": "OP odebráno",
+    "actionError": "Akce selhala",
+    "eventJoin": "Připojení",
+    "eventLeave": "Odpojení",
+    "eventChat": "Chat",
+    "eventCommand": "Příkaz",
+    "eventDeath": "Smrt",
+    "eventWarn": "Varování",
+    "eventKick": "Vyhození",
+    "eventBan": "Ban",
+    "eventUnban": "Odbanování"
   }
 }

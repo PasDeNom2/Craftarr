@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Yeniden oluşturma gerekli"
   },
   "console": {
     "placeholder": "Komut girin...",
@@ -237,7 +238,10 @@
     "clear": "Temizle",
     "autoScroll": "Otomatik kaydır",
     "newLines": "{count} yeni satır",
-    "stoppedPlaceholder": "Sunucu durduruldu"
+    "stoppedPlaceholder": "Sunucu durduruldu",
+    "noServerPack": "Sunucu paketi yok",
+    "noServerPackDesc": "Bu modpack bir sunucu paketi sunmuyor. Yine de istemci paketiyle kurulsun mu (modlar manifestten indirilir)?",
+    "useClientPack": "İstemci paketiyle kur"
   },
   "metrics": {
     "cpu": "CPU",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Ayarlar",
-    "subtitle": "MCManager genel yapılandırması",
+    "subtitle": "Craftarr genel yapılandırması",
     "apiKeys": "API anahtarları",
     "apiSources": "API kaynakları",
     "save": "Kaydet",
@@ -402,5 +406,43 @@
     "removed": "{{name}} beyaz listeden kaldırıldı",
     "remove": "Kaldır",
     "empty": "Beyaz listede oyuncu yok"
+  },
+  "players": {
+    "title": "Oyuncular",
+    "totalPlayers": "bilinen oyuncu",
+    "search": "Ara...",
+    "connections": "bağlantı",
+    "noPlayers": "Henüz oyuncu yok",
+    "noPlayersHint": "Oyuncular ilk bağlantılarından sonra görünür.",
+    "noResults": "Sonuç yok",
+    "banned": "Yasaklı",
+    "viewLogs": "Geçmişi görüntüle",
+    "logs": "Geçmiş",
+    "backToList": "Geri",
+    "events": "olay",
+    "noEvents": "Kayıtlı olay yok",
+    "kick": "At",
+    "warn": "Uyar",
+    "ban": "Yasakla",
+    "unban": "Yasağı kaldır",
+    "reasonPlaceholder": "Sebep (isteğe bağlı)",
+    "kickSuccess": "Oyuncu atıldı",
+    "warnSuccess": "Uyarı gönderildi",
+    "banSuccess": "Oyuncu yasaklandı",
+    "unbanSuccess": "Oyuncunun yasağı kaldırıldı",
+    "op": "OP",
+    "deop": "OP kaldır",
+    "opSuccess": "Oyuncu artık OP",
+    "deopSuccess": "OP kaldırıldı",
+    "actionError": "İşlem başarısız",
+    "eventJoin": "Giriş",
+    "eventLeave": "Çıkış",
+    "eventChat": "Sohbet",
+    "eventCommand": "Komut",
+    "eventDeath": "Ölüm",
+    "eventWarn": "Uyarı",
+    "eventKick": "Atılma",
+    "eventBan": "Yasak",
+    "eventUnban": "Yasak kaldırma"
   }
 }

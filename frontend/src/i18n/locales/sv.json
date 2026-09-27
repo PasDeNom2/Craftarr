@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Måste återskapas"
   },
   "console": {
     "placeholder": "Ange ett kommando...",
@@ -237,7 +238,10 @@
     "clear": "Rensa",
     "autoScroll": "Autoskroll",
     "newLines": "{count} nya rader",
-    "stoppedPlaceholder": "Server stoppad"
+    "stoppedPlaceholder": "Server stoppad",
+    "noServerPack": "Inget serverpaket tillgängligt",
+    "noServerPackDesc": "Detta modpack har inget serverpaket. Installera ändå med klientpaketet (moddar laddas ner via manifestet)?",
+    "useClientPack": "Installera med klientpaketet"
   },
   "metrics": {
     "cpu": "CPU",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Inställningar",
-    "subtitle": "Global MCManager-konfiguration",
+    "subtitle": "Global Craftarr-konfiguration",
     "apiKeys": "API-nycklar",
     "apiSources": "API-källor",
     "save": "Spara",
@@ -402,5 +406,43 @@
     "removed": "{{name}} borttagen från vitlistan",
     "remove": "Ta bort",
     "empty": "Inga spelare på vitlistan"
+  },
+  "players": {
+    "title": "Spelare",
+    "totalPlayers": "kända spelare",
+    "search": "Sök...",
+    "connections": "anslutning(ar)",
+    "noPlayers": "Inga spelare ännu",
+    "noPlayersHint": "Spelare visas efter sin första anslutning.",
+    "noResults": "Inga resultat",
+    "banned": "Bannlyst",
+    "viewLogs": "Visa historik",
+    "logs": "Historik",
+    "backToList": "Tillbaka",
+    "events": "händelse(r)",
+    "noEvents": "Inga registrerade händelser",
+    "kick": "Sparka",
+    "warn": "Varna",
+    "ban": "Bannlys",
+    "unban": "Häv bannlysning",
+    "reasonPlaceholder": "Anledning (valfritt)",
+    "kickSuccess": "Spelaren sparkad",
+    "warnSuccess": "Varning skickad",
+    "banSuccess": "Spelaren bannlyst",
+    "unbanSuccess": "Bannlysning hävd",
+    "op": "OP",
+    "deop": "Ta bort OP",
+    "opSuccess": "Spelaren är nu OP",
+    "deopSuccess": "OP borttagen",
+    "actionError": "Åtgärden misslyckades",
+    "eventJoin": "Anslutning",
+    "eventLeave": "Frånkoppling",
+    "eventChat": "Chatt",
+    "eventCommand": "Kommando",
+    "eventDeath": "Död",
+    "eventWarn": "Varning",
+    "eventKick": "Sparkad",
+    "eventBan": "Bannlysning",
+    "eventUnban": "Hävd bannlysning"
   }
 }

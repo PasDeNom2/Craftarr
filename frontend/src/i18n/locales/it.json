@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Ricreazione necessaria"
   },
   "console": {
     "placeholder": "Inserisci un comando...",
@@ -237,7 +238,10 @@
     "clear": "Svuota",
     "autoScroll": "Auto-scroll",
     "newLines": "{count} nuove righe",
-    "stoppedPlaceholder": "Server fermato"
+    "stoppedPlaceholder": "Server fermato",
+    "noServerPack": "Nessun server pack disponibile",
+    "noServerPackDesc": "Questo modpack non fornisce un server pack. Installare comunque con il pack client (le mod vengono scaricate dal manifest)?",
+    "useClientPack": "Installa con il pack client"
   },
   "metrics": {
     "cpu": "CPU",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Impostazioni",
-    "subtitle": "Configurazione globale MCManager",
+    "subtitle": "Configurazione globale Craftarr",
     "apiKeys": "Chiavi API",
     "apiSources": "Sorgenti API",
     "save": "Salva",
@@ -402,5 +406,43 @@
     "removed": "{{name}} rimosso dalla lista bianca",
     "remove": "Rimuovi",
     "empty": "Nessun giocatore in lista bianca"
+  },
+  "players": {
+    "title": "Giocatori",
+    "totalPlayers": "giocatore/i noti",
+    "search": "Cerca...",
+    "connections": "connessione/i",
+    "noPlayers": "Ancora nessun giocatore",
+    "noPlayersHint": "I giocatori compaiono dopo la loro prima connessione.",
+    "noResults": "Nessun risultato",
+    "banned": "Bannato",
+    "viewLogs": "Vedi cronologia",
+    "logs": "Cronologia",
+    "backToList": "Indietro",
+    "events": "evento/i",
+    "noEvents": "Nessun evento registrato",
+    "kick": "Espelli",
+    "warn": "Avverti",
+    "ban": "Banna",
+    "unban": "Sbanna",
+    "reasonPlaceholder": "Motivo (facoltativo)",
+    "kickSuccess": "Giocatore espulso",
+    "warnSuccess": "Avvertimento inviato",
+    "banSuccess": "Giocatore bannato",
+    "unbanSuccess": "Giocatore sbannato",
+    "op": "OP",
+    "deop": "Rimuovi OP",
+    "opSuccess": "Il giocatore è ora OP",
+    "deopSuccess": "OP rimosso",
+    "actionError": "Azione non riuscita",
+    "eventJoin": "Ingresso",
+    "eventLeave": "Uscita",
+    "eventChat": "Chat",
+    "eventCommand": "Comando",
+    "eventDeath": "Morte",
+    "eventWarn": "Avvertimento",
+    "eventKick": "Espulsione",
+    "eventBan": "Ban",
+    "eventUnban": "Sban"
   }
 }

@@ -117,22 +117,35 @@ async function getPlayerList(server) {
   }
 }
 
-async function getTps(server) {
-  try {
-    const resp = await sendCommand(server, 'tps');
-    const match = resp.match(/TPS from last 1m, 5m, 15m: ([\d.]+), ([\d.]+), ([\d.]+)/i)
-      || resp.match(/([\d.]+),?\s*([\d.]+),?\s*([\d.]+)/);
-    if (match) {
-      return {
-        tps1: parseFloat(match[1]),
-        tps5: parseFloat(match[2]),
-        tps15: parseFloat(match[3]),
-      };
-    }
-    return null;
-  } catch {
-    return null;
+/**
+ * Commande TPS selon le serveur : "tps" n'existe que sur Paper/Spigot/Purpur.
+ * NeoForge / Forge ont leur propre commande ; vanilla/Fabric/Quilt (1.20.3+) ont "tick query".
+ */
+function tpsCommandFor(server) {
+  const loader = (server.loader_type || '').toLowerCase();
+  if (loader === 'neoforge') return 'neoforge tps';
+  if (loader === 'forge') return 'forge tps';
+  if (['vanilla', 'fabric', 'quilt'].includes(loader)) return 'tick query';
+  return 'tps';
+}
+
+/** Extrait { tps1, tps5, tps15 } de la réponse (tps5/tps15 = null si le serveur ne les donne pas). */
+function parseTps(resp) {
+  if (!resp) return null;
+  const clean = resp.replace(/§./g, '');
+  // Paper/Spigot : "TPS from last 1m, 5m, 15m: 20.0, 19.98, 19.95"
+  const paper = clean.match(/TPS from last 1m, 5m, 15m:\s*\*?([\d.]+),\s*\*?([\d.]+),\s*\*?([\d.]+)/i);
+  if (paper) return { tps1: parseFloat(paper[1]), tps5: parseFloat(paper[2]), tps15: parseFloat(paper[3]) };
+  // NeoForge : "Overall: 20.000 TPS (17.452 ms/tick)"  |  Forge : "Overall: Mean tick time: 3.2 ms. Mean TPS: 20.000"
+  const overall = clean.match(/Overall\s*:[^\n]*?([\d.]+)\s*TPS/i) || clean.match(/Overall\s*:[^\n]*?Mean TPS:\s*([\d.]+)/i);
+  if (overall) return { tps1: parseFloat(overall[1]), tps5: null, tps15: null };
+  // Vanilla "tick query" : "Average time per tick: 3.2ms (Target: 50.0ms)" → TPS = min(20, 1000 / mspt)
+  const mspt = clean.match(/Average time per tick:\s*([\d.]+)\s*ms/i);
+  if (mspt) {
+    const ms = parseFloat(mspt[1]);
+    return { tps1: Math.round(Math.min(20, ms > 0 ? 1000 / ms : 20) * 10) / 10, tps5: null, tps15: null };
   }
+  return null;
 }
 
 /**
@@ -140,21 +153,16 @@ async function getTps(server) {
  */
 async function getServerStats(server) {
   try {
-    const [listResp, tpsResp] = await sendCommands(server, ['list', 'tps']);
+    const [listResp, tpsResp] = await sendCommands(server, ['list', tpsCommandFor(server)]);
 
     let players = { online: 0, max: server.max_players };
     const listMatch = listResp?.match(/(\d+)\s+of\s+a\s+max\s+of\s+(\d+)/) || listResp?.match(/(\d+)\/(\d+)/);
     if (listMatch) players = { online: parseInt(listMatch[1]), max: parseInt(listMatch[2]) };
 
-    let tps = null;
-    const tpsMatch = tpsResp?.match(/TPS from last 1m, 5m, 15m: ([\d.]+), ([\d.]+), ([\d.]+)/i)
-      || tpsResp?.match(/(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)/);
-    if (tpsMatch) tps = { tps1: parseFloat(tpsMatch[1]), tps5: parseFloat(tpsMatch[2]), tps15: parseFloat(tpsMatch[3]) };
-
-    return { players, tps };
+    return { players, tps: parseTps(tpsResp) };
   } catch {
     return { players: { online: 0, max: server.max_players }, tps: null };
   }
 }
 
-module.exports = { sendCommand, sendCommands, getPlayerList, getTps, getServerStats };
+module.exports = { sendCommand, sendCommands, getPlayerList, getServerStats, parseTps, tpsCommandFor };

@@ -163,7 +163,8 @@
       "stopped": "Zatrzymany",
       "installing": "Instalacja",
       "updating": "Aktualizacja",
-      "error": "Błąd"
+      "error": "Błąd",
+      "starting": "Uruchamianie"
     },
     "notFound": "Serwer nie znaleziony",
     "goBack": "Wróć do katalogu",
@@ -224,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Wymagane ponowne utworzenie"
   },
   "console": {
     "placeholder": "Wpisz polecenie...",
@@ -236,7 +238,10 @@
     "clear": "Wyczyść",
     "autoScroll": "Auto-przewijanie",
     "newLines": "{count} nowych linii",
-    "stoppedPlaceholder": "Serwer zatrzymany"
+    "stoppedPlaceholder": "Serwer zatrzymany",
+    "noServerPack": "Brak server packa",
+    "noServerPackDesc": "Ten modpack nie udostępnia server packa. Zainstalować mimo to z pakietu klienta (mody pobierane z manifestu)?",
+    "useClientPack": "Zainstaluj z pakietu klienta"
   },
   "metrics": {
     "cpu": "CPU",
@@ -335,7 +340,7 @@
   },
   "settings": {
     "title": "Ustawienia",
-    "subtitle": "Globalna konfiguracja MCManager",
+    "subtitle": "Globalna konfiguracja Craftarr",
     "apiKeys": "Klucze API",
     "apiSources": "Źródła API",
     "save": "Zapisz",
@@ -401,5 +406,43 @@
     "removed": "{{name}} usunięty z białej listy",
     "remove": "Usuń",
     "empty": "Brak graczy na białej liście"
+  },
+  "players": {
+    "title": "Gracze",
+    "totalPlayers": "znanych graczy",
+    "search": "Szukaj...",
+    "connections": "połączeń",
+    "noPlayers": "Brak graczy",
+    "noPlayersHint": "Gracze pojawiają się po pierwszym połączeniu.",
+    "noResults": "Brak wyników",
+    "banned": "Zbanowany",
+    "viewLogs": "Pokaż historię",
+    "logs": "Historia",
+    "backToList": "Wstecz",
+    "events": "zdarzeń",
+    "noEvents": "Brak zarejestrowanych zdarzeń",
+    "kick": "Wyrzuć",
+    "warn": "Ostrzeż",
+    "ban": "Zbanuj",
+    "unban": "Odbanuj",
+    "reasonPlaceholder": "Powód (opcjonalnie)",
+    "kickSuccess": "Gracz wyrzucony",
+    "warnSuccess": "Ostrzeżenie wysłane",
+    "banSuccess": "Gracz zbanowany",
+    "unbanSuccess": "Gracz odbanowany",
+    "op": "OP",
+    "deop": "Odbierz OP",
+    "opSuccess": "Gracz ma teraz OP",
+    "deopSuccess": "OP odebrany",
+    "actionError": "Akcja nie powiodła się",
+    "eventJoin": "Dołączenie",
+    "eventLeave": "Wyjście",
+    "eventChat": "Czat",
+    "eventCommand": "Komenda",
+    "eventDeath": "Śmierć",
+    "eventWarn": "Ostrzeżenie",
+    "eventKick": "Wyrzucenie",
+    "eventBan": "Ban",
+    "eventUnban": "Odbanowanie"
   }
 }

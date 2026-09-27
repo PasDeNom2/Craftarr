@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Потрібне перестворення"
   },
   "console": {
     "placeholder": "Введіть команду...",
@@ -237,7 +238,10 @@
     "clear": "Очистити",
     "autoScroll": "Авто-прокрутка",
     "newLines": "{count} нових рядків",
-    "stoppedPlaceholder": "Сервер зупинено"
+    "stoppedPlaceholder": "Сервер зупинено",
+    "noServerPack": "Серверний пак недоступний",
+    "noServerPackDesc": "Цей модпак не надає серверного паку. Все одно встановити з клієнтським паком (моди завантажуються за маніфестом)?",
+    "useClientPack": "Встановити з клієнтським паком"
   },
   "metrics": {
     "cpu": "ЦПУ",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Налаштування",
-    "subtitle": "Глобальна конфігурація MCManager",
+    "subtitle": "Глобальна конфігурація Craftarr",
     "apiKeys": "Ключі API",
     "apiSources": "Джерела API",
     "save": "Зберегти",
@@ -402,5 +406,43 @@
     "removed": "{{name}} видалено з білого списку",
     "remove": "Видалити",
     "empty": "У білому списку немає гравців"
+  },
+  "players": {
+    "title": "Гравці",
+    "totalPlayers": "відомих гравців",
+    "search": "Пошук...",
+    "connections": "підключень",
+    "noPlayers": "Гравців ще немає",
+    "noPlayersHint": "Гравці з’являються після першого підключення.",
+    "noResults": "Немає результатів",
+    "banned": "Забанений",
+    "viewLogs": "Переглянути історію",
+    "logs": "Історія",
+    "backToList": "Назад",
+    "events": "подій",
+    "noEvents": "Подій не зафіксовано",
+    "kick": "Вигнати",
+    "warn": "Попередити",
+    "ban": "Забанити",
+    "unban": "Розбанити",
+    "reasonPlaceholder": "Причина (необов’язково)",
+    "kickSuccess": "Гравця вигнано",
+    "warnSuccess": "Попередження надіслано",
+    "banSuccess": "Гравця забанено",
+    "unbanSuccess": "Гравця розбанено",
+    "op": "OP",
+    "deop": "Зняти OP",
+    "opSuccess": "Гравець тепер OP",
+    "deopSuccess": "OP знято",
+    "actionError": "Дію не виконано",
+    "eventJoin": "Вхід",
+    "eventLeave": "Вихід",
+    "eventChat": "Чат",
+    "eventCommand": "Команда",
+    "eventDeath": "Смерть",
+    "eventWarn": "Попередження",
+    "eventKick": "Вигнання",
+    "eventBan": "Бан",
+    "eventUnban": "Розбан"
   }
 }

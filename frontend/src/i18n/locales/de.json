@@ -163,7 +163,8 @@
       "stopped": "Gestoppt",
       "installing": "Installiert",
       "updating": "Aktualisiert",
-      "error": "Fehler"
+      "error": "Fehler",
+      "starting": "Startet"
     },
     "notFound": "Server nicht gefunden",
     "goBack": "Zurück zum Katalog",
@@ -224,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Neuerstellung erforderlich"
   },
   "console": {
     "placeholder": "Befehl eingeben...",
@@ -236,7 +238,10 @@
     "clear": "Leeren",
     "autoScroll": "Auto-Scroll",
     "newLines": "{count} neue Zeilen",
-    "stoppedPlaceholder": "Server gestoppt"
+    "stoppedPlaceholder": "Server gestoppt",
+    "noServerPack": "Kein Server-Pack verfügbar",
+    "noServerPackDesc": "Dieses Modpack bietet kein Server-Pack. Trotzdem mit dem Client-Pack installieren (Mods werden über das Manifest heruntergeladen)?",
+    "useClientPack": "Mit Client-Pack installieren"
   },
   "metrics": {
     "cpu": "CPU",
@@ -335,7 +340,7 @@
   },
   "settings": {
     "title": "Einstellungen",
-    "subtitle": "Globale MCManager-Konfiguration",
+    "subtitle": "Globale Craftarr-Konfiguration",
     "apiKeys": "API-Schlüssel",
     "apiSources": "API-Quellen",
     "save": "Speichern",
@@ -401,5 +406,43 @@
     "removed": "{{name}} von der Whitelist entfernt",
     "remove": "Entfernen",
     "empty": "Keine Spieler auf der Whitelist"
+  },
+  "players": {
+    "title": "Spieler",
+    "totalPlayers": "bekannte(r) Spieler",
+    "search": "Suchen...",
+    "connections": "Verbindung(en)",
+    "noPlayers": "Noch keine Spieler",
+    "noPlayersHint": "Spieler erscheinen nach ihrer ersten Verbindung.",
+    "noResults": "Keine Ergebnisse",
+    "banned": "Gebannt",
+    "viewLogs": "Verlauf anzeigen",
+    "logs": "Verlauf",
+    "backToList": "Zurück",
+    "events": "Ereignis(se)",
+    "noEvents": "Keine Ereignisse aufgezeichnet",
+    "kick": "Kicken",
+    "warn": "Verwarnen",
+    "ban": "Bannen",
+    "unban": "Entbannen",
+    "reasonPlaceholder": "Grund (optional)",
+    "kickSuccess": "Spieler gekickt",
+    "warnSuccess": "Verwarnung gesendet",
+    "banSuccess": "Spieler gebannt",
+    "unbanSuccess": "Spieler entbannt",
+    "op": "OP",
+    "deop": "OP entziehen",
+    "opSuccess": "Spieler ist jetzt OP",
+    "deopSuccess": "OP entzogen",
+    "actionError": "Aktion fehlgeschlagen",
+    "eventJoin": "Beitritt",
+    "eventLeave": "Verlassen",
+    "eventChat": "Chat",
+    "eventCommand": "Befehl",
+    "eventDeath": "Tod",
+    "eventWarn": "Verwarnung",
+    "eventKick": "Kick",
+    "eventBan": "Bann",
+    "eventUnban": "Entbannung"
   }
 }

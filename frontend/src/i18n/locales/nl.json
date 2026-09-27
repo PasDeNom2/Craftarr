@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Opnieuw aanmaken vereist"
   },
   "console": {
     "placeholder": "Voer een opdracht in...",
@@ -237,7 +238,10 @@
     "clear": "Wissen",
     "autoScroll": "Auto-scroll",
     "newLines": "{count} nieuwe regels",
-    "stoppedPlaceholder": "Server gestopt"
+    "stoppedPlaceholder": "Server gestopt",
+    "noServerPack": "Geen serverpack beschikbaar",
+    "noServerPackDesc": "Dit modpack biedt geen serverpack. Toch installeren met het clientpack (mods worden via het manifest gedownload)?",
+    "useClientPack": "Installeren met clientpack"
   },
   "metrics": {
     "cpu": "CPU",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Instellingen",
-    "subtitle": "Globale MCManager-configuratie",
+    "subtitle": "Globale Craftarr-configuratie",
     "apiKeys": "API-sleutels",
     "apiSources": "API-bronnen",
     "save": "Opslaan",
@@ -402,5 +406,43 @@
     "removed": "{{name}} van whitelist verwijderd",
     "remove": "Verwijderen",
     "empty": "Geen spelers op de whitelist"
+  },
+  "players": {
+    "title": "Spelers",
+    "totalPlayers": "bekende speler(s)",
+    "search": "Zoeken...",
+    "connections": "verbinding(en)",
+    "noPlayers": "Nog geen spelers",
+    "noPlayersHint": "Spelers verschijnen na hun eerste verbinding.",
+    "noResults": "Geen resultaten",
+    "banned": "Verbannen",
+    "viewLogs": "Geschiedenis bekijken",
+    "logs": "Geschiedenis",
+    "backToList": "Terug",
+    "events": "gebeurtenis(sen)",
+    "noEvents": "Geen gebeurtenissen vastgelegd",
+    "kick": "Kicken",
+    "warn": "Waarschuwen",
+    "ban": "Verbannen",
+    "unban": "Ban opheffen",
+    "reasonPlaceholder": "Reden (optioneel)",
+    "kickSuccess": "Speler gekickt",
+    "warnSuccess": "Waarschuwing verzonden",
+    "banSuccess": "Speler verbannen",
+    "unbanSuccess": "Ban opgeheven",
+    "op": "OP",
+    "deop": "OP intrekken",
+    "opSuccess": "Speler is nu OP",
+    "deopSuccess": "OP ingetrokken",
+    "actionError": "Actie mislukt",
+    "eventJoin": "Binnenkomst",
+    "eventLeave": "Vertrek",
+    "eventChat": "Chat",
+    "eventCommand": "Commando",
+    "eventDeath": "Dood",
+    "eventWarn": "Waarschuwing",
+    "eventKick": "Kick",
+    "eventBan": "Ban",
+    "eventUnban": "Ban opgeheven"
   }
 }

@@ -79,7 +79,7 @@ app.use('/api/sources', sourcesRoutes);
 app.use('/api/servers', backupsRoutes);
 app.use('/api/vanilla', vanillaRoutes);
 
-app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.0.0' }));
+app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use(errorHandler);
 

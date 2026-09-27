@@ -155,7 +155,8 @@
       "importWorld": "ワールドをインポート",
       "delete": "削除",
       "installMods": "Modをインストール",
-      "reinstall": "Reinstall"
+      "reinstall": "Reinstall",
+      "downloadWorld": "ワールドをダウンロード"
     },
     "status": {
       "running": "オンライン",
@@ -224,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "再作成が必要"
   },
   "console": {
     "placeholder": "コマンドを入力...",
@@ -236,7 +238,10 @@
     "clear": "クリア",
     "autoScroll": "自動スクロール",
     "newLines": "{count} 新しい行",
-    "stoppedPlaceholder": "サーバー停止中"
+    "stoppedPlaceholder": "サーバー停止中",
+    "noServerPack": "サーバーパックがありません",
+    "noServerPackDesc": "このModパックにはサーバーパックがありません。クライアントパックでインストールしますか（Modはマニフェストからダウンロードされます）？",
+    "useClientPack": "クライアントパックでインストール"
   },
   "metrics": {
     "cpu": "CPU",
@@ -335,7 +340,7 @@
   },
   "settings": {
     "title": "設定",
-    "subtitle": "MCManagerグローバル設定",
+    "subtitle": "Craftarrグローバル設定",
     "apiKeys": "APIキー",
     "apiSources": "APIソース",
     "save": "保存",
@@ -401,5 +406,43 @@
     "removed": "{{name}} をホワイトリストから削除しました",
     "remove": "削除",
     "empty": "ホワイトリストにプレイヤーがいません"
+  },
+  "players": {
+    "title": "プレイヤー",
+    "totalPlayers": "人の既知プレイヤー",
+    "search": "検索...",
+    "connections": "回の接続",
+    "noPlayers": "プレイヤーはまだいません",
+    "noPlayersHint": "プレイヤーは初回接続後に表示されます。",
+    "noResults": "結果なし",
+    "banned": "BAN済み",
+    "viewLogs": "履歴を表示",
+    "logs": "履歴",
+    "backToList": "戻る",
+    "events": "件のイベント",
+    "noEvents": "記録されたイベントはありません",
+    "kick": "キック",
+    "warn": "警告",
+    "ban": "BAN",
+    "unban": "BAN解除",
+    "reasonPlaceholder": "理由（任意）",
+    "kickSuccess": "プレイヤーをキックしました",
+    "warnSuccess": "警告を送信しました",
+    "banSuccess": "プレイヤーをBANしました",
+    "unbanSuccess": "BANを解除しました",
+    "op": "OP",
+    "deop": "OP解除",
+    "opSuccess": "プレイヤーをOPにしました",
+    "deopSuccess": "OPを解除しました",
+    "actionError": "操作に失敗しました",
+    "eventJoin": "参加",
+    "eventLeave": "退出",
+    "eventChat": "チャット",
+    "eventCommand": "コマンド",
+    "eventDeath": "死亡",
+    "eventWarn": "警告",
+    "eventKick": "キック",
+    "eventBan": "BAN",
+    "eventUnban": "BAN解除"
   }
 }

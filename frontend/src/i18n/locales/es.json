@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Recreación necesaria"
   },
   "console": {
     "placeholder": "Escribe un comando...",
@@ -237,7 +238,10 @@
     "clear": "Limpiar",
     "autoScroll": "Auto-scroll",
     "newLines": "{count} nuevas líneas",
-    "stoppedPlaceholder": "Servidor detenido"
+    "stoppedPlaceholder": "Servidor detenido",
+    "noServerPack": "No hay server pack disponible",
+    "noServerPackDesc": "Este modpack no ofrece server pack. ¿Instalar igualmente con el pack cliente (los mods se descargan desde el manifiesto)?",
+    "useClientPack": "Instalar con el pack cliente"
   },
   "metrics": {
     "cpu": "CPU",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Ajustes",
-    "subtitle": "Configuración global de MCManager",
+    "subtitle": "Configuración global de Craftarr",
     "apiKeys": "Claves API",
     "apiSources": "Fuentes API",
     "save": "Guardar",
@@ -402,5 +406,43 @@
     "removed": "{{name}} eliminado de la lista blanca",
     "remove": "Quitar",
     "empty": "No hay jugadores en la lista blanca"
+  },
+  "players": {
+    "title": "Jugadores",
+    "totalPlayers": "jugador(es) conocido(s)",
+    "search": "Buscar...",
+    "connections": "conexión(es)",
+    "noPlayers": "Aún no hay jugadores",
+    "noPlayersHint": "Los jugadores aparecen tras su primera conexión.",
+    "noResults": "Sin resultados",
+    "banned": "Baneado",
+    "viewLogs": "Ver historial",
+    "logs": "Historial",
+    "backToList": "Volver",
+    "events": "evento(s)",
+    "noEvents": "No hay eventos registrados",
+    "kick": "Expulsar",
+    "warn": "Advertir",
+    "ban": "Banear",
+    "unban": "Desbanear",
+    "reasonPlaceholder": "Motivo (opcional)",
+    "kickSuccess": "Jugador expulsado",
+    "warnSuccess": "Advertencia enviada",
+    "banSuccess": "Jugador baneado",
+    "unbanSuccess": "Jugador desbaneado",
+    "op": "OP",
+    "deop": "Quitar OP",
+    "opSuccess": "Jugador ahora es OP",
+    "deopSuccess": "OP retirado",
+    "actionError": "La acción ha fallado",
+    "eventJoin": "Entrada",
+    "eventLeave": "Salida",
+    "eventChat": "Chat",
+    "eventCommand": "Comando",
+    "eventDeath": "Muerte",
+    "eventWarn": "Advertencia",
+    "eventKick": "Expulsión",
+    "eventBan": "Baneo",
+    "eventUnban": "Desbaneo"
   }
 }

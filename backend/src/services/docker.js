@@ -683,11 +683,6 @@ async function pullImage(imageName, onProgress) {
   });
 }
 
-async function listMcContainers() {
-  const containers = await docker.listContainers({ all: true });
-  return containers.filter(c => c.Names.some(n => n.startsWith('/mc-')));
-}
-
 async function removeContainerAndImage(containerId) {
   let imageToRemove = null;
   try {
@@ -726,5 +721,4 @@ module.exports = {
   streamContainerLogs,
   getRecentLogs,
   pullImage,
-  listMcContainers,
 };

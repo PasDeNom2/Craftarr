@@ -53,7 +53,6 @@ export const stopServer = (id) => api.post(`/servers/${id}/stop`, null, LONG).th
 export const restartServer = (id) => api.post(`/servers/${id}/restart`, null, LONG).then(r => r.data);
 export const backupServer = (id) => api.post(`/servers/${id}/backup`, null, LONG).then(r => r.data);
 export const sendRcon = (id, command) => api.post(`/servers/${id}/rcon`, { command }).then(r => r.data);
-export const getServerMetrics = (id) => api.get(`/servers/${id}/metrics`).then(r => r.data);
 export const updateServer = (id, versionId) =>
   api.post(`/servers/${id}/update`, versionId ? { version_id: versionId } : {}).then(r => r.data);
 export const importWorld = (id, file) => {

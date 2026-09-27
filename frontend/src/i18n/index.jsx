@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+// Langue de repli pour toute clé absente d'une traduction (jamais de clé brute à l'écran)
+import FALLBACK_MESSAGES from './locales/en.json';
 
 // ─── Supported languages ──────────────────────────────────────────────────────
 export const LANGUAGES = [
@@ -79,7 +81,7 @@ export function I18nProvider({ children }) {
   }, []);
 
   const t = useCallback((key, vars) => {
-    let str = deepGet(messages, key, key);
+    let str = deepGet(messages, key, undefined) ?? deepGet(FALLBACK_MESSAGES, key, key);
     if (vars && typeof str === 'string') {
       Object.entries(vars).forEach(([k, v]) => {
         str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v);

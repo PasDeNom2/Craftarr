@@ -155,14 +155,16 @@
       "importWorld": "استيراد عالم",
       "delete": "حذف",
       "installMods": "تثبيت الإضافات",
-      "reinstall": "Reinstall"
+      "reinstall": "Reinstall",
+      "downloadWorld": "تنزيل العالم"
     },
     "status": {
       "running": "متصل",
       "stopped": "موقوف",
       "installing": "جارٍ التثبيت",
       "updating": "جارٍ التحديث",
-      "error": "خطأ"
+      "error": "خطأ",
+      "starting": "جارٍ التشغيل"
     },
     "notFound": "الخادم غير موجود",
     "goBack": "العودة إلى الكتالوج",
@@ -223,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "يلزم إعادة الإنشاء"
   },
   "console": {
     "placeholder": "أدخل أمراً...",
@@ -235,7 +238,10 @@
     "clear": "مسح",
     "autoScroll": "تمرير تلقائي",
     "newLines": "{count} سطر جديد",
-    "stoppedPlaceholder": "الخادم متوقف"
+    "stoppedPlaceholder": "الخادم متوقف",
+    "noServerPack": "لا تتوفر حزمة خادم",
+    "noServerPackDesc": "لا توفر هذه الحزمة حزمة خادم. هل تريد التثبيت على أي حال باستخدام حزمة العميل (تُنزَّل التعديلات عبر ملف البيان)؟",
+    "useClientPack": "التثبيت باستخدام حزمة العميل"
   },
   "metrics": {
     "cpu": "المعالج",
@@ -334,7 +340,7 @@
   },
   "settings": {
     "title": "الإعدادات",
-    "subtitle": "التكوين العام لـ MCManager",
+    "subtitle": "التكوين العام لـ Craftarr",
     "apiKeys": "مفاتيح API",
     "apiSources": "مصادر API",
     "save": "حفظ",
@@ -400,5 +406,43 @@
     "removed": "تمت إزالة {{name}} من القائمة البيضاء",
     "remove": "إزالة",
     "empty": "لا يوجد لاعبون في القائمة البيضاء"
+  },
+  "players": {
+    "title": "اللاعبون",
+    "totalPlayers": "لاعب معروف",
+    "search": "بحث...",
+    "connections": "اتصال",
+    "noPlayers": "لا يوجد لاعبون بعد",
+    "noPlayersHint": "يظهر اللاعبون بعد أول اتصال لهم.",
+    "noResults": "لا توجد نتائج",
+    "banned": "محظور",
+    "viewLogs": "عرض السجل",
+    "logs": "السجل",
+    "backToList": "رجوع",
+    "events": "حدث",
+    "noEvents": "لا توجد أحداث مسجلة",
+    "kick": "طرد",
+    "warn": "تحذير",
+    "ban": "حظر",
+    "unban": "إلغاء الحظر",
+    "reasonPlaceholder": "السبب (اختياري)",
+    "kickSuccess": "تم طرد اللاعب",
+    "warnSuccess": "تم إرسال التحذير",
+    "banSuccess": "تم حظر اللاعب",
+    "unbanSuccess": "تم إلغاء حظر اللاعب",
+    "op": "OP",
+    "deop": "إزالة OP",
+    "opSuccess": "أصبح اللاعب OP",
+    "deopSuccess": "تمت إزالة OP",
+    "actionError": "فشل الإجراء",
+    "eventJoin": "دخول",
+    "eventLeave": "خروج",
+    "eventChat": "دردشة",
+    "eventCommand": "أمر",
+    "eventDeath": "موت",
+    "eventWarn": "تحذير",
+    "eventKick": "طرد",
+    "eventBan": "حظر",
+    "eventUnban": "إلغاء الحظر"
   }
 }

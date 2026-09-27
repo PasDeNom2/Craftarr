@@ -155,14 +155,16 @@
       "importWorld": "导入世界",
       "delete": "删除",
       "installMods": "安装模组",
-      "reinstall": "Reinstall"
+      "reinstall": "Reinstall",
+      "downloadWorld": "下载世界"
     },
     "status": {
       "running": "在线",
       "stopped": "已停止",
       "installing": "安装中",
       "updating": "更新中",
-      "error": "错误"
+      "error": "错误",
+      "starting": "启动中"
     },
     "notFound": "找不到服务器",
     "goBack": "返回目录",
@@ -223,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "需要重建"
   },
   "console": {
     "placeholder": "输入命令...",
@@ -235,7 +238,10 @@
     "clear": "清空",
     "autoScroll": "自动滚动",
     "newLines": "{count} 条新行",
-    "stoppedPlaceholder": "服务器已停止"
+    "stoppedPlaceholder": "服务器已停止",
+    "noServerPack": "没有可用的服务器包",
+    "noServerPackDesc": "此整合包未提供服务器包。仍要使用客户端包安装吗（通过清单下载模组）？",
+    "useClientPack": "使用客户端包安装"
   },
   "metrics": {
     "cpu": "CPU",
@@ -334,7 +340,7 @@
   },
   "settings": {
     "title": "设置",
-    "subtitle": "MCManager 全局配置",
+    "subtitle": "Craftarr 全局配置",
     "apiKeys": "API 密钥",
     "apiSources": "API 来源",
     "save": "保存",
@@ -400,5 +406,43 @@
     "removed": "{{name}} 已从白名单中移除",
     "remove": "移除",
     "empty": "白名单中没有玩家"
+  },
+  "players": {
+    "title": "玩家",
+    "totalPlayers": "位已知玩家",
+    "search": "搜索...",
+    "connections": "次连接",
+    "noPlayers": "暂无玩家",
+    "noPlayersHint": "玩家首次连接后会显示在这里。",
+    "noResults": "无结果",
+    "banned": "已封禁",
+    "viewLogs": "查看历史",
+    "logs": "历史",
+    "backToList": "返回",
+    "events": "个事件",
+    "noEvents": "没有记录的事件",
+    "kick": "踢出",
+    "warn": "警告",
+    "ban": "封禁",
+    "unban": "解封",
+    "reasonPlaceholder": "原因（可选）",
+    "kickSuccess": "已踢出玩家",
+    "warnSuccess": "已发送警告",
+    "banSuccess": "已封禁玩家",
+    "unbanSuccess": "已解封玩家",
+    "op": "OP",
+    "deop": "取消 OP",
+    "opSuccess": "玩家已成为 OP",
+    "deopSuccess": "已取消 OP",
+    "actionError": "操作失败",
+    "eventJoin": "加入",
+    "eventLeave": "离开",
+    "eventChat": "聊天",
+    "eventCommand": "命令",
+    "eventDeath": "死亡",
+    "eventWarn": "警告",
+    "eventKick": "踢出",
+    "eventBan": "封禁",
+    "eventUnban": "解封"
   }
 }

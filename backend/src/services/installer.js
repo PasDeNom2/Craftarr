@@ -861,10 +861,4 @@ async function freshInstallModpack(server, serverDir) {
   }
 }
 
-/** @deprecated Use freshInstallModpack via applyUpdate instead */
-async function updateModpackMods(server) {
-  const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
-  await freshInstallModpack(server, serverDir);
-}
-
-module.exports = { installServer, installModsOnly, updateModpackMods, freshInstallModpack, confirmClientPack, cancelClientPack, setIo };
+module.exports = { installServer, installModsOnly, freshInstallModpack, confirmClientPack, cancelClientPack, setIo };

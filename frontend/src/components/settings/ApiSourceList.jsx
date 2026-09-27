@@ -46,7 +46,7 @@ export default function ApiSourceList() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'mcmanager-sources.json'; a.click();
+    a.href = url; a.download = 'craftarr-sources.json'; a.click();
     URL.revokeObjectURL(url);
   }
 

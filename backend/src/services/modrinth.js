@@ -244,15 +244,6 @@ async function getModList(apiKey, projectId) {
   return sorted;
 }
 
-// Conservé pour compatibilité — la logique serveur est gérée dans installMrpack (installer.js)
-async function getServerPackUrl(apiKey, projectId) {
-  const versions = await getVersions(apiKey, projectId);
-  const latest = versions[0];
-  if (!latest) return null;
-  const primary = latest.files.find(f => f.primary) || latest.files[0];
-  return primary ? { url: primary.url, version: latest } : null;
-}
-
 function normalizeModpack(hit) {
   return {
     id: hit.project_id,
@@ -308,4 +299,4 @@ async function testConnection(apiKey) {
   }
 }
 
-module.exports = { searchModpacks, getModpack, getVersions, getModList, getServerPackUrl, testConnection };
+module.exports = { searchModpacks, getModpack, getVersions, getModList, testConnection };

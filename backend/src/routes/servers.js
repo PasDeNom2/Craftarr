@@ -893,20 +893,6 @@ router.put('/:id/files/content', authMiddleware, (req, res, next) => {
   }
 });
 
-// GET /api/servers/:id/metrics
-router.get('/:id/metrics', authMiddleware, async (req, res, next) => {
-  try {
-    const db = getDb();
-    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
-    if (!server || !server.container_id) return res.json(null);
-
-    const stats = await dockerService.getContainerStats(server.container_id);
-    res.json(stats);
-  } catch (err) {
-    next(err);
-  }
-});
-
 // GET /api/servers/:id/whitelist
 router.get('/:id/whitelist', authMiddleware, (req, res) => {
   const db = getDb();

@@ -43,7 +43,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F0F0F0] rounded-xl mb-4">
             <Layers size={20} strokeWidth={2} className="text-black" />
           </div>
-          <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">MCManager</h1>
+          <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">Craftarr</h1>
           <p className="text-[#6B6B76] text-sm mt-1">{t('app.tagline')}</p>
         </div>
 

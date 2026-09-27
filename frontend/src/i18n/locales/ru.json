@@ -225,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "Требуется пересоздание"
   },
   "console": {
     "placeholder": "Введите команду...",
@@ -237,7 +238,10 @@
     "clear": "Очистить",
     "autoScroll": "Авто-прокрутка",
     "newLines": "{count} новых строк",
-    "stoppedPlaceholder": "Сервер остановлен"
+    "stoppedPlaceholder": "Сервер остановлен",
+    "noServerPack": "Серверный пак недоступен",
+    "noServerPackDesc": "Этот модпак не предоставляет серверный пак. Всё равно установить с клиентским паком (моды загружаются по манифесту)?",
+    "useClientPack": "Установить с клиентским паком"
   },
   "metrics": {
     "cpu": "ЦПУ",
@@ -336,7 +340,7 @@
   },
   "settings": {
     "title": "Настройки",
-    "subtitle": "Глобальная конфигурация MCManager",
+    "subtitle": "Глобальная конфигурация Craftarr",
     "apiKeys": "Ключи API",
     "apiSources": "Источники API",
     "save": "Сохранить",
@@ -402,5 +406,43 @@
     "removed": "{{name}} удалён из белого списка",
     "remove": "Удалить",
     "empty": "В белом списке нет игроков"
+  },
+  "players": {
+    "title": "Игроки",
+    "totalPlayers": "известных игроков",
+    "search": "Поиск...",
+    "connections": "подключений",
+    "noPlayers": "Игроков пока нет",
+    "noPlayersHint": "Игроки появляются после первого подключения.",
+    "noResults": "Нет результатов",
+    "banned": "Забанен",
+    "viewLogs": "Показать историю",
+    "logs": "История",
+    "backToList": "Назад",
+    "events": "событий",
+    "noEvents": "Событий не записано",
+    "kick": "Кикнуть",
+    "warn": "Предупредить",
+    "ban": "Забанить",
+    "unban": "Разбанить",
+    "reasonPlaceholder": "Причина (необязательно)",
+    "kickSuccess": "Игрок кикнут",
+    "warnSuccess": "Предупреждение отправлено",
+    "banSuccess": "Игрок забанен",
+    "unbanSuccess": "Игрок разбанен",
+    "op": "OP",
+    "deop": "Снять OP",
+    "opSuccess": "Игрок теперь OP",
+    "deopSuccess": "OP снят",
+    "actionError": "Действие не выполнено",
+    "eventJoin": "Вход",
+    "eventLeave": "Выход",
+    "eventChat": "Чат",
+    "eventCommand": "Команда",
+    "eventDeath": "Смерть",
+    "eventWarn": "Предупреждение",
+    "eventKick": "Кик",
+    "eventBan": "Бан",
+    "eventUnban": "Разбан"
   }
 }

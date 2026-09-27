@@ -15,6 +15,7 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import ServerAvatar from '../ui/ServerAvatar';
+import { resetSocket } from '../../hooks/useSocket';
 
 
 function NavItem({ to, icon: Icon, label, collapsed }) {
@@ -56,6 +57,8 @@ export default function Sidebar() {
   const runningCount = servers.filter(s => s.status === 'running').length;
 
   function handleLogout() {
+    // Ferme le socket authentifié avec l'ancien token (sinon il resterait ouvert après la déconnexion)
+    resetSocket();
     logout();
     navigate('/login');
   }

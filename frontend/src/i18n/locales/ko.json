@@ -155,7 +155,8 @@
       "importWorld": "월드 가져오기",
       "delete": "삭제",
       "installMods": "모드 설치",
-      "reinstall": "Reinstall"
+      "reinstall": "Reinstall",
+      "downloadWorld": "월드 다운로드"
     },
     "status": {
       "running": "온라인",
@@ -224,7 +225,8 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "needsRecreate": "재생성 필요"
   },
   "console": {
     "placeholder": "명령어 입력...",
@@ -236,7 +238,10 @@
     "clear": "지우기",
     "autoScroll": "자동 스크롤",
     "newLines": "{count}개의 새 줄",
-    "stoppedPlaceholder": "서버 중지됨"
+    "stoppedPlaceholder": "서버 중지됨",
+    "noServerPack": "서버 팩 없음",
+    "noServerPackDesc": "이 모드팩은 서버 팩을 제공하지 않습니다. 클라이언트 팩으로 설치할까요(매니페스트로 모드를 다운로드)?",
+    "useClientPack": "클라이언트 팩으로 설치"
   },
   "metrics": {
     "cpu": "CPU",
@@ -335,7 +340,7 @@
   },
   "settings": {
     "title": "설정",
-    "subtitle": "MCManager 전역 구성",
+    "subtitle": "Craftarr 전역 구성",
     "apiKeys": "API 키",
     "apiSources": "API 소스",
     "save": "저장",
@@ -401,5 +406,43 @@
     "removed": "{{name}} 화이트리스트에서 제거됨",
     "remove": "제거",
     "empty": "화이트리스트에 플레이어 없음"
+  },
+  "players": {
+    "title": "플레이어",
+    "totalPlayers": "명의 알려진 플레이어",
+    "search": "검색...",
+    "connections": "회 접속",
+    "noPlayers": "아직 플레이어가 없습니다",
+    "noPlayersHint": "플레이어는 첫 접속 후 표시됩니다.",
+    "noResults": "결과 없음",
+    "banned": "차단됨",
+    "viewLogs": "기록 보기",
+    "logs": "기록",
+    "backToList": "뒤로",
+    "events": "개의 이벤트",
+    "noEvents": "기록된 이벤트가 없습니다",
+    "kick": "추방",
+    "warn": "경고",
+    "ban": "차단",
+    "unban": "차단 해제",
+    "reasonPlaceholder": "사유 (선택)",
+    "kickSuccess": "플레이어를 추방했습니다",
+    "warnSuccess": "경고를 보냈습니다",
+    "banSuccess": "플레이어를 차단했습니다",
+    "unbanSuccess": "차단을 해제했습니다",
+    "op": "OP",
+    "deop": "OP 해제",
+    "opSuccess": "플레이어가 OP가 되었습니다",
+    "deopSuccess": "OP를 해제했습니다",
+    "actionError": "작업 실패",
+    "eventJoin": "입장",
+    "eventLeave": "퇴장",
+    "eventChat": "채팅",
+    "eventCommand": "명령어",
+    "eventDeath": "사망",
+    "eventWarn": "경고",
+    "eventKick": "추방",
+    "eventBan": "차단",
+    "eventUnban": "차단 해제"
   }
 }

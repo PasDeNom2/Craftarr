@@ -120,7 +120,7 @@ export default function MetricsPanel({ server }) {
           value={tps != null ? tps.toFixed(1) : '—'}
           unit="TPS"
           valueColor={tpsColor}
-          sub={current?.tps ? t('metrics.tpsSub', { tps5: current.tps.tps5?.toFixed(1), tps15: current.tps.tps15?.toFixed(1) }) : null}
+          sub={current?.tps?.tps5 != null ? t('metrics.tpsSub', { tps5: current.tps.tps5.toFixed(1), tps15: current.tps.tps15?.toFixed(1) }) : null}
         />
       </div>
 
