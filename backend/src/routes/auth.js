@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { getDb } = require('../config/database');
-const { v4: uuidv4 } = require('uuid');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
@@ -70,7 +69,7 @@ router.post('/setup', async (req, res, next) => {
       return res.status(400).json({ error: 'Mot de passe trop court (min 8 caractères)' });
     }
 
-    const id = uuidv4();
+    const id = crypto.randomUUID();
     const hash = await bcrypt.hash(password, 10);
     db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run(id, username.trim(), hash);
     setupToken = null; // usage unique

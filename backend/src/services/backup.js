@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { getDb } = require('../config/database');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';

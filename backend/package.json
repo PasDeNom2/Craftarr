@@ -5,14 +5,15 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
     "archiver": "^6.0.1",
     "axios": "^1.6.7",
-    "bcrypt": "^5.1.1",
-    "better-sqlite3": "^9.4.3",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.11.1",
     "dockerode": "^4.0.2",
     "dotenv": "^16.4.4",
     "express": "^4.18.2",
@@ -22,10 +23,12 @@
     "morgan": "^1.10.0",
     "multer": "^2.4.0",
     "node-cron": "^3.0.3",
-    "socket.io": "^4.7.2",
-    "uuid": "^9.0.1"
+    "socket.io": "^4.7.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

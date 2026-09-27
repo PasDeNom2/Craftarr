@@ -861,4 +861,8 @@ async function freshInstallModpack(server, serverDir) {
   }
 }
 
-module.exports = { installServer, installModsOnly, freshInstallModpack, confirmClientPack, cancelClientPack, setIo };
+module.exports = {
+  installServer, installModsOnly, freshInstallModpack, confirmClientPack, cancelClientPack, setIo,
+  // Exposé pour les tests uniquement
+  _internals: { downloadFile, safeJoin, installMrpack, ramAdvice },
+};

@@ -1,8 +1,9 @@
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+# npm ci : installe exactement le lockfile (builds reproductibles)
+RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 

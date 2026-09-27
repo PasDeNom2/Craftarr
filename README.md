@@ -191,13 +191,23 @@ docker exec -it craftarr-backend node src/scripts/reset-password.js [username] [
 
 ## Local development
 
+Requires **Node.js 22+** (the Docker images use Node 24 LTS).
+
 ```bash
 # Backend — http://localhost:3000
-cd backend && npm install && npm run dev
+cd backend && npm ci && npm run dev
 
 # Frontend — http://localhost:5173 (proxied to :3000)
-cd frontend && npm install && npm run dev
+cd frontend && npm ci && npm run dev
 ```
+
+### Tests
+
+```bash
+cd backend && npm test
+```
+
+The suite covers installs (downloads, hashes, `.mrpack`, zip-slip), modpack updates with rollback, backups/restore/world import, auth hardening and the HTTP API (a real backend is started on a temporary data folder — no Docker needed). CI runs it on every push (`.github/workflows/ci.yml`).
 
 ---
 
@@ -205,7 +215,7 @@ cd frontend && npm install && npm run dev
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js 20 + Express + Socket.io |
+| Backend | Node.js 24 + Express + Socket.io |
 | Frontend | React 18 + Vite + TailwindCSS |
 | Database | SQLite (better-sqlite3) |
 | Minecraft containers | itzg/minecraft-server |

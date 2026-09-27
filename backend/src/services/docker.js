@@ -721,4 +721,6 @@ module.exports = {
   streamContainerLogs,
   getRecentLogs,
   pullImage,
+  // Exposé pour les tests uniquement
+  _internals: { buildEnvVars, resolveMinecraftImage, ensureVoiceChatPort, detectPackNeoForgeVersion },
 };
