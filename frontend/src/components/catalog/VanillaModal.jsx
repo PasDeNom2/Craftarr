@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { createServer, getVanillaVersions, uploadServerIcon } from '../../services/api';
 import { useServerStore } from '../../store';
@@ -8,6 +8,7 @@ import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import { Rocket, Globe } from 'lucide-react';
 import IconPicker from '../ui/IconPicker';
+import { nextFreePort, portTakenBy } from '../../utils/ports';
 
 const VERSION_TYPES = [
   { value: 'release', label: 'Release' },
@@ -19,12 +20,13 @@ export default function VanillaModal({ open, onClose }) {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { addServer } = useServerStore();
+  const allServers = useServerStore(s => s.servers);
 
   const [versionType, setVersionType] = useState('release');
   const [form, setForm] = useState({
     name: 'Vanilla Server',
     mc_version: '',
-    port: 25565,
+    port: nextFreePort(allServers),
     ram_mb: 2048,
     max_players: 20,
     seed: '',
@@ -96,6 +98,11 @@ export default function VanillaModal({ open, onClose }) {
     }
   }
 
+  useEffect(() => {
+    if (open && portTakenBy(allServers, form.port)) set('port', nextFreePort(allServers));
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const portConflict = portTakenBy(allServers, form.port);
+
   return (
     <Modal open={open} onClose={onClose} title="Créer un serveur Vanilla" size="lg">
       <div className="p-6">
@@ -113,7 +120,7 @@ export default function VanillaModal({ open, onClose }) {
                   className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={{
                     background: versionType === vt.value ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                    color: versionType === vt.value ? 'var(--bg)' : '#6B6B76',
+                    color: versionType === vt.value ? 'var(--bg)' : 'var(--fg-2)',
                     border: `1px solid ${versionType === vt.value ? 'var(--accent)' : 'rgba(255,255,255,0.08)'}`,
                   }}
                 >
@@ -133,7 +140,19 @@ export default function VanillaModal({ open, onClose }) {
             </div>
             <div>
               <label className="label">{t('deploy.port')}</label>
-              <input className="input" type="number" min="1024" max="65535" value={form.port} onChange={e => set('port', +e.target.value)} />
+              <input
+                className="input" type="number" min="1024" max="65535" value={form.port}
+                onChange={e => set('port', +e.target.value)}
+                style={portConflict ? { borderColor: 'rgba(var(--danger-rgb),0.6)' } : undefined}
+              />
+              {portConflict && (
+                <p className="text-[11px] text-danger mt-1.5 fade-in">
+                  {t('deploy.portTaken', { name: portConflict.name })}
+                  <button type="button" className="ml-1.5 underline hover:no-underline" onClick={() => set('port', nextFreePort(allServers))}>
+                    {t('deploy.useFreePort', { port: nextFreePort(allServers) })}
+                  </button>
+                </p>
+              )}
             </div>
             <div>
               <label className="label">{t('deploy.maxPlayers')}</label>
@@ -146,13 +165,13 @@ export default function VanillaModal({ open, onClose }) {
             <label className="label">
               Version Minecraft
               {latestRelease && !form.mc_version && (
-                <span className="ml-2 text-[#4A4A55] font-normal normal-case tracking-normal">
+                <span className="ml-2 text-fg-3 font-normal normal-case tracking-normal">
                   — dernière : {latestRelease}
                 </span>
               )}
             </label>
             {isLoading ? (
-              <div className="input text-[#4A4A55] text-sm">{t('common.loading')}</div>
+              <div className="input text-fg-3 text-sm">{t('common.loading')}</div>
             ) : (
               <select className="input" value={form.mc_version} onChange={e => set('mc_version', e.target.value)}>
                 <option value="">Dernière version ({latestRelease})</option>
@@ -169,7 +188,7 @@ export default function VanillaModal({ open, onClose }) {
           <div>
             <div className="flex justify-between mb-1.5">
               <label className="label mb-0">{t('deploy.ram')}</label>
-              <span className="text-sm font-semibold text-[#F0F0F0]">
+              <span className="text-sm font-semibold text-fg">
                 {form.ram_mb >= 1024 ? `${form.ram_mb / 1024} Go` : `${form.ram_mb} Mo`}
               </span>
             </div>
@@ -180,7 +199,7 @@ export default function VanillaModal({ open, onClose }) {
               className="w-full"
               style={{ accentColor: 'var(--accent)' }}
             />
-            <div className="flex justify-between text-[11px] text-[#4A4A55] mt-1">
+            <div className="flex justify-between text-[11px] text-fg-3 mt-1">
               <span>512 Mo</span><span>32 Go</span>
             </div>
           </div>
@@ -223,13 +242,13 @@ export default function VanillaModal({ open, onClose }) {
           <div>
             <label className="label">
               {t('deploy.worldImportLabel')}
-              <span className="ml-2 text-[#4A4A55] font-normal normal-case tracking-normal">{t('deploy.worldImportHint')}</span>
+              <span className="ml-2 text-fg-3 font-normal normal-case tracking-normal">{t('deploy.worldImportHint')}</span>
             </label>
             <div
               className="rounded-xl p-4 text-center cursor-pointer transition-all duration-200"
               style={{
-                border: `2px dashed ${worldFile ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                background: worldFile ? 'rgba(74,222,128,0.04)' : 'transparent',
+                border: `2px dashed ${worldFile ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.1)'}`,
+                background: worldFile ? 'rgba(var(--accent-rgb),0.04)' : 'transparent',
               }}
             >
               <input type="file" accept=".zip" className="hidden" id="vanilla-world-upload"
@@ -237,17 +256,17 @@ export default function VanillaModal({ open, onClose }) {
               <label htmlFor="vanilla-world-upload" className="cursor-pointer">
                 {worldFile ? (
                   <div className="space-y-1">
-                    <p className="text-[#4ADE80] text-sm font-medium">{worldFile.name}</p>
-                    <p className="text-[#4A4A55] text-xs">{(worldFile.size / 1024 / 1024).toFixed(1)} Mo</p>
-                    <button type="button" className="text-xs text-[#F87171] hover:text-red-400 transition-colors"
+                    <p className="text-accent text-sm font-medium">{worldFile.name}</p>
+                    <p className="text-fg-3 text-xs">{(worldFile.size / 1024 / 1024).toFixed(1)} Mo</p>
+                    <button type="button" className="text-xs text-danger hover:text-red-400 transition-colors"
                       onClick={e => { e.preventDefault(); setWorldFile(null); }}>
                       {t('deploy.worldRemove')}
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Globe size={20} strokeWidth={1.5} className="mx-auto text-[#4A4A55]" />
-                    <p className="text-sm text-[#6B6B76]">{t('deploy.worldImportClick')}</p>
+                    <Globe size={20} strokeWidth={1.5} className="mx-auto text-fg-3" />
+                    <p className="text-sm text-fg-2">{t('deploy.worldImportClick')}</p>
                   </div>
                 )}
               </label>
@@ -259,17 +278,17 @@ export default function VanillaModal({ open, onClose }) {
               <input type="checkbox" className="w-4 h-4 rounded" checked={form.whitelist_enabled}
                 onChange={e => set('whitelist_enabled', e.target.checked)}
                 style={{ accentColor: 'var(--accent)' }} />
-              <span className="text-sm text-[#6B6B76]">{t('deploy.whitelist')}</span>
+              <span className="text-sm text-fg-2">{t('deploy.whitelist')}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer ml-auto">
               <input type="checkbox" className="w-4 h-4 rounded" checked={form.online_mode}
                 onChange={e => set('online_mode', e.target.checked)}
                 style={{ accentColor: 'var(--accent)' }} />
-              <span className="text-sm text-[#6B6B76]">{t('deploy.onlineMode')}</span>
+              <span className="text-sm text-fg-2">{t('deploy.onlineMode')}</span>
             </label>
           </div>
 
-          <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying}>
+          <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying || !!portConflict}>
             <Rocket size={14} strokeWidth={1.5} />
             {deploying ? t('deploy.deploying') : 'Créer le serveur Vanilla'}
           </button>

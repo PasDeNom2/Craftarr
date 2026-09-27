@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import { createSource, testSource } from '../../services/api';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { Plug, CheckCircle2, XCircle } from 'lucide-react';
+import Modal from '../ui/Modal';
+import { createSource, testSource, updateSource, deleteSource } from '../../services/api';
+import { useI18n } from '../../i18n';
 
 const FORMATS = [
   { value: 'curseforge', label: 'CurseForge-compatible' },
@@ -16,48 +18,61 @@ const PRESETS = [
   { name: 'Technic Platform', base_url: 'https://api.technicpack.net/v1', format: 'custom' },
 ];
 
+const MAPPER_EXAMPLE = `{
+  "_searchEndpoint": "search",
+  "_queryParam": "query",
+  "_itemsPath": "data.items",
+  "id": "id",
+  "name": "title",
+  "description": "description",
+  "downloadUrl": "files.0.url",
+  "version": "version",
+  "mcVersion": "gameVersion"
+}`;
+
 export default function SourceForm({ onClose }) {
   const qc = useQueryClient();
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', base_url: '', api_key: '', format: 'curseforge', field_mapping_json: '' });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [createdId, setCreatedId] = useState(null);
-
-  function applyPreset(preset) {
-    setForm(f => ({ ...f, name: preset.name, base_url: preset.base_url, format: preset.format }));
-  }
+  // Le test a besoin d'une source enregistrée : on la crée une fois, puis on la met à jour à l'enregistrement
+  const [draftId, setDraftId] = useState(null);
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
     setTestResult(null);
   }
 
+  function payload() {
+    return {
+      name: form.name.trim(),
+      base_url: form.base_url.trim(),
+      api_key: form.api_key || undefined,
+      format: form.format,
+      field_mapping_json: form.field_mapping_json.trim() ? JSON.parse(form.field_mapping_json) : undefined,
+    };
+  }
+
+  // Annuler après un test : ne pas laisser de source brouillon en base
+  function close() {
+    if (draftId) deleteSource(draftId).finally(() => qc.invalidateQueries({ queryKey: ['sources'] }));
+    onClose();
+  }
+
   async function handleTest() {
-    if (!form.name || !form.base_url) {
-      toast.error('Remplissez le nom et l\'URL avant de tester');
-      return;
-    }
+    if (!form.name || !form.base_url) return toast.error(t('sources.fillFirst'));
     setTesting(true);
     setTestResult(null);
     try {
-      // Crée temporairement ou utilise un id temporaire
-      let id = createdId;
-      if (!id) {
-        const src = await createSource({
-          name: form.name + ' (test)',
-          base_url: form.base_url,
-          api_key: form.api_key || undefined,
-          format: form.format,
-          field_mapping_json: form.field_mapping_json ? JSON.parse(form.field_mapping_json) : undefined,
-        });
-        id = src.id;
-        setCreatedId(id);
-      }
-      const result = await testSource(id);
-      setTestResult(result);
+      const data = payload();
+      let id = draftId;
+      if (id) await updateSource(id, data);
+      else { id = (await createSource(data)).id; setDraftId(id); }
+      setTestResult(await testSource(id));
     } catch (err) {
-      setTestResult({ ok: false, error: err.message });
+      setTestResult({ ok: false, error: err instanceof SyntaxError ? t('sources.invalidMapper') : (err.response?.data?.error || err.message) });
     } finally {
       setTesting(false);
     }
@@ -67,100 +82,87 @@ export default function SourceForm({ onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
-      let mapping = undefined;
-      if (form.field_mapping_json.trim()) {
-        mapping = JSON.parse(form.field_mapping_json);
-      }
-      if (!createdId) {
-        await createSource({
-          name: form.name,
-          base_url: form.base_url,
-          api_key: form.api_key || undefined,
-          format: form.format,
-          field_mapping_json: mapping,
-        });
-      }
+      const data = payload();
+      if (draftId) await updateSource(draftId, data);
+      else await createSource(data);
       qc.invalidateQueries({ queryKey: ['sources'] });
-      toast.success(`Source "${form.name}" ajoutée`);
+      toast.success(t('sources.created', { name: data.name }));
       onClose();
     } catch (err) {
-      if (err instanceof SyntaxError) {
-        toast.error('Le mapper JSON est invalide');
-      } else {
-        toast.error(err.response?.data?.error || 'Erreur lors de la création');
-      }
+      toast.error(err instanceof SyntaxError ? t('sources.invalidMapper') : (err.response?.data?.error || t('common.error')));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal open onClose={onClose} title="Ajouter une source de modpacks" size="md">
+    <Modal open onClose={close} title={t('sources.formTitle')} icon={Plug} size="md">
       <form onSubmit={handleSave} className="p-6 space-y-4">
-        {/* Presets */}
         <div>
-          <label className="label">Présets</label>
+          <label className="label">{t('sources.presets')}</label>
           <div className="flex flex-wrap gap-2">
             {PRESETS.map(p => (
-              <button key={p.name} type="button" className="btn-ghost text-xs py-1"
-                onClick={() => applyPreset(p)}>
+              <button
+                key={p.name} type="button"
+                className="text-xs px-2.5 py-1 rounded-lg bg-surface-2 border border-line text-fg-2 hover:text-fg hover:border-line-strong transition-colors"
+                onClick={() => setForm(f => ({ ...f, name: p.name, base_url: p.base_url, format: p.format }))}
+              >
                 {p.name}
               </button>
             ))}
           </div>
         </div>
 
-        <div>
-          <label className="label">Nom de la source *</label>
-          <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required placeholder="Mon API de modpacks" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="label">{t('sources.name')} *</label>
+            <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required placeholder={t('sources.namePlaceholder')} />
+          </div>
+          <div>
+            <label className="label">{t('sources.type')} *</label>
+            <select className="input" value={form.format} onChange={e => set('format', e.target.value)}>
+              {FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
         </div>
 
         <div>
-          <label className="label">URL de base *</label>
-          <input className="input" value={form.base_url} onChange={e => set('base_url', e.target.value)} required placeholder="https://api.example.com/v1" />
+          <label className="label">{t('sources.url')} *</label>
+          <input className="input font-mono" value={form.base_url} onChange={e => set('base_url', e.target.value)} required placeholder="https://api.example.com/v1" />
         </div>
 
         <div>
-          <label className="label">Clé API (optionnelle)</label>
-          <input className="input" type="password" value={form.api_key} onChange={e => set('api_key', e.target.value)} placeholder="Stockée chiffrée en AES-256" />
-        </div>
-
-        <div>
-          <label className="label">Format *</label>
-          <select className="input" value={form.format} onChange={e => set('format', e.target.value)}>
-            {FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
+          <label className="label">{t('sources.apiKey')} <span className="normal-case tracking-normal text-fg-3">({t('common.optional')})</span></label>
+          <input className="input" type="password" value={form.api_key} onChange={e => set('api_key', e.target.value)} placeholder={t('sources.apiKeyHint')} autoComplete="off" />
         </div>
 
         {form.format === 'custom' && (
-          <div>
-            <label className="label">Mapper JSON (champs → chemins dans la réponse)</label>
+          <div className="fade-in">
+            <label className="label">{t('sources.mapper')}</label>
             <textarea
-              className="input font-mono text-xs"
-              rows={6}
-              value={form.field_mapping_json}
-              onChange={e => set('field_mapping_json', e.target.value)}
-              placeholder={`{\n  "_searchEndpoint": "search",\n  "_queryParam": "query",\n  "_itemsPath": "data.items",\n  "id": "id",\n  "name": "title",\n  "description": "description",\n  "downloadUrl": "files.0.url",\n  "version": "version",\n  "mcVersion": "gameVersion"\n}`}
+              className="input font-mono text-xs" rows={7}
+              value={form.field_mapping_json} onChange={e => set('field_mapping_json', e.target.value)}
+              placeholder={MAPPER_EXAMPLE}
             />
           </div>
         )}
 
-        {/* Test */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button type="button" className="btn-secondary" onClick={handleTest} disabled={testing}>
-            {testing ? 'Test en cours...' : 'Tester la connexion'}
+            <Plug size={14} strokeWidth={1.75} /> {testing ? t('sources.testing') : t('sources.testConnection')}
           </button>
           {testResult && (
-            <span className={testResult.ok ? 'text-green-400 text-sm' : 'text-red-400 text-sm'}>
-              {testResult.ok ? '✓ Connexion OK' : `✗ ${testResult.error}`}
+            <span className={`inline-flex items-center gap-1.5 text-sm fade-in ${testResult.ok ? 'text-accent' : 'text-danger'}`}>
+              {testResult.ok ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+              {testResult.ok ? t('sources.testSuccess') : testResult.error}
             </span>
           )}
         </div>
 
-        <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <button type="button" className="btn-ghost" onClick={onClose}>Annuler</button>
+        <div className="flex gap-3 pt-4 border-t border-line">
+          <button type="button" className="btn-ghost" onClick={close}>{t('common.cancel')}</button>
           <button type="submit" className="btn-primary ml-auto" disabled={saving}>
-            {saving ? 'Enregistrement...' : 'Ajouter la source'}
+            {saving ? t('sources.saving') : t('sources.add')}
           </button>
         </div>
       </form>

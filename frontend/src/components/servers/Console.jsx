@@ -145,15 +145,15 @@ export default function Console({ server }) {
         style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
       >
         <div className="flex items-center gap-2">
-          <Terminal size={13} strokeWidth={1.5} className="text-[#6B6B76]" />
-          <span className="text-[11px] font-semibold text-[#6B6B76] font-mono uppercase tracking-widest">Console</span>
+          <Terminal size={13} strokeWidth={1.5} className="text-fg-2" />
+          <span className="text-[11px] font-semibold text-fg-2 font-mono uppercase tracking-widest">Console</span>
           {lines.length > 0 && (
-            <span className="text-[10px] text-[#4A4A55] font-mono">{lines.length}</span>
+            <span className="text-[10px] text-fg-3 font-mono">{lines.length}</span>
           )}
         </div>
         <div className="flex items-center gap-3">
           <button
-            className="flex items-center gap-1 text-[11px] text-[#4A4A55] hover:text-[#6B6B76] transition-colors"
+            className="flex items-center gap-1 text-[11px] text-fg-3 hover:text-fg-2 transition-colors"
             onClick={() => clearLogs(server.id)}
           >
             <Trash2 size={11} strokeWidth={1.5} />
@@ -164,7 +164,7 @@ export default function Console({ server }) {
               'flex items-center gap-1 text-[11px] px-2 py-0.5 rounded transition-colors',
               autoScroll
                 ? 'text-[var(--accent)]'
-                : 'text-[#4A4A55] hover:text-[#6B6B76]'
+                : 'text-fg-3 hover:text-fg-2'
             )}
             onClick={scrollToBottom}
           >
@@ -186,7 +186,7 @@ export default function Console({ server }) {
       {server.status === 'installing' && !noServerPack && (
         <div className="flex-shrink-0 px-4 py-2" style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-mono text-[#6B6B76] truncate">
+            <span className="text-[11px] font-mono text-fg-2 truncate">
               {installProgress?.message ?? t('console.installing')}
             </span>
           </div>
@@ -206,13 +206,13 @@ export default function Console({ server }) {
       {noServerPack && (
         <div
           className="flex-shrink-0 px-4 py-3 flex flex-col gap-2"
-          style={{ background: 'rgba(251,191,36,0.06)', borderBottom: '1px solid rgba(251,191,36,0.15)' }}
+          style={{ background: 'rgba(var(--warn-rgb),0.06)', borderBottom: '1px solid rgba(var(--warn-rgb),0.15)' }}
         >
           <div className="flex items-start gap-2">
-            <AlertTriangle size={14} strokeWidth={1.5} className="text-[#FBBF24] mt-0.5 flex-shrink-0" />
+            <AlertTriangle size={14} strokeWidth={1.5} className="text-warn mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-[12px] font-semibold text-[#FBBF24]">{t('console.noServerPack')}</p>
-              <p className="text-[11px] text-[#6B6B76] mt-0.5">{t('console.noServerPackDesc')}</p>
+              <p className="text-[12px] font-semibold text-warn">{t('console.noServerPack')}</p>
+              <p className="text-[11px] text-fg-2 mt-0.5">{t('console.noServerPackDesc')}</p>
             </div>
           </div>
           <div className="flex gap-2 mt-1">
@@ -242,7 +242,7 @@ export default function Console({ server }) {
         onClick={() => inputRef.current?.focus()}
       >
         {lines.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-[#4A4A55]">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-fg-3">
             <Terminal size={20} strokeWidth={1} />
             <span className="text-sm font-mono">{t('console.noLogs')}</span>
           </div>
@@ -250,12 +250,12 @@ export default function Console({ server }) {
           lines.map((line, i) => {
             const type = classifyLine(line);
             const colors = {
-              error:  '#F87171',
-              warn:   '#FBBF24',
+              error:  'var(--danger)',
+              warn:   'var(--warn)',
               join:   'var(--accent)',
-              leave:  '#6B6B76',
-              server: '#F0F0F0',
-              info:   '#F0F0F0',
+              leave:  'var(--fg-2)',
+              server: 'var(--fg)',
+              info:   'var(--fg)',
             };
             return (
               <div
@@ -296,7 +296,7 @@ export default function Console({ server }) {
         <span className="font-mono text-sm self-center select-none" style={{ color: 'var(--accent)' }}>{'>'}</span>
         <input
           ref={inputRef}
-          className="flex-1 bg-transparent border-none outline-none text-sm font-mono text-[#F0F0F0] disabled:opacity-40"
+          className="flex-1 bg-transparent border-none outline-none text-sm font-mono text-fg disabled:opacity-40"
           style={{ caretColor: 'var(--accent)' }}
           placeholder={server.status === 'running' ? t('console.placeholder') : t('console.stoppedPlaceholder')}
           value={command}
@@ -309,7 +309,7 @@ export default function Console({ server }) {
         {command.trim() && (
           <button
             type="submit"
-            className="text-xs text-[#6B6B76] hover:text-[#F0F0F0] font-mono disabled:opacity-40 transition-colors"
+            className="text-xs text-fg-2 hover:text-fg font-mono disabled:opacity-40 transition-colors"
             disabled={sending || server.status !== 'running'}
           >
             {sending ? '...' : t('console.send')}

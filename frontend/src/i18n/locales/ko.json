@@ -134,7 +134,9 @@
     "onlineModeOn": "활성화 — 실제 스킨, Mojang 인증. 크랙 계정은 연결 불가.",
     "onlineModeOff": "비활성화 — 크랙 모드, 모든 플레이어 허용 (공식 스킨 없음).",
     "deploying": "생성 중...",
-    "deploy": "서버 배포"
+    "deploy": "서버 배포",
+    "portTaken": "포트가 이미 \"{name}\"에서 사용 중입니다.",
+    "useFreePort": "{port} 사용"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "재생성 필요"
+    "needsRecreate": "재생성 필요",
+    "copyAddress": "서버 주소 복사",
+    "addressCopied": "주소가 복사되었습니다: {address}"
   },
   "console": {
     "placeholder": "명령어 입력...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "console.curseforge.com에서 키 획득 — CurseForge 카탈로그 접근에 필요",
     "modrinthDesc": "Modrinth 검색 속도 제한 향상. modrinth.com/settings/pats에서 이용 가능",
     "modrinthOptional": "Modrinth API 키 (선택사항)",
-    "appearance": "외관"
+    "appearance": "외관",
+    "system": "시스템"
   },
   "sources": {
     "title": "소스",
@@ -372,7 +377,21 @@
     "testError": "연결 실패",
     "deleteConfirm": "이 소스를 삭제하시겠습니까?",
     "deleteSuccess": "소스 삭제됨",
-    "saveSuccess": "소스 저장됨"
+    "saveSuccess": "소스 저장됨",
+    "testing": "테스트 중…",
+    "imported": "소스 {count}개를 가져왔습니다",
+    "invalidJson": "잘못된 JSON 파일",
+    "builtin": "기본 제공",
+    "fillFirst": "테스트 전에 이름과 URL을 입력하세요",
+    "invalidMapper": "JSON 매퍼가 잘못되었습니다",
+    "created": "소스 \"{name}\"이(가) 추가되었습니다",
+    "formTitle": "모드팩 소스 추가",
+    "presets": "프리셋",
+    "namePlaceholder": "내 모드팩 API",
+    "apiKeyHint": "암호화되어 저장됨 (AES-256)",
+    "mapper": "JSON 매퍼 (필드 → 응답 내 경로)",
+    "testConnection": "연결 테스트",
+    "saving": "저장 중…"
   },
   "common": {
     "confirm": "확인",
@@ -444,5 +463,30 @@
     "eventKick": "추방",
     "eventBan": "차단",
     "eventUnban": "차단 해제"
+  },
+  "crash": {
+    "eyebrow": "인터페이스 오류",
+    "title": "크리퍼가 지나갔습니다",
+    "bodyApp": "인터페이스가 멈췄습니다. Minecraft 서버는 계속 실행 중입니다.",
+    "bodyPanel": "인터페이스의 이 부분이 멈췄습니다. 나머지는 정상이며 서버도 계속 실행 중입니다.",
+    "retry": "다시 시도",
+    "reload": "페이지 새로고침",
+    "copy": "보고서 복사",
+    "copied": "보고서가 복사되었습니다",
+    "details": "기술 세부 정보"
+  },
+  "connection": {
+    "lost": "Craftarr 연결이 끊겼습니다 — 재연결 중",
+    "restored": "연결이 복구되었습니다"
+  },
+  "confirm": {
+    "typeToConfirm": "확인하려면 \"{name}\"을(를) 입력하세요",
+    "deleteServerTitle": "서버 삭제",
+    "deleteServerBody": "\"{name}\"의 월드, 모드, 설정이 영구적으로 삭제됩니다. 백업은 data/backups에 보관됩니다."
+  },
+  "notFound": {
+    "title": "청크를 찾을 수 없습니다",
+    "body": "이 페이지는 생성된 적이 없습니다.",
+    "back": "카탈로그로 돌아가기"
   }
 }

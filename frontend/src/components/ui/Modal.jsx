@@ -1,37 +1,45 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
+import { useI18n } from '../../i18n';
 
-export default function Modal({ open, onClose, title, children, size = 'md' }) {
+export default function Modal({ open, onClose, title, icon: Icon, children, size = 'md', tone = 'default' }) {
+  const { t } = useI18n();
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    // Empêche la page derrière de défiler
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [open, onClose]);
 
   if (!open) return null;
 
   const sizeClass = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size];
+  const toneColor = tone === 'danger' ? 'var(--danger)' : 'var(--accent)';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 fade-in" style={{ background: 'rgba(var(--bg-rgb),0.72)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
       <div
-        className={clsx('relative w-full rounded-xl overflow-hidden', sizeClass)}
-        style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.08)' }}
+        className={clsx('relative w-full rounded-2xl overflow-hidden pop-in', sizeClass)}
+        style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-pop)' }}
       >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <h2 className="font-semibold text-[#F0F0F0] text-sm">{title}</h2>
+        {/* liseré de couleur en haut */}
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${toneColor}, transparent)`, opacity: 0.6 }} />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
+          <h2 className="font-display font-semibold text-fg text-[15px] flex items-center gap-2.5">
+            {Icon && <Icon size={16} strokeWidth={1.75} style={{ color: toneColor }} />}
+            {title}
+          </h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#6B6B76] hover:text-[#F0F0F0] hover:bg-[#1C1C21] transition-colors"
+            aria-label={t('common.close')}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-2 hover:text-fg hover:bg-surface-2 transition-colors"
           >
-            <X size={15} strokeWidth={1.5} />
+            <X size={16} strokeWidth={1.75} />
           </button>
         </div>
         <div className="overflow-y-auto max-h-[80vh]">

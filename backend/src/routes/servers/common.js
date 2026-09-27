@@ -39,6 +39,12 @@ function findFreePort(db) {
   return port;
 }
 
+/** Serveur (autre que excludeId) qui utilise déjà ce port hôte, ou null. */
+function portOwner(db, port, excludeId = null) {
+  return db.prepare('SELECT id, name FROM servers WHERE (port = ? OR rcon_port = ?) AND id != ?')
+    .get(port, port, excludeId || '') || null;
+}
+
 function mapDockerStatus(dockerStatus, currentStatus) {
   if (['installing', 'updating', 'starting'].includes(currentStatus)) return currentStatus;
   switch (dockerStatus) {
@@ -50,4 +56,4 @@ function mapDockerStatus(dockerStatus, currentStatus) {
   }
 }
 
-module.exports = { DATA_PATH, getUpload, formatServer, findFreePort, mapDockerStatus };
+module.exports = { DATA_PATH, getUpload, formatServer, findFreePort, mapDockerStatus, portOwner };

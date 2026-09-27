@@ -99,7 +99,7 @@ export default function FileExplorer({ server }) {
         </div>
         <textarea
           className="flex-1 bg-dark-950 text-gray-100 font-mono text-xs p-4 resize-none outline-none border-none"
-          style={{ backgroundColor: '#0d1117' }}
+          style={{ backgroundColor: 'var(--bg)' }}
           value={editContent}
           onChange={e => { setEditContent(e.target.value); setDirty(true); }}
           spellCheck={false}

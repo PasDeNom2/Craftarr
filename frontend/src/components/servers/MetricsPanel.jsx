@@ -8,18 +8,18 @@ import { Activity } from 'lucide-react';
 
 const MAX_HISTORY = 60;
 
-function StatCard({ label, value, unit, sub, valueColor = '#F0F0F0' }) {
+function StatCard({ label, value, unit, sub, valueColor = 'var(--fg)' }) {
   return (
     <div
       className="rounded-xl p-4 space-y-3"
       style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
-      <p className="text-[11px] text-[#6B6B76] uppercase tracking-[0.1em] font-medium">{label}</p>
+      <p className="text-[11px] text-fg-2 uppercase tracking-[0.1em] font-medium">{label}</p>
       <p className="font-semibold tabular-nums leading-none" style={{ fontSize: '26px', color: valueColor }}>
         {value}
-        {unit && <span className="text-sm font-normal text-[#6B6B76] ml-1.5">{unit}</span>}
+        {unit && <span className="text-sm font-normal text-fg-2 ml-1.5">{unit}</span>}
       </p>
-      {sub && <p className="text-xs text-[#4A4A55] font-mono">{sub}</p>}
+      {sub && <p className="text-xs text-fg-3 font-mono">{sub}</p>}
     </div>
   );
 }
@@ -30,33 +30,34 @@ const CHART_TOOLTIP = {
     border: '1px solid rgba(255,255,255,0.08)',
     fontSize: 11,
     borderRadius: 8,
-    color: '#F0F0F0',
+    color: 'var(--fg)',
   },
-  labelStyle: { color: '#6B6B76' },
+  labelStyle: { color: 'var(--fg-2)' },
 };
 
 function MiniChart({ data, dataKey, stroke, gradientId, label, formatter, domain }) {
   return (
-    <div className="rounded-xl p-4" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-[11px] text-[#6B6B76] uppercase tracking-[0.1em] font-medium mb-3">{label}</p>
+    <div className="card !p-4">
+      <p className="eyebrow mb-3 flex items-center gap-2"><span className="status-block" style={{ color: stroke, width: 6, height: 6 }} />{label}</p>
       <ResponsiveContainer width="100%" height={120}>
         <AreaChart data={data} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={stroke} stopOpacity={0.2} />
+              <stop offset="5%"  stopColor={stroke} stopOpacity={0.28} />
               <stop offset="95%" stopColor={stroke} stopOpacity={0}   />
             </linearGradient>
           </defs>
-          <XAxis dataKey="time" tick={{ fontSize: 9, fill: '#4A4A55' }} interval="preserveStartEnd" />
-          <YAxis tick={{ fontSize: 9, fill: '#4A4A55' }} domain={domain} />
+          <XAxis dataKey="time" tick={{ fontSize: 9, fill: 'var(--fg-3)' }} interval="preserveStartEnd" />
+          <YAxis tick={{ fontSize: 9, fill: 'var(--fg-3)' }} domain={domain} />
           <Tooltip {...CHART_TOOLTIP} formatter={formatter} />
           <Area
             type="monotone"
             dataKey={dataKey}
             stroke={stroke}
             fill={`url(#${gradientId})`}
-            strokeWidth={1.5}
+            strokeWidth={2}
             dot={false}
+            isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -78,7 +79,7 @@ export default function MetricsPanel({ server }) {
         ...prev,
         {
           ...data,
-          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          time: new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         },
       ];
       return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
@@ -88,9 +89,9 @@ export default function MetricsPanel({ server }) {
   useServerSocket(server.id, server.container_id, { metrics: handleMetrics });
 
   const tps = current?.tps?.tps1;
-  const tpsColor = tps == null ? '#6B6B76' : tps >= 18 ? 'var(--accent)' : tps >= 12 ? '#FBBF24' : '#F87171';
+  const tpsColor = tps == null ? 'var(--fg-2)' : tps >= 18 ? 'var(--accent)' : tps >= 12 ? 'var(--warn)' : 'var(--danger)';
   const cpuVal = current?.cpu ?? 0;
-  const cpuColor = cpuVal > 80 ? '#F87171' : cpuVal > 50 ? '#FBBF24' : '#F0F0F0';
+  const cpuColor = cpuVal > 80 ? 'var(--danger)' : cpuVal > 50 ? 'var(--warn)' : 'var(--fg)';
   const isRunning = server.status === 'running';
 
   return (
@@ -130,7 +131,7 @@ export default function MetricsPanel({ server }) {
           <MiniChart
             data={history}
             dataKey="memUsed"
-            stroke="#F0F0F0"
+            stroke="var(--info)"
             gradientId="ramGrad"
             label={t('metrics.ramLabel')}
             formatter={(v) => [`${v} ${t('metrics.mb')}`, 'RAM']}
@@ -153,15 +154,15 @@ export default function MetricsPanel({ server }) {
             className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
           >
-            <Activity size={18} strokeWidth={1.5} className="text-[#4A4A55]" />
+            <Activity size={18} strokeWidth={1.5} className="text-fg-3" />
           </div>
-          <p className="text-[#6B6B76] text-sm">{t('metrics.startServer')}</p>
+          <p className="text-fg-2 text-sm">{t('metrics.startServer')}</p>
         </div>
       )}
 
       {isRunning && history.length === 0 && (
-        <div className="text-center py-8 text-[#6B6B76] text-sm space-y-2">
-          <div className="w-5 h-5 border border-[#4A4A55] border-t-transparent rounded-full animate-spin mx-auto" style={{ borderTopColor: 'transparent' }} />
+        <div className="text-center py-8 text-fg-2 text-sm space-y-2">
+          <div className="w-5 h-5 border border-fg-3 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderTopColor: 'transparent' }} />
           <span>{t('metrics.waiting')}</span>
         </div>
       )}

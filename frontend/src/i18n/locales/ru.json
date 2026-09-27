@@ -134,7 +134,9 @@
     "onlineModeOn": "Включено — настоящие скины, аут. Mojang. Взломанные аккаунты не могут подключиться.",
     "onlineModeOff": "Отключено — cracked-режим, все игроки приняты (без официальных скинов).",
     "deploying": "Создание...",
-    "deploy": "Развернуть сервер"
+    "deploy": "Развернуть сервер",
+    "portTaken": "Порт уже используется сервером «{name}».",
+    "useFreePort": "Использовать {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Требуется пересоздание"
+    "needsRecreate": "Требуется пересоздание",
+    "copyAddress": "Скопировать адрес сервера",
+    "addressCopied": "Адрес скопирован: {address}"
   },
   "console": {
     "placeholder": "Введите команду...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Получите ключ на console.curseforge.com — необходим для каталога CurseForge",
     "modrinthDesc": "Улучшает лимит запросов для поиска Modrinth. Доступно на modrinth.com/settings/pats",
     "modrinthOptional": "Ключ API Modrinth (необязательно)",
-    "appearance": "Внешний вид Minecraft"
+    "appearance": "Внешний вид Minecraft",
+    "system": "Система"
   },
   "sources": {
     "title": "Источники",
@@ -372,7 +377,21 @@
     "testError": "Подключение не удалось",
     "deleteConfirm": "Удалить этот источник?",
     "deleteSuccess": "Источник удалён",
-    "saveSuccess": "Источник сохранён"
+    "saveSuccess": "Источник сохранён",
+    "testing": "Проверка…",
+    "imported": "Импортировано источников: {count}",
+    "invalidJson": "Неверный JSON-файл",
+    "builtin": "Встроенный",
+    "fillFirst": "Укажите имя и URL перед проверкой",
+    "invalidMapper": "Неверный JSON-маппер",
+    "created": "Источник «{name}» добавлен",
+    "formTitle": "Добавить источник модпаков",
+    "presets": "Шаблоны",
+    "namePlaceholder": "Мой API модпаков",
+    "apiKeyHint": "Хранится в зашифрованном виде (AES-256)",
+    "mapper": "JSON-маппер (поля → пути в ответе)",
+    "testConnection": "Проверить соединение",
+    "saving": "Сохранение…"
   },
   "common": {
     "confirm": "Подтвердить",
@@ -444,5 +463,30 @@
     "eventKick": "Кик",
     "eventBan": "Бан",
     "eventUnban": "Разбан"
+  },
+  "crash": {
+    "eyebrow": "Ошибка интерфейса",
+    "title": "Здесь побывал крипер",
+    "bodyApp": "Интерфейс упал. Ваши серверы Minecraft продолжают работать.",
+    "bodyPanel": "Эта часть интерфейса упала. Остальное работает, серверы продолжают работать.",
+    "retry": "Повторить",
+    "reload": "Перезагрузить страницу",
+    "copy": "Скопировать отчёт",
+    "copied": "Отчёт скопирован",
+    "details": "Технические детали"
+  },
+  "connection": {
+    "lost": "Соединение с Craftarr потеряно — переподключение",
+    "restored": "Соединение восстановлено"
+  },
+  "confirm": {
+    "typeToConfirm": "Введите «{name}» для подтверждения",
+    "deleteServerTitle": "Удалить сервер",
+    "deleteServerBody": "Мир, моды и настройки «{name}» будут удалены безвозвратно. Резервные копии сохраняются в data/backups."
+  },
+  "notFound": {
+    "title": "Чанк не найден",
+    "body": "Эта страница так и не была сгенерирована.",
+    "back": "Вернуться в каталог"
   }
 }

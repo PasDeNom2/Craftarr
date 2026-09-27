@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Rocket, Globe } from 'lucide-react';
 import IconPicker from '../ui/IconPicker';
+import { nextFreePort, portTakenBy } from '../../utils/ports';
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
 const LOADER_LABELS = { forge: 'Forge', neoforge: 'NeoForge', fabric: 'Fabric', quilt: 'Quilt', vanilla: 'Vanilla' };
@@ -16,9 +17,11 @@ const LOADER_LABELS = { forge: 'Forge', neoforge: 'NeoForge', fabric: 'Fabric', 
 export default function DeployModal({ modpack, onClose }) {
   const navigate = useNavigate();
   const { t } = useI18n();
+  // Port par défaut = premier port libre (25565 est souvent déjà pris par un autre serveur)
+  const allServers = useServerStore(s => s.servers);
   const [form, setForm] = useState({
     name: modpack ? `${modpack.name.slice(0, 30)} Server` : '',
-    port: 25565,
+    port: nextFreePort(allServers),
     ram_mb: 4096,
     max_players: 20,
     seed: '',
@@ -94,6 +97,8 @@ export default function DeployModal({ modpack, onClose }) {
 
   if (!modpack) return null;
 
+  const portConflict = portTakenBy(allServers, form.port);
+
   return (
     <Modal open={!!modpack} onClose={onClose} title={`${t('deploy.title')} : ${modpack?.name}`} size="lg">
       <div className="p-6">
@@ -109,7 +114,19 @@ export default function DeployModal({ modpack, onClose }) {
             </div>
             <div>
               <label className="label">{t('deploy.port')}</label>
-              <input className="input" type="number" min="1024" max="65535" value={form.port} onChange={e => set('port', +e.target.value)} />
+              <input
+                className="input" type="number" min="1024" max="65535" value={form.port}
+                onChange={e => set('port', +e.target.value)}
+                style={portConflict ? { borderColor: 'rgba(var(--danger-rgb),0.6)' } : undefined}
+              />
+              {portConflict && (
+                <p className="text-[11px] text-danger mt-1.5 fade-in">
+                  {t('deploy.portTaken', { name: portConflict.name })}
+                  <button type="button" className="ml-1.5 underline hover:no-underline" onClick={() => set('port', nextFreePort(allServers))}>
+                    {t('deploy.useFreePort', { port: nextFreePort(allServers) })}
+                  </button>
+                </p>
+              )}
             </div>
             <div>
               <label className="label">{t('deploy.maxPlayers')}</label>
@@ -121,9 +138,9 @@ export default function DeployModal({ modpack, onClose }) {
           <div>
             <label className="label">{t('deploy.version')}</label>
             {versionsLoading ? (
-              <div className="input text-[#4A4A55] text-sm">{t('deploy.versionLoading')}</div>
+              <div className="input text-fg-3 text-sm">{t('deploy.versionLoading')}</div>
             ) : versions.length === 0 ? (
-              <div className="input text-[#4A4A55] text-sm">{t('deploy.versionNone')}</div>
+              <div className="input text-fg-3 text-sm">{t('deploy.versionNone')}</div>
             ) : (
               <select className="input" value={form.version_id} onChange={e => set('version_id', e.target.value)}>
                 {versions.map(v => {
@@ -144,7 +161,7 @@ export default function DeployModal({ modpack, onClose }) {
           <div>
             <div className="flex justify-between mb-1.5">
               <label className="label mb-0">{t('deploy.ram')}</label>
-              <span className="text-sm font-semibold text-[#F0F0F0]">
+              <span className="text-sm font-semibold text-fg">
                 {form.ram_mb >= 1024 ? `${form.ram_mb / 1024} Go` : `${form.ram_mb} Mo`}
               </span>
             </div>
@@ -153,9 +170,9 @@ export default function DeployModal({ modpack, onClose }) {
               value={form.ram_mb}
               onChange={e => set('ram_mb', +e.target.value)}
               className="w-full"
-              style={{ accentColor: '#4ADE80' }}
+              style={{ accentColor: 'var(--accent)' }}
             />
-            <div className="flex justify-between text-[11px] text-[#4A4A55] mt-1">
+            <div className="flex justify-between text-[11px] text-fg-3 mt-1">
               <span>{t('deploy.ramMin')}</span><span>{t('deploy.ramMax')}</span>
             </div>
           </div>
@@ -169,13 +186,13 @@ export default function DeployModal({ modpack, onClose }) {
           <div>
             <label className="label">
               {t('deploy.worldImportLabel')}
-              <span className="ml-2 text-[#4A4A55] font-normal normal-case tracking-normal">{t('deploy.worldImportHint')}</span>
+              <span className="ml-2 text-fg-3 font-normal normal-case tracking-normal">{t('deploy.worldImportHint')}</span>
             </label>
             <div
               className="rounded-xl p-4 text-center cursor-pointer transition-all duration-200"
               style={{
-                border: `2px dashed ${worldFile ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                background: worldFile ? 'rgba(74,222,128,0.04)' : 'transparent',
+                border: `2px dashed ${worldFile ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.1)'}`,
+                background: worldFile ? 'rgba(var(--accent-rgb),0.04)' : 'transparent',
               }}
             >
               <input type="file" accept=".zip" className="hidden" id="world-upload"
@@ -183,17 +200,17 @@ export default function DeployModal({ modpack, onClose }) {
               <label htmlFor="world-upload" className="cursor-pointer">
                 {worldFile ? (
                   <div className="space-y-1">
-                    <p className="text-[#4ADE80] text-sm font-medium">{worldFile.name}</p>
-                    <p className="text-[#4A4A55] text-xs">{(worldFile.size / 1024 / 1024).toFixed(1)} Mo</p>
-                    <button type="button" className="text-xs text-[#F87171] hover:text-red-400 transition-colors"
+                    <p className="text-accent text-sm font-medium">{worldFile.name}</p>
+                    <p className="text-fg-3 text-xs">{(worldFile.size / 1024 / 1024).toFixed(1)} Mo</p>
+                    <button type="button" className="text-xs text-danger hover:text-red-400 transition-colors"
                       onClick={e => { e.preventDefault(); setWorldFile(null); }}>
                       {t('deploy.worldRemove')}
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Globe size={20} strokeWidth={1.5} className="mx-auto text-[#4A4A55]" />
-                    <p className="text-sm text-[#6B6B76]">{t('deploy.worldImportClick')}</p>
+                    <Globe size={20} strokeWidth={1.5} className="mx-auto text-fg-3" />
+                    <p className="text-sm text-fg-2">{t('deploy.worldImportClick')}</p>
                   </div>
                 )}
               </label>
@@ -204,18 +221,18 @@ export default function DeployModal({ modpack, onClose }) {
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 rounded" checked={form.whitelist_enabled}
                 onChange={e => set('whitelist_enabled', e.target.checked)}
-                style={{ accentColor: '#4ADE80' }} />
-              <span className="text-sm text-[#6B6B76]">{t('deploy.whitelist')}</span>
+                style={{ accentColor: 'var(--accent)' }} />
+              <span className="text-sm text-fg-2">{t('deploy.whitelist')}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer ml-auto">
               <input type="checkbox" className="w-4 h-4 rounded" checked={form.online_mode}
                 onChange={e => set('online_mode', e.target.checked)}
-                style={{ accentColor: '#4ADE80' }} />
-              <span className="text-sm text-[#6B6B76]">{t('deploy.onlineMode')}</span>
+                style={{ accentColor: 'var(--accent)' }} />
+              <span className="text-sm text-fg-2">{t('deploy.onlineMode')}</span>
             </label>
           </div>
 
-          <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying}>
+          <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying || !!portConflict}>
             <Rocket size={14} strokeWidth={1.5} />
             {deploying ? t('deploy.deploying') : t('deploy.deploy')}
           </button>

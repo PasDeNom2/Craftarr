@@ -134,7 +134,9 @@
     "onlineModeOn": "Povoleno — skutečné skiny, auth Mojang. Cracknuté účty se nemohou připojit.",
     "onlineModeOff": "Zakázáno — cracked režim, všichni hráči přijati (žádné officiální skiny).",
     "deploying": "Vytváření...",
-    "deploy": "Nasadit server"
+    "deploy": "Nasadit server",
+    "portTaken": "Port už používá „{name}\".",
+    "useFreePort": "Použít {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Nutné znovu vytvořit"
+    "needsRecreate": "Nutné znovu vytvořit",
+    "copyAddress": "Kopírovat adresu serveru",
+    "addressCopied": "Adresa zkopírována: {address}"
   },
   "console": {
     "placeholder": "Zadejte příkaz...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Získejte klíč na console.curseforge.com — vyžadováno pro CurseForge katalog",
     "modrinthDesc": "Zvyšuje limit požadavků pro vyhledávání Modrinth. Dostupné na modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API klíč (volitelný)",
-    "appearance": "Vzhled Minecraft"
+    "appearance": "Vzhled Minecraft",
+    "system": "Systém"
   },
   "sources": {
     "title": "Zdroje",
@@ -372,7 +377,21 @@
     "testError": "Připojení selhalo",
     "deleteConfirm": "Smazat tento zdroj?",
     "deleteSuccess": "Zdroj smazán",
-    "saveSuccess": "Zdroj uložen"
+    "saveSuccess": "Zdroj uložen",
+    "testing": "Testuji…",
+    "imported": "Importováno zdrojů: {count}",
+    "invalidJson": "Neplatný soubor JSON",
+    "builtin": "Vestavěný",
+    "fillFirst": "Před testem vyplň název a URL",
+    "invalidMapper": "JSON mapper je neplatný",
+    "created": "Zdroj „{name}\" přidán",
+    "formTitle": "Přidat zdroj modpacků",
+    "presets": "Předvolby",
+    "namePlaceholder": "Moje API modpacků",
+    "apiKeyHint": "Uloženo šifrovaně (AES-256)",
+    "mapper": "JSON mapper (pole → cesty v odpovědi)",
+    "testConnection": "Otestovat připojení",
+    "saving": "Ukládám…"
   },
   "common": {
     "confirm": "Potvrdit",
@@ -444,5 +463,30 @@
     "eventKick": "Vyhození",
     "eventBan": "Ban",
     "eventUnban": "Odbanování"
+  },
+  "crash": {
+    "eyebrow": "Chyba rozhraní",
+    "title": "Byl tu creeper",
+    "bodyApp": "Rozhraní spadlo. Tvoje servery Minecraft stále běží.",
+    "bodyPanel": "Tato část rozhraní spadla. Zbytek funguje a servery stále běží.",
+    "retry": "Zkusit znovu",
+    "reload": "Znovu načíst stránku",
+    "copy": "Kopírovat hlášení",
+    "copied": "Hlášení zkopírováno",
+    "details": "Technické podrobnosti"
+  },
+  "connection": {
+    "lost": "Spojení s Craftarr ztraceno — znovu se připojuji",
+    "restored": "Spojení obnoveno"
+  },
+  "confirm": {
+    "typeToConfirm": "Pro potvrzení napiš „{name}\"",
+    "deleteServerTitle": "Smazat server",
+    "deleteServerBody": "Svět, módy a nastavení „{name}\" budou trvale smazány. Zálohy zůstávají v data/backups."
+  },
+  "notFound": {
+    "title": "Chunk nenalezen",
+    "body": "Tato stránka nebyla nikdy vygenerována.",
+    "back": "Zpět do katalogu"
   }
 }

@@ -134,7 +134,9 @@
     "onlineModeOn": "有効 — 本物のスキン、Mojang 認証。クラックアカウントは接続不可。",
     "onlineModeOff": "無効 — クラックモード、全プレイヤー接続可（公式スキンなし）。",
     "deploying": "作成中...",
-    "deploy": "サーバーをデプロイ"
+    "deploy": "サーバーをデプロイ",
+    "portTaken": "ポートは「{name}」で使用中です。",
+    "useFreePort": "{port} を使用"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "再作成が必要"
+    "needsRecreate": "再作成が必要",
+    "copyAddress": "サーバーアドレスをコピー",
+    "addressCopied": "アドレスをコピーしました：{address}"
   },
   "console": {
     "placeholder": "コマンドを入力...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "console.curseforge.com でキーを取得 — CurseForgeカタログへのアクセスに必要",
     "modrinthDesc": "Modrinth検索のレート制限を改善します。modrinth.com/settings/pats で入手可能",
     "modrinthOptional": "Modrinth APIキー（任意）",
-    "appearance": "外観"
+    "appearance": "外観",
+    "system": "システム"
   },
   "sources": {
     "title": "ソース",
@@ -372,7 +377,21 @@
     "testError": "接続失敗",
     "deleteConfirm": "このソースを削除しますか？",
     "deleteSuccess": "ソースを削除しました",
-    "saveSuccess": "ソースを保存しました"
+    "saveSuccess": "ソースを保存しました",
+    "testing": "テスト中…",
+    "imported": "{count} 件のソースをインポートしました",
+    "invalidJson": "無効な JSON ファイル",
+    "builtin": "組み込み",
+    "fillFirst": "テスト前に名前と URL を入力してください",
+    "invalidMapper": "JSON マッパーが無効です",
+    "created": "ソース「{name}」を追加しました",
+    "formTitle": "Modパックのソースを追加",
+    "presets": "プリセット",
+    "namePlaceholder": "自分の Modパック API",
+    "apiKeyHint": "暗号化して保存（AES-256）",
+    "mapper": "JSON マッパー（フィールド → レスポンス内のパス）",
+    "testConnection": "接続をテスト",
+    "saving": "保存中…"
   },
   "common": {
     "confirm": "確認",
@@ -444,5 +463,30 @@
     "eventKick": "キック",
     "eventBan": "BAN",
     "eventUnban": "BAN解除"
+  },
+  "crash": {
+    "eyebrow": "インターフェースエラー",
+    "title": "クリーパーが通り過ぎた",
+    "bodyApp": "インターフェースがクラッシュしました。Minecraft サーバーは動作し続けています。",
+    "bodyPanel": "インターフェースのこの部分がクラッシュしました。他は正常で、サーバーも動作中です。",
+    "retry": "再試行",
+    "reload": "ページを再読み込み",
+    "copy": "レポートをコピー",
+    "copied": "レポートをコピーしました",
+    "details": "技術的な詳細"
+  },
+  "connection": {
+    "lost": "Craftarr との接続が切れました — 再接続中",
+    "restored": "接続が回復しました"
+  },
+  "confirm": {
+    "typeToConfirm": "確認のため「{name}」と入力してください",
+    "deleteServerTitle": "サーバーを削除",
+    "deleteServerBody": "「{name}」のワールド、Mod、設定は完全に削除されます。バックアップは data/backups に残ります。"
+  },
+  "notFound": {
+    "title": "チャンクが見つかりません",
+    "body": "このページは生成されませんでした。",
+    "back": "カタログに戻る"
   }
 }

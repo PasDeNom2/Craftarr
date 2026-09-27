@@ -2,221 +2,354 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Theme variables ── */
+/* ════════════════════════════════════════════════════════════════════════
+   Craftarr — « Deepslate Control Room »
+   Surfaces ardoise, un seul accent émeraude, couleurs d'état tirées du jeu
+   (or, redstone, diamant, améthyste). Toutes les couleurs passent par ces
+   variables : un thème = un bloc de variables.
+   ════════════════════════════════════════════════════════════════════════ */
+
 :root, [data-theme="dark"] {
-  --bg:          #09090B;
-  --bg-card:     #131316;
-  --bg-hover:    #1C1C21;
-  --bg-sidebar:  #0D0D10;
-  --accent:      #4ADE80;
-  --accent-rgb:  74, 222, 128;
-  --accent-hover:#22c55e;
+  --bg:           #0A0D12;
+  --bg-2:         #0D1117;
+  --surface:      #121821;
+  --surface-2:    #18202B;
+  --surface-3:    #1F2835;
+  --fg:           #E7EDF4;
+  --fg-2:         #8B97A8;
+  --fg-3:         #5A6677;
+  --line:         rgba(148, 170, 200, 0.10);
+  --line-strong:  rgba(148, 170, 200, 0.20);
+
+  --accent:       #3DDC84;
+  --accent-hover: #5BE89A;
+  --accent-ink:   #03170B;
+  --accent-rgb:   61, 220, 132;
+
+  --warn:   #F5C04A;  --warn-rgb:   245, 192, 74;
+  --danger: #FF6B6B;  --danger-rgb: 255, 107, 107;
+  --info:   #5CC8FF;  --info-rgb:   92, 200, 255;
+  --purple: #B592FF;  --purple-rgb: 181, 146, 255;
+  --orange: #FF9F43;  --orange-rgb: 255, 159, 67;
+
+  --fg-2-rgb: 139, 151, 168;
+  --bg-rgb:   10, 13, 18;
+
+  /* Alias historiques (anciens composants) */
+  --bg-card:    var(--surface);
+  --bg-hover:   var(--surface-2);
+  --bg-sidebar: var(--bg-2);
+
+  --radius: 12px;
+  --shadow-pop: 0 18px 50px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--line);
+  color-scheme: dark;
 }
 
+/* Prismarine — bleu océan */
 [data-theme="blue"] {
-  --bg:          #0D1B35;
-  --bg-card:     #162444;
-  --bg-hover:    #1E3058;
-  --bg-sidebar:  #0A1528;
-  --accent:      #60A5FA;
-  --accent-rgb:  96, 165, 250;
-  --accent-hover:#3b82f6;
+  --bg: #08111C; --bg-2: #0B1624; --surface: #0F1D2E; --surface-2: #152739; --surface-3: #1C3247;
+  --fg: #E4F0FA; --fg-2: #88A3BD; --fg-3: #56708A;
+  --line: rgba(120, 180, 230, 0.12); --line-strong: rgba(120, 180, 230, 0.24);
+  --accent: #4FC3F7; --accent-hover: #7DD3FA; --accent-ink: #021522; --accent-rgb: 79, 195, 247;
+  --bg-rgb: 8, 17, 28;
 }
 
+/* Nether — rouge braise */
 [data-theme="red"] {
-  --bg:          #200B0B;
-  --bg-card:     #301010;
-  --bg-hover:    #421616;
-  --bg-sidebar:  #180808;
-  --accent:      #F87171;
-  --accent-rgb:  248, 113, 113;
-  --accent-hover:#ef4444;
+  --bg: #120909; --bg-2: #170B0B; --surface: #1E0F0F; --surface-2: #281515; --surface-3: #331B1B;
+  --fg: #F6E9E7; --fg-2: #B28F8A; --fg-3: #7D5E5A;
+  --line: rgba(240, 150, 140, 0.12); --line-strong: rgba(240, 150, 140, 0.24);
+  --accent: #FF7A59; --accent-hover: #FF9A80; --accent-ink: #210700; --accent-rgb: 255, 122, 89;
+  --bg-rgb: 18, 9, 9;
 }
 
+/* Daltonien — accent ambre, état distinguable sans le vert/rouge */
 [data-theme="daltonien"] {
-  --bg:          #0E0E10;
-  --bg-card:     #1A1A1F;
-  --bg-hover:    #252530;
-  --bg-sidebar:  #0A0A0D;
-  --accent:      #F59E0B;
-  --accent-rgb:  245, 158, 11;
-  --accent-hover:#d97706;
+  --bg: #0C0C0E; --bg-2: #101013; --surface: #16161A; --surface-2: #1E1E24; --surface-3: #27272F;
+  --fg: #EEEEF2; --fg-2: #9A9AA6; --fg-3: #65656F;
+  --line: rgba(200, 200, 215, 0.10); --line-strong: rgba(200, 200, 215, 0.22);
+  --accent: #F5A524; --accent-hover: #F8BB57; --accent-ink: #1C1000; --accent-rgb: 245, 165, 36;
+  --danger: #5CC8FF; --danger-rgb: 92, 200, 255;
+  --bg-rgb: 12, 12, 14;
 }
 
 @layer base {
   * { box-sizing: border-box; }
 
+  html, body, #root { height: 100%; }
+
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
     background-color: var(--bg);
-    color: #F0F0F0;
+    color: var(--fg);
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'ss02', 'tnum';
   }
 
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  h1, h2, h3 { font-family: 'Bricolage Grotesque', 'IBM Plex Sans', system-ui, sans-serif; }
+
+  ::selection { background: rgba(var(--accent-rgb), 0.28); color: var(--fg); }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
-
-  select option {
-    background-color: var(--bg-hover);
-    color: #F0F0F0;
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--fg-3); }
+
+  select option { background-color: var(--surface-2); color: var(--fg); }
+
+  /* Focus visible au clavier uniquement */
+  :focus-visible {
+    outline: 2px solid rgba(var(--accent-rgb), 0.7);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  input[type="range"], input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 }
 
 @layer components {
-  /* ── Buttons ── */
-  .btn {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  /* ── Atmosphère : grille de blocs + halo d'accent ── */
+  .atmosphere {
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(1200px 500px at 12% -10%, rgba(var(--accent-rgb), 0.07), transparent 60%),
+      radial-gradient(900px 400px at 110% 0%, rgba(var(--info-rgb), 0.04), transparent 60%),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: auto, auto, 32px 32px, 32px 32px;
+    background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+    background-attachment: local;
+  }
+  /* la grille s'estompe vers le bas */
+  .atmosphere-fade {
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
   }
 
-  /* White fill — primary action, one per view max */
+  /* ── Boutons ── */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-[10px] font-medium text-sm select-none whitespace-nowrap;
+    transition: background-color .18s, border-color .18s, color .18s, box-shadow .25s, transform .12s;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* Action principale — une par vue */
   .btn-primary {
-    @apply btn bg-[#F0F0F0] text-black;
+    @apply btn;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), inset 0 -2px 0 rgba(0, 0, 0, .18);
   }
   .btn-primary:hover:not(:disabled) {
-    opacity: 0.85;
+    background: var(--accent-hover);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 -2px 0 rgba(0, 0, 0, .18), 0 0 24px -4px rgba(var(--accent-rgb), .55);
   }
 
-  /* Ghost with subtle border */
   .btn-secondary {
-    @apply btn bg-transparent text-[#F0F0F0];
-    border: 1px solid rgba(255,255,255,0.12);
+    @apply btn;
+    color: var(--fg);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
   }
-  .btn-secondary:hover:not(:disabled) {
-    background-color: var(--bg-hover);
-  }
+  .btn-secondary:hover:not(:disabled) { background: var(--surface-3); border-color: var(--line-strong); }
 
-  /* Danger — same as secondary, turns red on hover */
   .btn-danger {
-    @apply btn bg-transparent text-[#F0F0F0];
-    border: 1px solid rgba(255,255,255,0.12);
+    @apply btn;
+    color: var(--fg-2);
+    background: transparent;
+    border: 1px solid var(--line);
   }
   .btn-danger:hover:not(:disabled) {
-    border-color: #F87171;
-    color: #F87171;
-    background-color: transparent;
+    color: var(--danger);
+    border-color: rgba(var(--danger-rgb), .45);
+    background: rgba(var(--danger-rgb), .08);
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-[#6B6B76];
+    @apply btn;
+    color: var(--fg-2);
+    background: transparent;
   }
-  .btn-ghost:hover:not(:disabled) {
-    color: #F0F0F0;
-    background-color: var(--bg-hover);
-  }
+  .btn-ghost:hover:not(:disabled) { color: var(--fg); background: var(--surface-2); }
 
-  /* ── Card ── */
+  /* ── Carte ── */
   .card {
-    @apply rounded-xl p-5;
-    background-color: var(--bg-card);
-    border: 1px solid rgba(255,255,255,0.06);
+    @apply p-5;
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .018), transparent 40%), var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
+  }
+  .card-interactive {
+    transition: border-color .2s, transform .2s cubic-bezier(.16, 1, .3, 1), box-shadow .25s;
+  }
+  .card-interactive:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 14px 32px -16px rgba(0, 0, 0, .7);
   }
 
-  /* ── Input ── */
+  /* ── Champs ── */
   .input {
-    @apply w-full rounded-lg px-3 py-2 text-sm;
-    background-color: var(--bg-hover);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: #F0F0F0;
-    transition: border-color 0.2s;
+    @apply w-full rounded-[10px] px-3 py-2 text-sm;
+    background-color: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    transition: border-color .2s, box-shadow .2s, background-color .2s;
   }
-  .input::placeholder { color: #4A4A55; }
+  .input::placeholder { color: var(--fg-3); }
+  .input:hover:not(:disabled) { border-color: var(--line-strong); }
   .input:focus {
     outline: none;
-    border-color: rgba(255,255,255,0.22);
+    border-color: rgba(var(--accent-rgb), .6);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .14);
   }
-  .input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  .input:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* ── Label ── */
   .label {
-    @apply block text-xs font-medium mb-1 uppercase tracking-wide;
-    letter-spacing: 0.08em;
-    color: #6B6B76;
+    @apply block text-[11px] font-medium mb-1.5 uppercase;
+    letter-spacing: .09em;
+    color: var(--fg-2);
   }
 
-  /* ── Badge ── */
-  .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+  .badge { @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium; }
+
+  /* Petit titre de section « eyebrow » */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase;
+    letter-spacing: .14em;
+    color: var(--fg-3);
   }
+
+  /* ── Bloc d'état : un petit bloc lumineux façon Minecraft ── */
+  .status-block {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: currentColor;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .35) inset, 0 0 10px currentColor;
+    flex-shrink: 0;
+  }
+  .status-block.live { animation: block-breathe 2.2s ease-in-out infinite; }
 }
 
-/* ── Console log colour coding ── */
+@keyframes block-breathe {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, .35) inset, 0 0 4px currentColor; }
+  50%      { box-shadow: 0 0 0 1px rgba(0, 0, 0, .35) inset, 0 0 14px currentColor; }
+}
+
+/* ── Console ── */
 .log-line {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 12.5px;
+  line-height: 1.55;
+  border-bottom: 1px solid rgba(255, 255, 255, .025);
 }
-.log-line.info  { color: #F0F0F0; }
-.log-line.warn  { color: #FBBF24; }
-.log-line.error { color: #F87171; }
-.log-line.debug { color: #4A4A55; }
-.log-line.server { color: #F0F0F0; }
-.log-line.join  { color: #4ADE80; }
-.log-line.leave { color: #6B6B76; }
+.log-line.info   { color: var(--fg); }
+.log-line.warn   { color: var(--warn); }
+.log-line.error  { color: var(--danger); }
+.log-line.debug  { color: var(--fg-3); }
+.log-line.server { color: var(--fg); }
+.log-line.join   { color: var(--accent); }
+.log-line.leave  { color: var(--fg-2); }
 
-/* ── Pulsing status dot ── */
+/* Ancien point pulsant (encore utilisé ponctuellement) */
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.45); }
-  70%  { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
-  100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), .45); }
+  70%  { box-shadow: 0 0 0 5px rgba(var(--accent-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
 }
 .pulse-dot { animation: pulse-ring 2s ease-out infinite; }
 
-/* ── Skeleton loader ── */
+/* ── Squelette de chargement ── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
-/* ── Card fade-in on load ── */
+/* ── Entrées animées ── */
 @keyframes card-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(.99); }
+  to   { opacity: 1; transform: none; }
 }
-.card-in { animation: card-in 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+.card-in { animation: card-in .4s cubic-bezier(.16, 1, .3, 1) both; }
 
-/* ── CurseForge HTML description ── */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.pop-in { animation: pop-in .28s cubic-bezier(.16, 1, .3, 1) both; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in .2s ease both; }
+
+/* ── Description HTML CurseForge / Modrinth ── */
 .cf-description h1, .cf-description h2, .cf-description h3, .cf-description h4 {
-  color: #D0D0D8;
+  color: var(--fg);
   font-weight: 600;
-  margin: 1rem 0 0.4rem;
+  margin: 1rem 0 .4rem;
   line-height: 1.3;
 }
 .cf-description h1 { font-size: 1.1rem; }
 .cf-description h2 { font-size: 1rem; }
-.cf-description h3 { font-size: 0.9rem; }
-.cf-description p  { margin: 0.4rem 0; }
-.cf-description ul, .cf-description ol {
-  padding-left: 1.25rem;
-  margin: 0.4rem 0;
-}
-.cf-description li { margin: 0.15rem 0; }
+.cf-description h3 { font-size: .9rem; }
+.cf-description p  { margin: .4rem 0; }
+.cf-description ul, .cf-description ol { padding-left: 1.25rem; margin: .4rem 0; }
+.cf-description li { margin: .15rem 0; }
 .cf-description a  { color: var(--accent); text-decoration: none; }
 .cf-description a:hover { text-decoration: underline; }
-.cf-description img { max-width: 100%; border-radius: 8px; margin: 0.5rem 0; }
-.cf-description hr  { border-color: rgba(255,255,255,0.08); margin: 1rem 0; }
-.cf-description strong { color: #E0E0E8; }
+.cf-description img { max-width: 100%; border-radius: 8px; margin: .5rem 0; }
+.cf-description hr  { border-color: var(--line); margin: 1rem 0; }
+.cf-description strong { color: var(--fg); }
 .cf-description code {
-  background: rgba(255,255,255,0.06);
-  padding: 0.1em 0.35em;
+  background: var(--surface-2);
+  padding: .1em .35em;
   border-radius: 4px;
-  font-size: 0.85em;
+  font-size: .85em;
 }
 .cf-description blockquote {
-  border-left: 3px solid rgba(255,255,255,0.12);
-  padding-left: 0.75rem;
-  color: #4A4A55;
-  margin: 0.5rem 0;
+  border-left: 3px solid var(--line-strong);
+  padding-left: .75rem;
+  color: var(--fg-2);
+  margin: .5rem 0;
+}
+
+/* Respect des préférences d'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Le creeper « siffle » avant d'exploser */
+@keyframes creeper-shake {
+  0%, 62%, 100% { transform: translate(0, 0) scale(1); }
+  66% { transform: translate(-1px, 0) scale(1.03); }
+  72% { transform: translate(1px, -1px) scale(1.05); }
+  78% { transform: translate(-1px, 1px) scale(1.04); }
+  84% { transform: translate(1px, 0) scale(1.06); filter: brightness(1.6); }
+  90% { transform: translate(0, 0) scale(1); }
+}
+.creeper-shake { animation: creeper-shake 3.2s ease-in-out infinite; transform-origin: center; }
+
+/* Le bloc du logo flotte doucement sur l'écran de connexion */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
 }

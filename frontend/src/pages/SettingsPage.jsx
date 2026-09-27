@@ -5,79 +5,54 @@ import { useI18n } from '../i18n';
 import { useThemeStore } from '../store';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import ApiSourceList from '../components/settings/ApiSourceList';
 
+// Aperçus des thèmes (doivent correspondre aux blocs [data-theme] de index.css)
 const THEMES = [
-  {
-    id: 'dark',
-    label: 'Dark',
-    bg: '#09090B',
-    card: '#131316',
-    accent: '#4ADE80',
-  },
-  {
-    id: 'blue',
-    label: 'Blue',
-    bg: '#0D1B35',
-    card: '#162444',
-    accent: '#60A5FA',
-  },
-  {
-    id: 'red',
-    label: 'Red',
-    bg: '#200B0B',
-    card: '#301010',
-    accent: '#F87171',
-  },
-  {
-    id: 'daltonien',
-    label: 'Daltonien',
-    bg: '#0E0E10',
-    card: '#1A1A1F',
-    accent: '#F59E0B',
-  },
+  { id: 'dark',      label: 'Deepslate',  bg: '#0A0D12', card: '#121821', line: '#1F2835', accent: '#3DDC84' },
+  { id: 'blue',      label: 'Prismarine', bg: '#08111C', card: '#0F1D2E', line: '#1C3247', accent: '#4FC3F7' },
+  { id: 'red',       label: 'Nether',     bg: '#120909', card: '#1E0F0F', line: '#331B1B', accent: '#FF7A59' },
+  { id: 'daltonien', label: 'Daltonien',  bg: '#0C0C0E', card: '#16161A', line: '#27272F', accent: '#F5A524' },
 ];
 
 function ThemePicker() {
   const { theme, setTheme } = useThemeStore();
 
   return (
-    <div className="card">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {THEMES.map(t => {
-          const active = theme === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTheme(t.id)}
-              className="relative rounded-xl overflow-hidden transition-all duration-200 text-left"
-              style={{
-                border: active ? `2px solid ${t.accent}` : '2px solid rgba(255,255,255,0.06)',
-                boxShadow: active ? `0 0 12px rgba(${t.id === 'dark' ? '74,222,128' : t.id === 'blue' ? '96,165,250' : t.id === 'red' ? '248,113,113' : '245,158,11'},0.25)` : 'none',
-              }}
-            >
-              {/* Preview */}
-              <div className="h-16 p-2 flex flex-col gap-1.5" style={{ background: t.bg }}>
-                <div className="rounded-md h-2 w-3/4" style={{ background: t.card }} />
-                <div className="rounded-md h-2 w-1/2" style={{ background: t.card }} />
-                <div className="rounded-full h-2 w-1/3 mt-auto" style={{ background: t.accent }} />
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {THEMES.map(th => {
+        const active = theme === th.id;
+        return (
+          <button
+            key={th.id}
+            onClick={() => setTheme(th.id)}
+            aria-pressed={active}
+            className="group relative rounded-xl overflow-hidden text-left transition-transform duration-200 hover:-translate-y-0.5"
+            style={{
+              boxShadow: active ? `0 0 0 2px ${th.accent}, 0 10px 30px -12px ${th.accent}` : '0 0 0 1px var(--line)',
+            }}
+          >
+            {/* Mini-interface du thème */}
+            <div className="h-24 flex" style={{ background: th.bg }}>
+              <div className="w-7 h-full flex flex-col items-center gap-1.5 pt-2" style={{ background: th.card, borderRight: `1px solid ${th.line}` }}>
+                <span className="w-3 h-3 rounded-[3px]" style={{ background: th.accent }} />
+                <span className="w-3 h-1 rounded-sm" style={{ background: th.line }} />
+                <span className="w-3 h-1 rounded-sm" style={{ background: th.line }} />
               </div>
-              {/* Label */}
-              <div
-                className="px-2.5 py-1.5 flex items-center justify-between"
-                style={{ background: t.card, borderTop: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <span className="text-xs font-medium text-[#F0F0F0]">{t.label}</span>
-                {active && (
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ background: t.accent }}
-                  />
-                )}
+              <div className="flex-1 p-2.5 flex flex-col gap-1.5"
+                style={{ backgroundImage: `linear-gradient(${th.line} 1px, transparent 1px), linear-gradient(90deg, ${th.line} 1px, transparent 1px)`, backgroundSize: '12px 12px' }}>
+                <div className="rounded h-2.5 w-2/3" style={{ background: th.card, border: `1px solid ${th.line}` }} />
+                <div className="rounded h-2.5 w-1/2" style={{ background: th.card, border: `1px solid ${th.line}` }} />
+                <div className="rounded h-3 w-10 mt-auto" style={{ background: th.accent, boxShadow: `0 0 10px ${th.accent}` }} />
               </div>
-            </button>
-          );
-        })}
-      </div>
+            </div>
+            <div className="px-3 py-2 flex items-center justify-between" style={{ background: th.card, borderTop: `1px solid ${th.line}` }}>
+              <span className="text-xs font-medium" style={{ color: '#E7EDF4' }}>{th.label}</span>
+              {active && <span className="status-block" style={{ color: th.accent, width: 7, height: 7 }} />}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -85,12 +60,7 @@ function ThemePicker() {
 function Section({ title, children }) {
   return (
     <div className="space-y-3">
-      <h2
-        className="text-xs font-semibold uppercase tracking-[0.1em] pb-2"
-        style={{ color: '#6B6B76', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-      >
-        {title}
-      </h2>
+      <h2 className="eyebrow pb-2 border-b border-line">{title}</h2>
       {children}
     </div>
   );
@@ -116,8 +86,8 @@ function ApiKeyField({ sourceId, label, description }) {
   return (
     <div className="card space-y-3">
       <div>
-        <p className="text-sm font-medium text-[#F0F0F0]">{label}</p>
-        <p className="text-xs text-[#6B6B76] mt-0.5">{description}</p>
+        <p className="text-sm font-medium text-fg">{label}</p>
+        <p className="text-xs text-fg-2 mt-0.5">{description}</p>
       </div>
       <div className="flex gap-2">
         <input
@@ -143,40 +113,36 @@ export default function SettingsPage() {
   const { t } = useI18n();
 
   return (
-    <div className="p-7 max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight mb-1">{t('settings.title')}</h1>
-        <p className="text-[#6B6B76] text-sm">{t('settings.subtitle')}</p>
-      </div>
+    <div className="px-8 py-8 max-w-4xl mx-auto space-y-10">
+      <header className="card-in">
+        <p className="eyebrow mb-2">{t('nav.settings')}</p>
+        <h1 className="font-display text-[34px] leading-none font-semibold text-fg tracking-tight">{t('settings.title')}</h1>
+        <p className="text-fg-2 text-sm mt-3">{t('settings.subtitle')}</p>
+      </header>
 
-      <Section title={t('settings.appearance') || 'Appearance'}>
+      <Section title={t('settings.appearance')}>
         <ThemePicker />
       </Section>
 
       <Section title={t('settings.apiKeys')}>
-        <ApiKeyField
-          sourceId="curseforge"
-          label="CurseForge API Key"
-          description={t('settings.curseforgeDesc')}
-        />
-        <ApiKeyField
-          sourceId="modrinth"
-          label={t('settings.modrinthOptional')}
-          description={t('settings.modrinthDesc')}
-        />
+        <ApiKeyField sourceId="curseforge" label="CurseForge API Key" description={t('settings.curseforgeDesc')} />
+        <ApiKeyField sourceId="modrinth" label={t('settings.modrinthOptional')} description={t('settings.modrinthDesc')} />
       </Section>
 
-      <Section title="System">
-        <div className="card space-y-3 text-sm">
+      <Section title={t('settings.apiSources')}>
+        <ApiSourceList />
+      </Section>
+
+      <Section title={t('settings.system')}>
+        <div className="card !p-0 divide-y divide-line text-sm">
           {[
-            ['Version', '1.0.0'],
-            ['Backend', 'Node.js + Express'],
-            ['Image Minecraft', 'itzg/minecraft-server'],
+            ['Backend', 'Node.js 24 · Express · Socket.io'],
+            ['Minecraft', 'itzg/minecraft-server'],
             ['Database', 'SQLite'],
           ].map(([k, v]) => (
-            <div key={k} className="flex justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px' }}>
-              <span className="text-[#6B6B76]">{k}</span>
-              <span className="text-[#F0F0F0] font-medium font-mono text-xs">{v}</span>
+            <div key={k} className="flex justify-between px-5 py-3">
+              <span className="text-fg-2">{k}</span>
+              <span className="text-fg font-mono text-xs">{v}</span>
             </div>
           ))}
         </div>

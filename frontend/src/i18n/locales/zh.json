@@ -134,7 +134,9 @@
     "onlineModeOn": "已启用 — 真实皮肤，Mojang 验证。破解账号无法连接。",
     "onlineModeOff": "已禁用 — 破解模式，所有玩家均可连接（无官方皮肤）。",
     "deploying": "创建中...",
-    "deploy": "部署服务器"
+    "deploy": "部署服务器",
+    "portTaken": "端口已被“{name}”占用。",
+    "useFreePort": "使用 {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "需要重建"
+    "needsRecreate": "需要重建",
+    "copyAddress": "复制服务器地址",
+    "addressCopied": "地址已复制：{address}"
   },
   "console": {
     "placeholder": "输入命令...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "在 console.curseforge.com 获取密钥 — 访问 CurseForge 目录必需",
     "modrinthDesc": "提高 Modrinth 搜索的速率限制。在 modrinth.com/settings/pats 获取",
     "modrinthOptional": "Modrinth API 密钥（可选）",
-    "appearance": "外观"
+    "appearance": "外观",
+    "system": "系统"
   },
   "sources": {
     "title": "来源",
@@ -372,7 +377,21 @@
     "testError": "连接失败",
     "deleteConfirm": "删除此来源？",
     "deleteSuccess": "来源已删除",
-    "saveSuccess": "来源已保存"
+    "saveSuccess": "来源已保存",
+    "testing": "测试中…",
+    "imported": "已导入 {count} 个来源",
+    "invalidJson": "无效的 JSON 文件",
+    "builtin": "内置",
+    "fillFirst": "测试前请填写名称和 URL",
+    "invalidMapper": "JSON 映射无效",
+    "created": "已添加来源“{name}”",
+    "formTitle": "添加整合包来源",
+    "presets": "预设",
+    "namePlaceholder": "我的整合包 API",
+    "apiKeyHint": "加密存储（AES-256）",
+    "mapper": "JSON 映射（字段 → 响应中的路径）",
+    "testConnection": "测试连接",
+    "saving": "保存中…"
   },
   "common": {
     "confirm": "确认",
@@ -444,5 +463,30 @@
     "eventKick": "踢出",
     "eventBan": "封禁",
     "eventUnban": "解封"
+  },
+  "crash": {
+    "eyebrow": "界面错误",
+    "title": "一只苦力怕路过了",
+    "bodyApp": "界面崩溃了。你的 Minecraft 服务器仍在运行。",
+    "bodyPanel": "界面的这一部分崩溃了。其余功能正常，服务器仍在运行。",
+    "retry": "重试",
+    "reload": "重新加载页面",
+    "copy": "复制报告",
+    "copied": "报告已复制",
+    "details": "技术细节"
+  },
+  "connection": {
+    "lost": "与 Craftarr 的连接已断开 — 正在重连",
+    "restored": "连接已恢复"
+  },
+  "confirm": {
+    "typeToConfirm": "输入“{name}”以确认",
+    "deleteServerTitle": "删除服务器",
+    "deleteServerBody": "“{name}”的世界、模组和配置将被永久删除。备份保留在 data/backups 中。"
+  },
+  "notFound": {
+    "title": "找不到区块",
+    "body": "此页面从未生成。",
+    "back": "返回目录"
   }
 }

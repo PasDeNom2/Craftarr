@@ -8,6 +8,8 @@ import SetupPage from './pages/SetupPage';
 import CatalogPage from './pages/CatalogPage';
 import ServerDetailPage from './pages/ServerDetailPage';
 import SettingsPage from './pages/SettingsPage';
+import NotFoundPage from './pages/NotFoundPage';
+import { LogoMark } from './components/ui/Logo';
 
 function PrivateRoute({ children }) {
   const token = useAuthStore(s => s.token);
@@ -29,9 +31,8 @@ function AuthGate({ children }) {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="w-5 h-5 border border-[#4A4A55] border-t-transparent rounded-full animate-spin"
-          style={{ borderTopColor: 'transparent' }} />
+      <div className="min-h-screen flex items-center justify-center atmosphere">
+        <LogoMark size={40} glow className="animate-pulse" />
       </div>
     );
   }
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="servers/:id" element={<ServerDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

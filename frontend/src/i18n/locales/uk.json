@@ -134,7 +134,9 @@
     "onlineModeOn": "Увімкнено — справжні скіни, аут. Mojang. Зламані акаунти не можуть підключитися.",
     "onlineModeOff": "Вимкнено — cracked-режим, всі гравці приймаються (без офіційних скінів).",
     "deploying": "Створення...",
-    "deploy": "Розгорнути сервер"
+    "deploy": "Розгорнути сервер",
+    "portTaken": "Порт уже використовує сервер «{name}».",
+    "useFreePort": "Використати {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Потрібне перестворення"
+    "needsRecreate": "Потрібне перестворення",
+    "copyAddress": "Скопіювати адресу сервера",
+    "addressCopied": "Адресу скопійовано: {address}"
   },
   "console": {
     "placeholder": "Введіть команду...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Отримайте ключ на console.curseforge.com — необхідний для каталогу CurseForge",
     "modrinthDesc": "Покращує ліміт запитів для пошуку Modrinth. Доступно на modrinth.com/settings/pats",
     "modrinthOptional": "Ключ API Modrinth (необов'язковий)",
-    "appearance": "Зовнішній вигляд Minecraft"
+    "appearance": "Зовнішній вигляд Minecraft",
+    "system": "Система"
   },
   "sources": {
     "title": "Джерела",
@@ -372,7 +377,21 @@
     "testError": "Підключення не вдалося",
     "deleteConfirm": "Видалити це джерело?",
     "deleteSuccess": "Джерело видалено",
-    "saveSuccess": "Джерело збережено"
+    "saveSuccess": "Джерело збережено",
+    "testing": "Перевірка…",
+    "imported": "Імпортовано джерел: {count}",
+    "invalidJson": "Некоректний JSON-файл",
+    "builtin": "Вбудоване",
+    "fillFirst": "Вкажіть назву та URL перед перевіркою",
+    "invalidMapper": "Некоректний JSON-мапер",
+    "created": "Джерело «{name}» додано",
+    "formTitle": "Додати джерело модпаків",
+    "presets": "Шаблони",
+    "namePlaceholder": "Мій API модпаків",
+    "apiKeyHint": "Зберігається зашифрованим (AES-256)",
+    "mapper": "JSON-мапер (поля → шляхи у відповіді)",
+    "testConnection": "Перевірити з’єднання",
+    "saving": "Збереження…"
   },
   "common": {
     "confirm": "Підтвердити",
@@ -444,5 +463,30 @@
     "eventKick": "Вигнання",
     "eventBan": "Бан",
     "eventUnban": "Розбан"
+  },
+  "crash": {
+    "eyebrow": "Помилка інтерфейсу",
+    "title": "Тут побував кріпер",
+    "bodyApp": "Інтерфейс впав. Ваші сервери Minecraft продовжують працювати.",
+    "bodyPanel": "Ця частина інтерфейсу впала. Решта працює, сервери продовжують працювати.",
+    "retry": "Повторити",
+    "reload": "Перезавантажити сторінку",
+    "copy": "Скопіювати звіт",
+    "copied": "Звіт скопійовано",
+    "details": "Технічні деталі"
+  },
+  "connection": {
+    "lost": "З’єднання з Craftarr втрачено — перепідключення",
+    "restored": "З’єднання відновлено"
+  },
+  "confirm": {
+    "typeToConfirm": "Введіть «{name}» для підтвердження",
+    "deleteServerTitle": "Видалити сервер",
+    "deleteServerBody": "Світ, моди та налаштування «{name}» буде видалено назавжди. Резервні копії зберігаються в data/backups."
+  },
+  "notFound": {
+    "title": "Чанк не знайдено",
+    "body": "Цю сторінку так і не було згенеровано.",
+    "back": "Повернутися до каталогу"
   }
 }

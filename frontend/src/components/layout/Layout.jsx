@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useServerStore } from '../../store';
 import { getServers } from '../../services/api';
 import { getSocket } from '../../hooks/useSocket';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import ErrorBoundary from '../ui/ErrorBoundary';
+import ConnectionBanner from '../ui/ConnectionBanner';
 
 export default function Layout() {
   const { setServers, updateServer, addServer } = useServerStore();
   const qc = useQueryClient();
+  const location = useLocation();
 
   useEffect(() => {
     // Merge les serveurs reçus avec le store existant pour ne jamais effacer les
@@ -69,17 +71,15 @@ export default function Layout() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface">
+    <div className="flex h-screen overflow-hidden bg-bg">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div
-          className="flex items-center justify-end px-4 py-2 shrink-0"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-        >
-          <LanguageSwitcher />
-        </div>
-        <main className="flex-1 overflow-y-auto bg-surface">
-          <Outlet />
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <ConnectionBanner />
+        <main className="flex-1 overflow-y-auto atmosphere">
+          {/* Une page qui plante n'emporte pas la navigation ; changer de page efface l'erreur */}
+          <ErrorBoundary scope="panel" resetKey={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

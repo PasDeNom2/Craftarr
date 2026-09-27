@@ -4,33 +4,39 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { I18nProvider } from './i18n';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 import './index.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 30000 },
+    queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: false },
   },
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <I18nProvider>
-  <QueryClientProvider client={queryClient}>
-    <App />
-    <Toaster
-      position="top-right"
-      toastOptions={{
-        style: {
-          background: '#131316',
-          color: '#F0F0F0',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '10px',
-          fontSize: '13px',
-          padding: '10px 14px',
-        },
-        success: { iconTheme: { primary: '#4ADE80', secondary: '#131316' } },
-        error:   { iconTheme: { primary: '#F87171', secondary: '#131316' } },
-      }}
-    />
-  </QueryClientProvider>
+    {/* Dernier filet de sécurité : jamais d'écran blanc */}
+    <ErrorBoundary scope="app">
+      <QueryClientProvider client={queryClient}>
+        <App />
+        <Toaster
+          position="bottom-right"
+          gutter={10}
+          toastOptions={{
+            style: {
+              background: 'var(--surface)',
+              color: 'var(--fg)',
+              boxShadow: 'var(--shadow-pop)',
+              borderRadius: '12px',
+              fontSize: '13px',
+              padding: '10px 14px',
+              maxWidth: '420px',
+            },
+            success: { iconTheme: { primary: 'var(--accent)', secondary: 'var(--surface)' } },
+            error: { duration: 6000, iconTheme: { primary: 'var(--danger)', secondary: 'var(--surface)' } },
+          }}
+        />
+      </QueryClientProvider>
+    </ErrorBoundary>
   </I18nProvider>
 );

@@ -134,7 +134,9 @@
     "onlineModeOn": "Aktiverat — riktiga skins, Mojang-auth. Crackade konton kan inte ansluta.",
     "onlineModeOff": "Inaktiverat — crackat läge, alla spelare accepteras (inga officiella skins).",
     "deploying": "Skapar...",
-    "deploy": "Distribuera server"
+    "deploy": "Distribuera server",
+    "portTaken": "Porten används redan av ”{name}”.",
+    "useFreePort": "Använd {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Måste återskapas"
+    "needsRecreate": "Måste återskapas",
+    "copyAddress": "Kopiera serveradressen",
+    "addressCopied": "Adress kopierad: {address}"
   },
   "console": {
     "placeholder": "Ange ett kommando...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Hämta din nyckel på console.curseforge.com — krävs för CurseForge-katalogen",
     "modrinthDesc": "Förbättrar hastighetsgränsen för Modrinth-sökningar. Tillgänglig på modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API-nyckel (valfri)",
-    "appearance": "Minecraft-utseende"
+    "appearance": "Minecraft-utseende",
+    "system": "System"
   },
   "sources": {
     "title": "Källor",
@@ -372,7 +377,21 @@
     "testError": "Anslutning misslyckades",
     "deleteConfirm": "Ta bort denna källa?",
     "deleteSuccess": "Källa borttagen",
-    "saveSuccess": "Källa sparad"
+    "saveSuccess": "Källa sparad",
+    "testing": "Testar…",
+    "imported": "{count} källa/källor importerade",
+    "invalidJson": "Ogiltig JSON-fil",
+    "builtin": "Inbyggd",
+    "fillFirst": "Fyll i namn och URL innan du testar",
+    "invalidMapper": "JSON-mappern är ogiltig",
+    "created": "Källan ”{name}” har lagts till",
+    "formTitle": "Lägg till en modpackkälla",
+    "presets": "Förinställningar",
+    "namePlaceholder": "Mitt modpack-API",
+    "apiKeyHint": "Lagras krypterad (AES-256)",
+    "mapper": "JSON-mapper (fält → sökvägar i svaret)",
+    "testConnection": "Testa anslutningen",
+    "saving": "Sparar…"
   },
   "common": {
     "confirm": "Bekräfta",
@@ -444,5 +463,30 @@
     "eventKick": "Sparkad",
     "eventBan": "Bannlysning",
     "eventUnban": "Hävd bannlysning"
+  },
+  "crash": {
+    "eyebrow": "Gränssnittsfel",
+    "title": "En creeper har varit här",
+    "bodyApp": "Gränssnittet kraschade. Dina Minecraft-servrar körs fortfarande.",
+    "bodyPanel": "Den här delen av gränssnittet kraschade. Resten fungerar och dina servrar körs fortfarande.",
+    "retry": "Försök igen",
+    "reload": "Ladda om sidan",
+    "copy": "Kopiera rapport",
+    "copied": "Rapport kopierad",
+    "details": "Tekniska detaljer"
+  },
+  "connection": {
+    "lost": "Anslutningen till Craftarr bröts — ansluter igen",
+    "restored": "Anslutningen återställd"
+  },
+  "confirm": {
+    "typeToConfirm": "Skriv ”{name}” för att bekräfta",
+    "deleteServerTitle": "Ta bort server",
+    "deleteServerBody": "Världen, moddarna och konfigurationen för ”{name}” tas bort permanent. Säkerhetskopior sparas i data/backups."
+  },
+  "notFound": {
+    "title": "Chunken hittades inte",
+    "body": "Den här sidan genererades aldrig.",
+    "back": "Tillbaka till katalogen"
   }
 }

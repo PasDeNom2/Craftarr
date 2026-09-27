@@ -134,7 +134,9 @@
     "onlineModeOn": "Ingeschakeld — echte skins, Mojang-auth. Gecrackede accounts kunnen niet verbinden.",
     "onlineModeOff": "Uitgeschakeld — cracked-modus, alle spelers geaccepteerd (geen officiële skins).",
     "deploying": "Aanmaken...",
-    "deploy": "Server implementeren"
+    "deploy": "Server implementeren",
+    "portTaken": "Poort wordt al gebruikt door \"{name}\".",
+    "useFreePort": "{port} gebruiken"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Opnieuw aanmaken vereist"
+    "needsRecreate": "Opnieuw aanmaken vereist",
+    "copyAddress": "Serveradres kopiëren",
+    "addressCopied": "Adres gekopieerd: {address}"
   },
   "console": {
     "placeholder": "Voer een opdracht in...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Haal uw sleutel op via console.curseforge.com — vereist voor de CurseForge-catalogus",
     "modrinthDesc": "Verbetert de snelheidslimiet voor Modrinth-zoekopdrachten. Beschikbaar op modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API-sleutel (optioneel)",
-    "appearance": "Minecraft-uiterlijk"
+    "appearance": "Minecraft-uiterlijk",
+    "system": "Systeem"
   },
   "sources": {
     "title": "Bronnen",
@@ -372,7 +377,21 @@
     "testError": "Verbinding mislukt",
     "deleteConfirm": "Deze bron verwijderen?",
     "deleteSuccess": "Bron verwijderd",
-    "saveSuccess": "Bron opgeslagen"
+    "saveSuccess": "Bron opgeslagen",
+    "testing": "Bezig met testen…",
+    "imported": "{count} bron(nen) geïmporteerd",
+    "invalidJson": "Ongeldig JSON-bestand",
+    "builtin": "Ingebouwd",
+    "fillFirst": "Vul naam en URL in voordat je test",
+    "invalidMapper": "De JSON-mapper is ongeldig",
+    "created": "Bron \"{name}\" toegevoegd",
+    "formTitle": "Modpackbron toevoegen",
+    "presets": "Voorinstellingen",
+    "namePlaceholder": "Mijn modpack-API",
+    "apiKeyHint": "Versleuteld opgeslagen (AES-256)",
+    "mapper": "JSON-mapper (velden → paden in het antwoord)",
+    "testConnection": "Verbinding testen",
+    "saving": "Opslaan…"
   },
   "common": {
     "confirm": "Bevestigen",
@@ -444,5 +463,30 @@
     "eventKick": "Kick",
     "eventBan": "Ban",
     "eventUnban": "Ban opgeheven"
+  },
+  "crash": {
+    "eyebrow": "Interfacefout",
+    "title": "Er is een creeper langs geweest",
+    "bodyApp": "De interface is gecrasht. Je Minecraft-servers draaien nog.",
+    "bodyPanel": "Dit deel van de interface is gecrasht. De rest werkt en je servers draaien nog.",
+    "retry": "Opnieuw proberen",
+    "reload": "Pagina herladen",
+    "copy": "Rapport kopiëren",
+    "copied": "Rapport gekopieerd",
+    "details": "Technische details"
+  },
+  "connection": {
+    "lost": "Verbinding met Craftarr verbroken — opnieuw verbinden",
+    "restored": "Verbinding hersteld"
+  },
+  "confirm": {
+    "typeToConfirm": "Typ \"{name}\" om te bevestigen",
+    "deleteServerTitle": "Server verwijderen",
+    "deleteServerBody": "De wereld, mods en configuratie van \"{name}\" worden definitief verwijderd. Back-ups blijven bewaard in data/backups."
+  },
+  "notFound": {
+    "title": "Chunk niet gevonden",
+    "body": "Deze pagina is nooit gegenereerd.",
+    "back": "Terug naar de catalogus"
   }
 }

@@ -134,7 +134,9 @@
     "onlineModeOn": "Enabled — real skins, Mojang auth. Cracked accounts cannot connect.",
     "onlineModeOff": "Disabled — cracked mode, all players accepted (no official skins).",
     "deploying": "Creating...",
-    "deploy": "Deploy server"
+    "deploy": "Deploy server",
+    "portTaken": "Port already used by \"{name}\".",
+    "useFreePort": "Use {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "recreateError": "Saved but error recreating container",
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
-    }
+    },
+    "copyAddress": "Copy server address",
+    "addressCopied": "Address copied: {address}"
   },
   "console": {
     "placeholder": "Enter a command...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Get your key at console.curseforge.com — required to access the CurseForge catalogue",
     "modrinthDesc": "Improves rate limit for Modrinth searches. Available at modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API Key (optional)",
-    "appearance": "Minecraft Appearance"
+    "appearance": "Minecraft Appearance",
+    "system": "System"
   },
   "sources": {
     "title": "Sources",
@@ -372,7 +377,21 @@
     "testError": "Connection failed",
     "deleteConfirm": "Delete this source?",
     "deleteSuccess": "Source deleted",
-    "saveSuccess": "Source saved"
+    "saveSuccess": "Source saved",
+    "testing": "Testing…",
+    "imported": "{count} source(s) imported",
+    "invalidJson": "Invalid JSON file",
+    "builtin": "Built-in",
+    "fillFirst": "Fill in the name and URL before testing",
+    "invalidMapper": "The JSON mapper is invalid",
+    "created": "Source \"{name}\" added",
+    "formTitle": "Add a modpack source",
+    "presets": "Presets",
+    "namePlaceholder": "My modpack API",
+    "apiKeyHint": "Stored encrypted (AES-256)",
+    "mapper": "JSON mapper (fields → paths in the response)",
+    "testConnection": "Test connection",
+    "saving": "Saving…"
   },
   "common": {
     "confirm": "Confirm",
@@ -444,5 +463,30 @@
     "eventKick": "Kick",
     "eventBan": "Ban",
     "eventUnban": "Unban"
+  },
+  "crash": {
+    "eyebrow": "Interface error",
+    "title": "A creeper got in",
+    "bodyApp": "The interface crashed. Your Minecraft servers are still running.",
+    "bodyPanel": "This part of the interface crashed. Everything else works, and your servers are still running.",
+    "retry": "Try again",
+    "reload": "Reload page",
+    "copy": "Copy report",
+    "copied": "Report copied",
+    "details": "Technical details"
+  },
+  "connection": {
+    "lost": "Connection to Craftarr lost — reconnecting",
+    "restored": "Connection restored"
+  },
+  "confirm": {
+    "typeToConfirm": "Type \"{name}\" to confirm",
+    "deleteServerTitle": "Delete server",
+    "deleteServerBody": "The world, mods and configuration of \"{name}\" will be permanently deleted. Backups are kept in data/backups."
+  },
+  "notFound": {
+    "title": "Chunk not found",
+    "body": "This page was never generated.",
+    "back": "Back to catalogue"
   }
 }

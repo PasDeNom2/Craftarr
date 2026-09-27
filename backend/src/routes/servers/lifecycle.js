@@ -11,7 +11,7 @@ const backupService = require('../../services/backup');
 const updater = require('../../services/updater');
 const { startLogStream } = require('../../websocket/logs');
 const { isMcVersion } = require('../../services/mcVersion');
-const { DATA_PATH, formatServer, findFreePort, mapDockerStatus } = require('./common');
+const { DATA_PATH, formatServer, findFreePort, mapDockerStatus, portOwner } = require('./common');
 
 const router = express.Router();
 
@@ -78,6 +78,9 @@ router.post('/', authMiddleware, async (req, res, next) => {
 
     const db = getDb();
     const assignedPort = port || findFreePort(db);
+    // Deux serveurs sur le même port : le second container ne démarrerait jamais
+    const clash = portOwner(db, assignedPort);
+    if (clash) return res.status(409).json({ error: `Le port ${assignedPort} est déjà utilisé par « ${clash.name} »` });
     const rconPort = assignedPort + 10;
     const rconPassword = uuidv4().replace(/-/g, '').slice(0, 16);
     const id = uuidv4();
@@ -410,6 +413,10 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
       }
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
+    if (updates.port !== undefined && updates.port !== server.port) {
+      const clash = portOwner(db, updates.port, server.id);
+      if (clash) return res.status(409).json({ error: `Le port ${updates.port} est déjà utilisé par « ${clash.name} »` });
+    }
 
     // Lever needs_recreate si un champ impactant le container a changé
     const needsRecreate = Object.keys(updates).some(k => CONTAINER_FIELDS.has(k) && updates[k] !== server[k]);

@@ -134,7 +134,9 @@
     "onlineModeOn": "Etkin — gerçek skinler, Mojang kimlik doğrulama. Kırık hesaplar bağlanamaz.",
     "onlineModeOff": "Devre dışı — cracked modu, tüm oyuncular kabul edilir (resmi skin yok).",
     "deploying": "Oluşturuluyor...",
-    "deploy": "Sunucuyu Dağıt"
+    "deploy": "Sunucuyu Dağıt",
+    "portTaken": "Bağlantı noktası zaten “{name}” tarafından kullanılıyor.",
+    "useFreePort": "{port} kullan"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Yeniden oluşturma gerekli"
+    "needsRecreate": "Yeniden oluşturma gerekli",
+    "copyAddress": "Sunucu adresini kopyala",
+    "addressCopied": "Adres kopyalandı: {address}"
   },
   "console": {
     "placeholder": "Komut girin...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "console.curseforge.com'dan anahtar alın — CurseForge kataloğu için gerekli",
     "modrinthDesc": "Modrinth aramaları için hız sınırını artırır. modrinth.com/settings/pats'ta mevcut",
     "modrinthOptional": "Modrinth API anahtarı (isteğe bağlı)",
-    "appearance": "Minecraft Görünümü"
+    "appearance": "Minecraft Görünümü",
+    "system": "Sistem"
   },
   "sources": {
     "title": "Kaynaklar",
@@ -372,7 +377,21 @@
     "testError": "Bağlantı başarısız",
     "deleteConfirm": "Bu kaynağı sil?",
     "deleteSuccess": "Kaynak silindi",
-    "saveSuccess": "Kaynak kaydedildi"
+    "saveSuccess": "Kaynak kaydedildi",
+    "testing": "Test ediliyor…",
+    "imported": "{count} kaynak içe aktarıldı",
+    "invalidJson": "Geçersiz JSON dosyası",
+    "builtin": "Yerleşik",
+    "fillFirst": "Test etmeden önce adı ve URL’yi gir",
+    "invalidMapper": "JSON eşleyici geçersiz",
+    "created": "“{name}” kaynağı eklendi",
+    "formTitle": "Modpack kaynağı ekle",
+    "presets": "Hazır ayarlar",
+    "namePlaceholder": "Modpack API’m",
+    "apiKeyHint": "Şifreli saklanır (AES-256)",
+    "mapper": "JSON eşleyici (alanlar → yanıttaki yollar)",
+    "testConnection": "Bağlantıyı test et",
+    "saving": "Kaydediliyor…"
   },
   "common": {
     "confirm": "Onayla",
@@ -444,5 +463,30 @@
     "eventKick": "Atılma",
     "eventBan": "Yasak",
     "eventUnban": "Yasak kaldırma"
+  },
+  "crash": {
+    "eyebrow": "Arayüz hatası",
+    "title": "Buradan bir creeper geçti",
+    "bodyApp": "Arayüz çöktü. Minecraft sunucuların hâlâ çalışıyor.",
+    "bodyPanel": "Arayüzün bu bölümü çöktü. Geri kalanı çalışıyor, sunucuların da açık.",
+    "retry": "Tekrar dene",
+    "reload": "Sayfayı yenile",
+    "copy": "Raporu kopyala",
+    "copied": "Rapor kopyalandı",
+    "details": "Teknik ayrıntılar"
+  },
+  "connection": {
+    "lost": "Craftarr bağlantısı koptu — yeniden bağlanılıyor",
+    "restored": "Bağlantı yeniden kuruldu"
+  },
+  "confirm": {
+    "typeToConfirm": "Onaylamak için “{name}” yaz",
+    "deleteServerTitle": "Sunucuyu sil",
+    "deleteServerBody": "“{name}” sunucusunun dünyası, modları ve ayarları kalıcı olarak silinecek. Yedekler data/backups içinde tutulur."
+  },
+  "notFound": {
+    "title": "Chunk bulunamadı",
+    "body": "Bu sayfa hiç oluşturulmadı.",
+    "back": "Kataloğa dön"
   }
 }

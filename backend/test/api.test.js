@@ -93,6 +93,18 @@ test('backup : rangé dans data/backups/<id>, basé sur level-name', async () =>
   assert.ok(names.includes('monde/level.dat') && !names.some(n => n.startsWith('mods/')), names.join(','));
 });
 
+test('ports : création et modification refusées sur un port déjà utilisé', async () => {
+  const create = await req('POST', '/servers', { name: 'Doublon', modpack_id: '1', modpack_source: 'curseforge', port: 25599 }, jwt);
+  assert.strictEqual(create.status, 409);
+  assert.match(create.data.error, /25599.*Test/);
+
+  db.prepare(`INSERT INTO servers (id, name, modpack_id, modpack_name, modpack_source, port, rcon_port, rcon_password, ram_mb, max_players, status, loader_type)
+    VALUES ('eeeeeeee-0000-0000-0000-000000000000', 'Autre', '1', 'A', 'curseforge', 25620, 25630, 'x', 2048, 5, 'stopped', 'fabric')`).run();
+  assert.strictEqual((await req('PATCH', '/servers/eeeeeeee-0000-0000-0000-000000000000', { port: 25599 }, jwt)).status, 409);
+  assert.strictEqual((await req('PATCH', '/servers/eeeeeeee-0000-0000-0000-000000000000', { port: 25640 }, jwt)).status, 200);
+  db.prepare("DELETE FROM servers WHERE id = 'eeeeeeee-0000-0000-0000-000000000000'").run();
+});
+
 test('import de monde : refus des zips invalides, bascule sûre sinon', async () => {
   assert.strictEqual(await upload(Buffer.from('pas un zip')), 400);
   const noWorld = new AdmZip(); noWorld.addFile('readme.txt', Buffer.from('x'));

@@ -35,7 +35,7 @@ export default function IconPicker({ value, onChange, label }) {
           style={{
             width: 52, height: 52, borderRadius: 10,
             background: preview ? 'transparent' : 'rgba(255,255,255,0.05)',
-            border: `2px dashed ${preview ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.12)'}`,
+            border: `2px dashed ${preview ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.12)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
             transition: 'border-color 0.2s',
@@ -44,15 +44,15 @@ export default function IconPicker({ value, onChange, label }) {
           {preview ? (
             <img src={preview} alt="icon" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <ImagePlus size={18} strokeWidth={1.5} style={{ color: '#4A4A55' }} />
+            <ImagePlus size={18} strokeWidth={1.5} style={{ color: 'var(--fg-3)' }} />
           )}
         </div>
       </label>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-[#6B6B76]">{label || t('server.settings.icon')}</p>
-        <p className="text-[11px] text-[#4A4A55] mt-0.5">64×64 px</p>
+        <p className="text-xs text-fg-2">{label || t('server.settings.icon')}</p>
+        <p className="text-[11px] text-fg-3 mt-0.5">64×64 px</p>
         {preview && (
-          <button type="button" onClick={handleRemove} className="flex items-center gap-1 text-[11px] text-[#F87171] mt-1 hover:opacity-80 transition-opacity">
+          <button type="button" onClick={handleRemove} className="flex items-center gap-1 text-[11px] text-danger mt-1 hover:opacity-80 transition-opacity">
             <X size={10} strokeWidth={2} /> {t('deploy.worldRemove')}
           </button>
         )}

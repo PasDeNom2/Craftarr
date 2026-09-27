@@ -134,7 +134,9 @@
     "onlineModeOn": "Aktiviert — echte Skins, Mojang-Auth. Geknackte Konten können nicht verbinden.",
     "onlineModeOff": "Deaktiviert — Cracked-Modus, alle Spieler akzeptiert (keine offiziellen Skins).",
     "deploying": "Wird erstellt...",
-    "deploy": "Server deployen"
+    "deploy": "Server deployen",
+    "portTaken": "Port wird bereits von „{name}\" verwendet.",
+    "useFreePort": "{port} verwenden"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Neuerstellung erforderlich"
+    "needsRecreate": "Neuerstellung erforderlich",
+    "copyAddress": "Serveradresse kopieren",
+    "addressCopied": "Adresse kopiert: {address}"
   },
   "console": {
     "placeholder": "Befehl eingeben...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Schlüssel auf console.curseforge.com — erforderlich für den CurseForge-Katalog",
     "modrinthDesc": "Verbessert das Rate-Limit für Modrinth-Suchen. Auf modrinth.com/settings/pats verfügbar",
     "modrinthOptional": "Modrinth API-Schlüssel (optional)",
-    "appearance": "Minecraft-Erscheinungsbild"
+    "appearance": "Minecraft-Erscheinungsbild",
+    "system": "System"
   },
   "sources": {
     "title": "Quellen",
@@ -372,7 +377,21 @@
     "testError": "Verbindung fehlgeschlagen",
     "deleteConfirm": "Diese Quelle löschen?",
     "deleteSuccess": "Quelle gelöscht",
-    "saveSuccess": "Quelle gespeichert"
+    "saveSuccess": "Quelle gespeichert",
+    "testing": "Test läuft…",
+    "imported": "{count} Quelle(n) importiert",
+    "invalidJson": "Ungültige JSON-Datei",
+    "builtin": "Integriert",
+    "fillFirst": "Name und URL vor dem Test ausfüllen",
+    "invalidMapper": "Der JSON-Mapper ist ungültig",
+    "created": "Quelle „{name}\" hinzugefügt",
+    "formTitle": "Modpack-Quelle hinzufügen",
+    "presets": "Vorlagen",
+    "namePlaceholder": "Meine Modpack-API",
+    "apiKeyHint": "Verschlüsselt gespeichert (AES-256)",
+    "mapper": "JSON-Mapper (Felder → Pfade in der Antwort)",
+    "testConnection": "Verbindung testen",
+    "saving": "Speichern…"
   },
   "common": {
     "confirm": "Bestätigen",
@@ -444,5 +463,30 @@
     "eventKick": "Kick",
     "eventBan": "Bann",
     "eventUnban": "Entbannung"
+  },
+  "crash": {
+    "eyebrow": "Oberflächenfehler",
+    "title": "Ein Creeper war hier",
+    "bodyApp": "Die Oberfläche ist abgestürzt. Deine Minecraft-Server laufen weiter.",
+    "bodyPanel": "Dieser Teil der Oberfläche ist abgestürzt. Der Rest funktioniert und deine Server laufen weiter.",
+    "retry": "Erneut versuchen",
+    "reload": "Seite neu laden",
+    "copy": "Bericht kopieren",
+    "copied": "Bericht kopiert",
+    "details": "Technische Details"
+  },
+  "connection": {
+    "lost": "Verbindung zu Craftarr verloren — verbinde neu",
+    "restored": "Verbindung wiederhergestellt"
+  },
+  "confirm": {
+    "typeToConfirm": "Gib „{name}\" zur Bestätigung ein",
+    "deleteServerTitle": "Server löschen",
+    "deleteServerBody": "Welt, Mods und Konfiguration von „{name}\" werden endgültig gelöscht. Backups bleiben in data/backups erhalten."
+  },
+  "notFound": {
+    "title": "Chunk nicht gefunden",
+    "body": "Diese Seite wurde nie generiert.",
+    "back": "Zurück zum Katalog"
   }
 }

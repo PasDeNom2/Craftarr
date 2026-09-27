@@ -134,7 +134,9 @@
     "onlineModeOn": "Activé — skins réels, authentification Mojang. Les comptes crackés ne peuvent pas se connecter.",
     "onlineModeOff": "Désactivé — mode cracked, tous les joueurs peuvent se connecter (pas de skins officiels).",
     "deploying": "Création en cours...",
-    "deploy": "Déployer ce serveur"
+    "deploy": "Déployer ce serveur",
+    "portTaken": "Port déjà utilisé par « {name} ».",
+    "useFreePort": "Utiliser {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "recreateError": "Sauvegardé mais erreur à la recréation",
       "iconUpdated": "Icône mise à jour — redémarrez le serveur pour l'appliquer",
       "iconError": "Erreur lors de l'upload de l'icône"
-    }
+    },
+    "copyAddress": "Copier l'adresse du serveur",
+    "addressCopied": "Adresse copiée : {address}"
   },
   "console": {
     "placeholder": "Entrez une commande...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Obtenez votre clé sur console.curseforge.com — requise pour accéder au catalogue CurseForge",
     "modrinthDesc": "Améliore le rate limit pour les recherches Modrinth. Disponible sur modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API Key (optionnelle)",
-    "appearance": "Apparence Minecraft"
+    "appearance": "Apparence Minecraft",
+    "system": "Système"
   },
   "sources": {
     "title": "Sources",
@@ -372,7 +377,21 @@
     "testError": "Connexion échouée",
     "deleteConfirm": "Supprimer cette source ?",
     "deleteSuccess": "Source supprimée",
-    "saveSuccess": "Source sauvegardée"
+    "saveSuccess": "Source sauvegardée",
+    "testing": "Test en cours…",
+    "imported": "{count} source(s) importée(s)",
+    "invalidJson": "Fichier JSON invalide",
+    "builtin": "Native",
+    "fillFirst": "Renseigne le nom et l'URL avant de tester",
+    "invalidMapper": "Le mapper JSON est invalide",
+    "created": "Source « {name} » ajoutée",
+    "formTitle": "Ajouter une source de modpacks",
+    "presets": "Préréglages",
+    "namePlaceholder": "Mon API de modpacks",
+    "apiKeyHint": "Stockée chiffrée (AES-256)",
+    "mapper": "Mapper JSON (champs → chemins dans la réponse)",
+    "testConnection": "Tester la connexion",
+    "saving": "Enregistrement…"
   },
   "common": {
     "confirm": "Confirmer",
@@ -444,5 +463,30 @@
     "eventKick": "Expulsion",
     "eventBan": "Bannissement",
     "eventUnban": "Débannissement"
+  },
+  "crash": {
+    "eyebrow": "Erreur d'interface",
+    "title": "Un creeper est passé par là",
+    "bodyApp": "L'interface a planté. Tes serveurs Minecraft, eux, tournent toujours.",
+    "bodyPanel": "Cette partie de l'interface a planté. Le reste fonctionne, et tes serveurs tournent toujours.",
+    "retry": "Réessayer",
+    "reload": "Recharger la page",
+    "copy": "Copier le rapport",
+    "copied": "Rapport copié",
+    "details": "Détails techniques"
+  },
+  "connection": {
+    "lost": "Connexion à Craftarr perdue — reconnexion en cours",
+    "restored": "Connexion rétablie"
+  },
+  "confirm": {
+    "typeToConfirm": "Tape « {name} » pour confirmer",
+    "deleteServerTitle": "Supprimer le serveur",
+    "deleteServerBody": "Le monde, les mods et la configuration de « {name} » seront supprimés définitivement. Les backups sont conservés dans data/backups."
+  },
+  "notFound": {
+    "title": "Chunk introuvable",
+    "body": "Cette page n'a jamais été générée.",
+    "back": "Retour au catalogue"
   }
 }

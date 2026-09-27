@@ -134,7 +134,9 @@
     "onlineModeOn": "Włączony — prawdziwe skiny, auth Mojang. Złamane konta nie mogą się połączyć.",
     "onlineModeOff": "Wyłączony — tryb cracked, wszyscy gracze akceptowani (brak oficjalnych skinów).",
     "deploying": "Tworzenie...",
-    "deploy": "Wdróż serwer"
+    "deploy": "Wdróż serwer",
+    "portTaken": "Port jest już używany przez „{name}\".",
+    "useFreePort": "Użyj {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Wymagane ponowne utworzenie"
+    "needsRecreate": "Wymagane ponowne utworzenie",
+    "copyAddress": "Kopiuj adres serwera",
+    "addressCopied": "Skopiowano adres: {address}"
   },
   "console": {
     "placeholder": "Wpisz polecenie...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Pobierz klucz na console.curseforge.com — wymagany dla katalogu CurseForge",
     "modrinthDesc": "Poprawia limit zapytań dla wyszukiwań Modrinth. Dostępny na modrinth.com/settings/pats",
     "modrinthOptional": "Klucz API Modrinth (opcjonalny)",
-    "appearance": "Wygląd Minecraft"
+    "appearance": "Wygląd Minecraft",
+    "system": "System"
   },
   "sources": {
     "title": "Źródła",
@@ -372,7 +377,21 @@
     "testError": "Połączenie nieudane",
     "deleteConfirm": "Usunąć to źródło?",
     "deleteSuccess": "Źródło usunięte",
-    "saveSuccess": "Źródło zapisane"
+    "saveSuccess": "Źródło zapisane",
+    "testing": "Testowanie…",
+    "imported": "Zaimportowano źródła: {count}",
+    "invalidJson": "Nieprawidłowy plik JSON",
+    "builtin": "Wbudowane",
+    "fillFirst": "Podaj nazwę i URL przed testem",
+    "invalidMapper": "Mapper JSON jest nieprawidłowy",
+    "created": "Dodano źródło „{name}\"",
+    "formTitle": "Dodaj źródło modpacków",
+    "presets": "Ustawienia wstępne",
+    "namePlaceholder": "Moje API modpacków",
+    "apiKeyHint": "Przechowywany w formie zaszyfrowanej (AES-256)",
+    "mapper": "Mapper JSON (pola → ścieżki w odpowiedzi)",
+    "testConnection": "Testuj połączenie",
+    "saving": "Zapisywanie…"
   },
   "common": {
     "confirm": "Potwierdź",
@@ -444,5 +463,30 @@
     "eventKick": "Wyrzucenie",
     "eventBan": "Ban",
     "eventUnban": "Odbanowanie"
+  },
+  "crash": {
+    "eyebrow": "Błąd interfejsu",
+    "title": "Był tu creeper",
+    "bodyApp": "Interfejs się zawiesił. Twoje serwery Minecraft nadal działają.",
+    "bodyPanel": "Ta część interfejsu się zawiesiła. Reszta działa, a serwery nadal pracują.",
+    "retry": "Spróbuj ponownie",
+    "reload": "Odśwież stronę",
+    "copy": "Kopiuj raport",
+    "copied": "Raport skopiowany",
+    "details": "Szczegóły techniczne"
+  },
+  "connection": {
+    "lost": "Utracono połączenie z Craftarr — ponowne łączenie",
+    "restored": "Połączenie przywrócone"
+  },
+  "confirm": {
+    "typeToConfirm": "Wpisz „{name}\", aby potwierdzić",
+    "deleteServerTitle": "Usuń serwer",
+    "deleteServerBody": "Świat, mody i konfiguracja „{name}\" zostaną trwale usunięte. Kopie zapasowe pozostają w data/backups."
+  },
+  "notFound": {
+    "title": "Nie znaleziono chunka",
+    "body": "Ta strona nigdy nie została wygenerowana.",
+    "back": "Wróć do katalogu"
   }
 }

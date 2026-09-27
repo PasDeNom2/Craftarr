@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { setupAdmin } from '../services/api';
 import { useAuthStore } from '../store';
 import { useI18n } from '../i18n';
-import LanguageSwitcher from '../components/ui/LanguageSwitcher';
-import { Layers, ShieldCheck } from 'lucide-react';
+import AuthShell from '../components/layout/AuthShell';
+import { ShieldCheck } from 'lucide-react';
 
 export default function SetupPage() {
   const [setupToken, setSetupToken] = useState('');
@@ -43,105 +43,72 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
-      {/* Language switcher top-right */}
-      <div className="fixed top-4 right-4">
-        <LanguageSwitcher />
+    <AuthShell subtitle={t('setup.subtitle')}>
+      <div
+        className="flex items-start gap-3 rounded-xl px-4 py-3 mb-4 text-[13px] leading-relaxed"
+        style={{ background: 'rgba(var(--accent-rgb),0.07)', border: '1px solid rgba(var(--accent-rgb),0.2)' }}
+      >
+        <ShieldCheck size={16} strokeWidth={1.75} className="shrink-0 mt-0.5 text-accent" />
+        <span className="text-fg-2">{t('setup.notice')}</span>
       </div>
 
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F0F0F0] rounded-xl mb-4">
-            <Layers size={20} strokeWidth={2} className="text-black" />
-          </div>
-          <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">Craftarr</h1>
-          <p className="text-[#6B6B76] text-sm mt-1">{t('setup.subtitle')}</p>
+      <form onSubmit={handleSubmit} className="card !p-6 space-y-4" style={{ boxShadow: 'var(--shadow-pop)' }}>
+        <div>
+          <label className="label" htmlFor="setup-token">{t('setup.token')}</label>
+          <input
+            id="setup-token" type="text" className="input h-11 font-pixel text-[13px] tracking-[0.2em] uppercase"
+            value={setupToken} onChange={e => setSetupToken(e.target.value)}
+            placeholder="XXXXXXXXXXXX" autoFocus autoComplete="off" spellCheck={false} required
+          />
+          <p className="text-[11px] text-fg-3 mt-1.5 font-mono">{t('setup.tokenHint')}</p>
         </div>
 
-        <div
-          className="flex items-start gap-3 rounded-xl px-4 py-3 mb-5 text-sm"
-          style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)' }}
-        >
-          <ShieldCheck size={15} strokeWidth={1.5} className="shrink-0 mt-0.5 text-[#4ADE80]" />
-          <span className="text-[#6B6B76]">{t('setup.notice')}</span>
+        <div className="border-t border-line" />
+
+        <div>
+          <label className="label" htmlFor="setup-username">{t('setup.username')}</label>
+          <input
+            id="setup-username" type="text" className="input h-11" value={username}
+            onChange={e => setUsername(e.target.value)} placeholder="admin" minLength={3} autoComplete="username" required
+          />
+          <p className="text-[11px] text-fg-3 mt-1.5">{t('setup.usernameHint')}</p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 p-6 rounded-xl"
-          style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.06)' }}
+        <div>
+          <label className="label" htmlFor="setup-password">{t('setup.password')}</label>
+          <input
+            id="setup-password" type="password" className="input h-11" value={password}
+            onChange={e => setPassword(e.target.value)} placeholder="••••••••" minLength={8} autoComplete="new-password" required
+          />
+          {/* Jauge de longueur : 8 blocs, façon barre d'expérience */}
+          <div className="flex gap-1 mt-2" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <span key={i} className="h-1.5 flex-1 rounded-sm transition-colors"
+                style={{ background: i < Math.min(password.length, 16) / 2 ? 'var(--accent)' : 'var(--surface-3)' }} />
+            ))}
+          </div>
+          <p className="text-[11px] text-fg-3 mt-1.5">{t('setup.passwordHint')}</p>
+        </div>
+
+        <div>
+          <label className="label" htmlFor="setup-confirm">{t('setup.confirm')}</label>
+          <input
+            id="setup-confirm" type="password" className="input h-11" value={confirm}
+            onChange={e => setConfirm(e.target.value)} placeholder="••••••••" autoComplete="new-password" required
+          />
+          {confirm && password !== confirm && (
+            <p className="text-[11px] text-danger mt-1.5">{t('setup.passwordMismatch')}</p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="btn-primary w-full justify-center h-11 mt-2"
+          disabled={loading || (confirm.length > 0 && password !== confirm)}
         >
-          <div>
-            <label className="label">{t('setup.token')}</label>
-            <input
-              type="text"
-              className="input font-mono uppercase tracking-widest"
-              value={setupToken}
-              onChange={e => setSetupToken(e.target.value)}
-              placeholder="XXXXXXXXXXXX"
-              autoFocus
-              autoComplete="off"
-              spellCheck={false}
-              required
-            />
-            <p className="text-[11px] text-[#4A4A55] mt-1">{t('setup.tokenHint')}</p>
-          </div>
-
-          <div>
-            <label className="label">{t('setup.username')}</label>
-            <input
-              type="text"
-              className="input"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="admin"
-              minLength={3}
-              autoComplete="username"
-              required
-            />
-            <p className="text-[11px] text-[#4A4A55] mt-1">{t('setup.usernameHint')}</p>
-          </div>
-
-          <div>
-            <label className="label">{t('setup.password')}</label>
-            <input
-              type="password"
-              className="input"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              minLength={8}
-              autoComplete="new-password"
-              required
-            />
-            <p className="text-[11px] text-[#4A4A55] mt-1">{t('setup.passwordHint')}</p>
-          </div>
-
-          <div>
-            <label className="label">{t('setup.confirm')}</label>
-            <input
-              type="password"
-              className="input"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="new-password"
-              required
-            />
-            {confirm && password !== confirm && (
-              <p className="text-[11px] text-[#F87171] mt-1">{t('setup.passwordMismatch')}</p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="btn-primary w-full justify-center py-2.5 mt-2"
-            disabled={loading || (confirm.length > 0 && password !== confirm)}
-          >
-            {loading ? t('setup.loading') : t('setup.submit')}
-          </button>
-        </form>
-      </div>
-    </div>
+          {loading ? t('setup.loading') : t('setup.submit')}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

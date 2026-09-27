@@ -67,11 +67,11 @@ export default function WhitelistPanel({ server }) {
         <div className="flex items-center gap-3">
           {server.whitelist_enabled
             ? <ShieldCheck size={18} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
-            : <ShieldOff size={18} strokeWidth={1.5} className="text-[#6B6B76]" />
+            : <ShieldOff size={18} strokeWidth={1.5} className="text-fg-2" />
           }
           <div>
-            <p className="text-sm font-medium text-[#F0F0F0]">{t('whitelist.toggle')}</p>
-            <p className="text-[11px] text-[#4A4A55] mt-0.5">
+            <p className="text-sm font-medium text-fg">{t('whitelist.toggle')}</p>
+            <p className="text-[11px] text-fg-3 mt-0.5">
               {server.whitelist_enabled ? t('whitelist.toggleOnDesc') : t('whitelist.toggleOffDesc')}
             </p>
           </div>
@@ -115,9 +115,9 @@ export default function WhitelistPanel({ server }) {
         style={{ border: '1px solid rgba(255,255,255,0.06)' }}
       >
         {isLoading ? (
-          <div className="p-6 text-center text-sm text-[#4A4A55]">{t('common.loading')}</div>
+          <div className="p-6 text-center text-sm text-fg-3">{t('common.loading')}</div>
         ) : list.length === 0 ? (
-          <div className="p-6 text-center text-sm text-[#4A4A55]">{t('whitelist.empty')}</div>
+          <div className="p-6 text-center text-sm text-fg-3">{t('whitelist.empty')}</div>
         ) : (
           <ul className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
             {list.map(player => (
@@ -130,13 +130,13 @@ export default function WhitelistPanel({ server }) {
                     className="rounded"
                     onError={e => { e.target.style.display = 'none'; }}
                   />
-                  <span className="text-sm text-[#F0F0F0] font-medium">{player.name}</span>
-                  <span className="text-[10px] text-[#4A4A55] font-mono">{player.uuid}</span>
+                  <span className="text-sm text-fg font-medium">{player.name}</span>
+                  <span className="text-[10px] text-fg-3 font-mono">{player.uuid}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleRemove(player.name)}
-                  className="p-1.5 rounded-lg text-[#4A4A55] hover:text-[#F87171] hover:bg-white/[0.04] transition-colors"
+                  className="p-1.5 rounded-lg text-fg-3 hover:text-danger hover:bg-white/[0.04] transition-colors"
                   title={t('whitelist.remove')}
                 >
                   <Trash2 size={13} strokeWidth={1.5} />

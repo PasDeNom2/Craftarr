@@ -134,7 +134,9 @@
     "onlineModeOn": "Ativado — skins reais, auth Mojang. Contas pirateadas não podem se conectar.",
     "onlineModeOff": "Desativado — modo cracked, todos os jogadores aceitos (sem skins oficiais).",
     "deploying": "Criando...",
-    "deploy": "Implantar servidor"
+    "deploy": "Implantar servidor",
+    "portTaken": "Porta já usada por \"{name}\".",
+    "useFreePort": "Usar {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Recriação necessária"
+    "needsRecreate": "Recriação necessária",
+    "copyAddress": "Copiar o endereço do servidor",
+    "addressCopied": "Endereço copiado: {address}"
   },
   "console": {
     "placeholder": "Digite um comando...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Obtenha sua chave em console.curseforge.com — necessária para o catálogo CurseForge",
     "modrinthDesc": "Melhora o limite de requisições para pesquisas Modrinth. Disponível em modrinth.com/settings/pats",
     "modrinthOptional": "Chave API Modrinth (opcional)",
-    "appearance": "Aparência Minecraft"
+    "appearance": "Aparência Minecraft",
+    "system": "Sistema"
   },
   "sources": {
     "title": "Fontes",
@@ -372,7 +377,21 @@
     "testError": "Falha na conexão",
     "deleteConfirm": "Excluir esta fonte?",
     "deleteSuccess": "Fonte excluída",
-    "saveSuccess": "Fonte salva"
+    "saveSuccess": "Fonte salva",
+    "testing": "Testando…",
+    "imported": "{count} fonte(s) importada(s)",
+    "invalidJson": "Arquivo JSON inválido",
+    "builtin": "Nativa",
+    "fillFirst": "Preencha o nome e a URL antes de testar",
+    "invalidMapper": "O mapper JSON é inválido",
+    "created": "Fonte \"{name}\" adicionada",
+    "formTitle": "Adicionar uma fonte de modpacks",
+    "presets": "Predefinições",
+    "namePlaceholder": "Minha API de modpacks",
+    "apiKeyHint": "Armazenada criptografada (AES-256)",
+    "mapper": "Mapper JSON (campos → caminhos na resposta)",
+    "testConnection": "Testar a conexão",
+    "saving": "Salvando…"
   },
   "common": {
     "confirm": "Confirmar",
@@ -444,5 +463,30 @@
     "eventKick": "Expulsão",
     "eventBan": "Banimento",
     "eventUnban": "Desbanimento"
+  },
+  "crash": {
+    "eyebrow": "Erro de interface",
+    "title": "Um creeper passou por aqui",
+    "bodyApp": "A interface travou. Seus servidores de Minecraft continuam rodando.",
+    "bodyPanel": "Esta parte da interface travou. O resto funciona e seus servidores continuam rodando.",
+    "retry": "Tentar novamente",
+    "reload": "Recarregar a página",
+    "copy": "Copiar relatório",
+    "copied": "Relatório copiado",
+    "details": "Detalhes técnicos"
+  },
+  "connection": {
+    "lost": "Conexão com o Craftarr perdida — reconectando",
+    "restored": "Conexão restabelecida"
+  },
+  "confirm": {
+    "typeToConfirm": "Digite \"{name}\" para confirmar",
+    "deleteServerTitle": "Excluir servidor",
+    "deleteServerBody": "O mundo, os mods e a configuração de \"{name}\" serão excluídos definitivamente. Os backups ficam em data/backups."
+  },
+  "notFound": {
+    "title": "Chunk não encontrado",
+    "body": "Esta página nunca foi gerada.",
+    "back": "Voltar ao catálogo"
   }
 }

@@ -5,6 +5,7 @@ import { getSocket } from '../../hooks/useSocket';
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { parseDbDate } from '../../utils/dates';
 import {
   Users, ChevronRight, ChevronLeft, Search, AlertTriangle, Ban,
   LogOut, MessageSquareWarning, ShieldCheck, Clock, Hash, Crown,
@@ -19,7 +20,7 @@ function PlayerAvatar({ username, size = 32, className = '' }) {
     return (
       <div
         className={`flex items-center justify-center text-sm font-bold ${className}`}
-        style={{ width: size, height: size, background: 'rgba(255,255,255,0.06)', color: '#F0F0F0' }}
+        style={{ width: size, height: size, background: 'rgba(255,255,255,0.06)', color: 'var(--fg)' }}
       >
         {username[0].toUpperCase()}
       </div>
@@ -39,15 +40,15 @@ function PlayerAvatar({ username, size = 32, className = '' }) {
 }
 
 const EVENT_ICONS = {
-  join:    { icon: '→', color: '#4ADE80' },
-  leave:   { icon: '←', color: '#6B6B76' },
-  chat:    { icon: '💬', color: '#60A5FA' },
-  command: { icon: '/', color: '#FBBF24' },
-  death:   { icon: '💀', color: '#F87171' },
-  warn:    { icon: '⚠', color: '#FB923C' },
-  kick:    { icon: '🥾', color: '#FB923C' },
-  ban:     { icon: '🔨', color: '#F87171' },
-  unban:   { icon: '✓', color: '#4ADE80' },
+  join:    { icon: '→', color: 'var(--accent)' },
+  leave:   { icon: '←', color: 'var(--fg-2)' },
+  chat:    { icon: '💬', color: 'var(--info)' },
+  command: { icon: '/', color: 'var(--warn)' },
+  death:   { icon: '💀', color: 'var(--danger)' },
+  warn:    { icon: '⚠', color: 'var(--orange)' },
+  kick:    { icon: '🥾', color: 'var(--orange)' },
+  ban:     { icon: '🔨', color: 'var(--danger)' },
+  unban:   { icon: '✓', color: 'var(--accent)' },
 };
 
 function ActionModal({ title, placeholder, onConfirm, onClose, confirmLabel, confirmClass = 'btn-danger' }) {
@@ -55,8 +56,8 @@ function ActionModal({ title, placeholder, onConfirm, onClose, confirmLabel, con
   const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="rounded-2xl p-6 space-y-4 w-full max-w-sm" style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <h3 className="text-sm font-semibold text-[#F0F0F0]">{title}</h3>
+      <div className="rounded-2xl p-6 space-y-4 w-full max-w-sm" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <h3 className="text-sm font-semibold text-fg">{title}</h3>
         <input
           className="input w-full"
           placeholder={placeholder}
@@ -101,11 +102,11 @@ function PlayerEvents({ server, player, onBack }) {
         <div className="flex items-center gap-2">
           <PlayerAvatar username={player.username} size={32} className="rounded-lg" />
           <div>
-            <p className="text-sm font-semibold text-[#F0F0F0]">{player.username}</p>
-            <p className="text-xs text-[#6B6B76]">{events.length} {t('players.events')}</p>
+            <p className="text-sm font-semibold text-fg">{player.username}</p>
+            <p className="text-xs text-fg-2">{events.length} {t('players.events')}</p>
           </div>
           {player.is_banned === 1 && (
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(248,113,113,0.1)', color: '#F87171', border: '1px solid rgba(248,113,113,0.2)' }}>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(var(--danger-rgb),0.1)', color: 'var(--danger)', border: '1px solid rgba(var(--danger-rgb),0.2)' }}>
               {t('players.banned')}
             </span>
           )}
@@ -113,13 +114,13 @@ function PlayerEvents({ server, player, onBack }) {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-[#6B6B76] py-8 text-sm">{t('common.loading')}</div>
+        <div className="text-center text-fg-2 py-8 text-sm">{t('common.loading')}</div>
       ) : events.length === 0 ? (
-        <div className="text-center py-12 text-sm text-[#6B6B76]">{t('players.noEvents')}</div>
+        <div className="text-center py-12 text-sm text-fg-2">{t('players.noEvents')}</div>
       ) : (
         <div className="space-y-1">
           {events.map(ev => {
-            const meta = EVENT_ICONS[ev.type] || { icon: '•', color: '#6B6B76' };
+            const meta = EVENT_ICONS[ev.type] || { icon: '•', color: 'var(--fg-2)' };
             return (
               <div key={ev.id}
                 className="flex items-start gap-3 px-3 py-2 rounded-lg"
@@ -129,10 +130,10 @@ function PlayerEvents({ server, player, onBack }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-medium" style={{ color: meta.color }}>{typeLabel[ev.type] || ev.type}</span>
-                    {ev.detail && <span className="text-xs text-[#C0C0C8] truncate max-w-xs font-mono">{ev.detail}</span>}
+                    {ev.detail && <span className="text-xs text-fg truncate max-w-xs font-mono">{ev.detail}</span>}
                   </div>
                 </div>
-                <span className="text-[11px] text-[#4A4A55] shrink-0">
+                <span className="text-[11px] text-fg-3 shrink-0">
                   {(() => { try { return format(new Date(ev.timestamp.replace(' ', 'T') + 'Z'), 'dd/MM/yyyy HH:mm'); } catch { return ev.timestamp; } })()}
                 </span>
               </div>
@@ -220,18 +221,18 @@ export default function PlayersPanel({ server }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h3 className="text-sm font-semibold text-[#F0F0F0]">{t('players.title')}</h3>
-          <p className="text-xs text-[#6B6B76] mt-0.5">
+          <h3 className="text-sm font-semibold text-fg">{t('players.title')}</h3>
+          <p className="text-xs text-fg-2 mt-0.5">
             {players.length} {t('players.totalPlayers')}
             {players.filter(p => p.is_banned).length > 0 && (
-              <span className="ml-2" style={{ color: '#F87171' }}>
+              <span className="ml-2" style={{ color: 'var(--danger)' }}>
                 · {players.filter(p => p.is_banned).length} {t('players.banned')}
               </span>
             )}
           </p>
         </div>
         <div className="relative">
-          <Search size={13} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#4A4A55]" />
+          <Search size={13} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
           <input
             className="input pl-8 text-xs py-1.5 w-44"
             placeholder={t('players.search')}
@@ -242,15 +243,15 @@ export default function PlayersPanel({ server }) {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-[#6B6B76] py-8 text-sm">{t('common.loading')}</div>
+        <div className="text-center text-fg-2 py-8 text-sm">{t('common.loading')}</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <Users size={18} strokeWidth={1.5} className="text-[#4A4A55]" />
+            <Users size={18} strokeWidth={1.5} className="text-fg-3" />
           </div>
-          <p className="text-sm text-[#6B6B76]">{search ? t('players.noResults') : t('players.noPlayers')}</p>
-          {!search && <p className="text-xs text-[#4A4A55]">{t('players.noPlayersHint')}</p>}
+          <p className="text-sm text-fg-2">{search ? t('players.noResults') : t('players.noPlayers')}</p>
+          {!search && <p className="text-xs text-fg-3">{t('players.noPlayersHint')}</p>}
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -258,34 +259,34 @@ export default function PlayersPanel({ server }) {
             <div
               key={player.username}
               className="flex items-center gap-3 px-4 py-3 rounded-xl group transition-colors duration-150"
-              style={{ background: '#131316', border: `1px solid ${player.is_banned ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.06)'}` }}
+              style={{ background: 'var(--surface)', border: `1px solid ${player.is_banned ? 'rgba(var(--danger-rgb),0.15)' : 'rgba(255,255,255,0.06)'}` }}
             >
               {/* Avatar */}
               <div className="shrink-0 relative" style={{ opacity: player.is_banned ? 0.5 : 1 }}>
                 <PlayerAvatar username={player.username} size={36} className="rounded-lg" />
                 {player.is_online === 1 && (
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                    style={{ background: '#4ADE80', borderColor: '#131316' }} />
+                    style={{ background: 'var(--accent)', borderColor: 'var(--surface)' }} />
                 )}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-[#F0F0F0]">{player.username}</span>
+                  <span className="text-sm font-medium text-fg">{player.username}</span>
                   {player.is_op === 1 && (
-                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>
+                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(var(--warn-rgb),0.1)', color: 'var(--warn)' }}>
                       <Crown size={9} strokeWidth={2} />
                       {t('players.op')}
                     </span>
                   )}
                   {player.is_banned === 1 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(248,113,113,0.1)', color: '#F87171' }}>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(var(--danger-rgb),0.1)', color: 'var(--danger)' }}>
                       {t('players.banned')}
                     </span>
                   )}
                 </div>
-                <div className="flex gap-3 text-[11px] text-[#4A4A55] mt-0.5 flex-wrap">
+                <div className="flex gap-3 text-[11px] text-fg-3 mt-0.5 flex-wrap">
                   <span className="flex items-center gap-1">
                     <Hash size={10} />
                     {player.join_count} {t('players.connections')}
@@ -293,11 +294,11 @@ export default function PlayersPanel({ server }) {
                   {player.last_seen && (
                     <span className="flex items-center gap-1">
                       <Clock size={10} />
-                      {format(new Date(player.last_seen), 'dd/MM/yyyy HH:mm')}
+                      {(parseDbDate(player.last_seen) ? format(parseDbDate(player.last_seen), 'dd/MM/yyyy HH:mm') : '—')}
                     </span>
                   )}
                   {player.is_banned === 1 && player.ban_reason && (
-                    <span className="text-[#F87171]">{player.ban_reason}</span>
+                    <span className="text-danger">{player.ban_reason}</span>
                   )}
                 </div>
               </div>
@@ -310,7 +311,7 @@ export default function PlayersPanel({ server }) {
                     className="btn-secondary text-[11px] py-1 px-2 gap-1"
                     onClick={() => unbanMut.mutate({ username: player.username })}
                     disabled={unbanMut.isPending}
-                    style={{ color: '#4ADE80' }}
+                    style={{ color: 'var(--accent)' }}
                   >
                     <ShieldCheck size={11} strokeWidth={1.5} />
                     {t('players.unban')}
@@ -333,7 +334,7 @@ export default function PlayersPanel({ server }) {
                         onClick={() => deopMut.mutate({ username: player.username })}
                         disabled={deopMut.isPending}
                         title={t('players.deop')}
-                        style={{ color: '#FBBF24' }}
+                        style={{ color: 'var(--warn)' }}
                       >
                         <Crown size={11} strokeWidth={1.5} />
                       </button>
@@ -343,7 +344,7 @@ export default function PlayersPanel({ server }) {
                         onClick={() => opMut.mutate({ username: player.username })}
                         disabled={opMut.isPending}
                         title={t('players.op')}
-                        style={{ color: '#6B6B76' }}
+                        style={{ color: 'var(--fg-2)' }}
                       >
                         <Crown size={11} strokeWidth={1.5} />
                       </button>
@@ -355,7 +356,7 @@ export default function PlayersPanel({ server }) {
                         className="btn-secondary text-[11px] py-1 px-2 gap-1"
                         onClick={() => setModal({ type: 'warn', player })}
                         title={t('players.warn')}
-                        style={{ color: '#FB923C' }}
+                        style={{ color: 'var(--orange)' }}
                       >
                         <AlertTriangle size={11} strokeWidth={1.5} />
                       </button>

@@ -134,7 +134,9 @@
     "onlineModeOn": "مفعّل — سكنات حقيقية، مصادقة Mojang. الحسابات المقرصنة لا يمكنها الاتصال.",
     "onlineModeOff": "معطّل — وضع المقرصن، جميع اللاعبين مقبولون (بدون سكنات رسمية).",
     "deploying": "جار الإنشاء...",
-    "deploy": "نشر الخادم"
+    "deploy": "نشر الخادم",
+    "portTaken": "المنفذ مستخدم بالفعل من قبل «{name}».",
+    "useFreePort": "استخدام {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "يلزم إعادة الإنشاء"
+    "needsRecreate": "يلزم إعادة الإنشاء",
+    "copyAddress": "نسخ عنوان الخادم",
+    "addressCopied": "تم نسخ العنوان: {address}"
   },
   "console": {
     "placeholder": "أدخل أمراً...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "احصل على المفتاح من console.curseforge.com — مطلوب للوصول إلى كتالوج CurseForge",
     "modrinthDesc": "يحسن حد المعدل لبحث Modrinth. متوفر على modrinth.com/settings/pats",
     "modrinthOptional": "مفتاح API Modrinth (اختياري)",
-    "appearance": "المظهر"
+    "appearance": "المظهر",
+    "system": "النظام"
   },
   "sources": {
     "title": "المصادر",
@@ -372,7 +377,21 @@
     "testError": "فشل الاتصال",
     "deleteConfirm": "حذف هذا المصدر؟",
     "deleteSuccess": "تم حذف المصدر",
-    "saveSuccess": "تم حفظ المصدر"
+    "saveSuccess": "تم حفظ المصدر",
+    "testing": "جارٍ الاختبار…",
+    "imported": "تم استيراد {count} مصدر",
+    "invalidJson": "ملف JSON غير صالح",
+    "builtin": "مدمج",
+    "fillFirst": "أدخل الاسم والرابط قبل الاختبار",
+    "invalidMapper": "مُخطِّط JSON غير صالح",
+    "created": "تمت إضافة المصدر «{name}»",
+    "formTitle": "إضافة مصدر حزم تعديلات",
+    "presets": "إعدادات جاهزة",
+    "namePlaceholder": "واجهة API الخاصة بي",
+    "apiKeyHint": "مخزّن مشفّرًا (AES-256)",
+    "mapper": "مُخطِّط JSON (الحقول ← المسارات في الاستجابة)",
+    "testConnection": "اختبار الاتصال",
+    "saving": "جارٍ الحفظ…"
   },
   "common": {
     "confirm": "تأكيد",
@@ -444,5 +463,30 @@
     "eventKick": "طرد",
     "eventBan": "حظر",
     "eventUnban": "إلغاء الحظر"
+  },
+  "crash": {
+    "eyebrow": "خطأ في الواجهة",
+    "title": "مرّ من هنا كريبر",
+    "bodyApp": "تعطلت الواجهة. خوادم Minecraft الخاصة بك ما زالت تعمل.",
+    "bodyPanel": "تعطل هذا الجزء من الواجهة. البقية تعمل وخوادمك ما زالت تعمل.",
+    "retry": "إعادة المحاولة",
+    "reload": "إعادة تحميل الصفحة",
+    "copy": "نسخ التقرير",
+    "copied": "تم نسخ التقرير",
+    "details": "التفاصيل التقنية"
+  },
+  "connection": {
+    "lost": "انقطع الاتصال بـ Craftarr — جارٍ إعادة الاتصال",
+    "restored": "تمت استعادة الاتصال"
+  },
+  "confirm": {
+    "typeToConfirm": "اكتب «{name}» للتأكيد",
+    "deleteServerTitle": "حذف الخادم",
+    "deleteServerBody": "سيتم حذف عالم «{name}» وتعديلاته وإعداداته نهائيًا. تبقى النسخ الاحتياطية في data/backups."
+  },
+  "notFound": {
+    "title": "القطعة غير موجودة",
+    "body": "لم يتم إنشاء هذه الصفحة قط.",
+    "back": "العودة إلى الكتالوج"
   }
 }

@@ -65,19 +65,19 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
                   src={detail?.thumbnailUrl || modpack.thumbnailUrl}
                   alt={detail?.name || modpack.name}
                   className="w-14 h-14 rounded-xl object-cover shrink-0"
-                  style={{ background: '#1C1C21' }}
+                  style={{ background: 'var(--surface-2)' }}
                 />
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h2 className="text-base font-semibold text-[#F0F0F0] truncate">{detail?.name || modpack.name}</h2>
+                  <h2 className="text-base font-semibold text-fg truncate">{detail?.name || modpack.name}</h2>
                   <SourceBadge source={modpack.source} sourceName={modpack._sourceName} />
                 </div>
-                <p className="text-sm text-[#6B6B76] line-clamp-1">{detail?.summary || modpack.summary}</p>
+                <p className="text-sm text-fg-2 line-clamp-1">{detail?.summary || modpack.summary}</p>
                 {detail?.authors?.length > 0 && (
-                  <p className="text-xs text-[#4A4A55] mt-0.5">{t('modpack.by')} {detail.authors.join(', ')}</p>
+                  <p className="text-xs text-fg-3 mt-0.5">{t('modpack.by')} {detail.authors.join(', ')}</p>
                 )}
-                <div className="flex gap-4 text-xs text-[#4A4A55] mt-1 flex-wrap">
+                <div className="flex gap-4 text-xs text-fg-3 mt-1 flex-wrap">
                   {(detail?.mcVersions || modpack.mcVersions)?.length > 0 && (
                     <span className="flex items-center gap-1">
                       <Gamepad2 size={11} strokeWidth={1.5} />
@@ -124,13 +124,13 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
                 key={tb.key}
                 onClick={() => setTab(tb.key)}
                 className="relative px-4 py-2 text-xs font-medium transition-colors duration-150"
-                style={{ color: tab === tb.key ? 'var(--accent)' : '#6B6B76' }}
+                style={{ color: tab === tb.key ? 'var(--accent)' : 'var(--fg-2)' }}
               >
                 {tb.label}
                 {tb.key === 'mods' && allMods.length > 0 && (
                   <span
                     className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
-                    style={{ background: 'rgba(74,222,128,0.1)', color: 'var(--accent)' }}
+                    style={{ background: 'rgba(var(--accent-rgb),0.1)', color: 'var(--accent)' }}
                   >
                     {allMods.length}
                   </span>
@@ -189,16 +189,16 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
               ) : detail?.description ? (
                 detail.descriptionIsHtml ? (
                   <div
-                    className="cf-description text-sm text-[#6B6B76] leading-relaxed"
+                    className="cf-description text-sm text-fg-2 leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: detail.description }}
                   />
                 ) : (
-                  <div className="text-sm text-[#6B6B76] leading-relaxed prose-sm prose-invert max-w-none">
+                  <div className="text-sm text-fg-2 leading-relaxed prose-sm prose-invert max-w-none">
                     <ReactMarkdown>{detail.description}</ReactMarkdown>
                   </div>
                 )
               ) : (
-                <p className="text-sm text-[#4A4A55] italic">{t('modpack.noDescription')}</p>
+                <p className="text-sm text-fg-3 italic">{t('modpack.noDescription')}</p>
               )}
             </div>
           )}
@@ -208,7 +208,7 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
             <div className="space-y-4">
               {/* Search bar */}
               <div className="relative">
-                <Search size={13} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4A4A55] pointer-events-none" />
+                <Search size={13} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
                 <input
                   className="input pl-9 w-full text-sm"
                   placeholder={t('modpack.searchMod')}
@@ -218,7 +218,7 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
                 {modSearch && (
                   <button
                     onClick={() => setModSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4A4A55] hover:text-[#6B6B76] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-3 hover:text-fg-2 transition-colors"
                   >
                     <X size={12} strokeWidth={2} />
                   </button>
@@ -228,28 +228,28 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
               {/* States */}
               {modsLoading ? (
                 <div className="flex flex-col items-center py-12 gap-3">
-                  <Loader2 size={24} strokeWidth={1.5} className="text-[#4A4A55] animate-spin" />
-                  <p className="text-sm text-[#6B6B76]">{t('modpack.modsLoading')}</p>
-                  <p className="text-xs text-[#4A4A55]">{t('modpack.modsLoadingHint')}</p>
+                  <Loader2 size={24} strokeWidth={1.5} className="text-fg-3 animate-spin" />
+                  <p className="text-sm text-fg-2">{t('modpack.modsLoading')}</p>
+                  <p className="text-xs text-fg-3">{t('modpack.modsLoadingHint')}</p>
                 </div>
               ) : modsError ? (
                 <div className="flex flex-col items-center py-12 gap-3 text-center">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}>
-                    <AlertCircle size={18} strokeWidth={1.5} className="text-[#F87171]" />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--danger-rgb),0.08)', border: '1px solid rgba(var(--danger-rgb),0.15)' }}>
+                    <AlertCircle size={18} strokeWidth={1.5} className="text-danger" />
                   </div>
-                  <p className="text-sm text-[#F0F0F0] font-medium">{t('modpack.modsError')}</p>
-                  <p className="text-xs text-[#6B6B76]">{t('modpack.modsErrorHint')}</p>
+                  <p className="text-sm text-fg font-medium">{t('modpack.modsError')}</p>
+                  <p className="text-xs text-fg-2">{t('modpack.modsErrorHint')}</p>
                 </div>
               ) : filteredMods.length === 0 ? (
                 <div className="flex flex-col items-center py-12 gap-2 text-center">
-                  <Package size={24} strokeWidth={1.5} className="text-[#4A4A55]" />
-                  <p className="text-sm text-[#6B6B76]">
+                  <Package size={24} strokeWidth={1.5} className="text-fg-3" />
+                  <p className="text-sm text-fg-2">
                     {modSearch ? t('modpack.modsNoMatch').replace('{search}', modSearch) : t('modpack.modsEmpty')}
                   </p>
                 </div>
               ) : (
                 <>
-                  <p className="text-xs text-[#4A4A55]">
+                  <p className="text-xs text-fg-3">
                     {modSearch
                       ? t('modpack.modsResults').replace('{count}', filteredMods.length).replace('{total}', allMods.length)
                       : t('modpack.modsCount').replace('{count}', allMods.length)}
@@ -283,14 +283,14 @@ function ModRow({ mod }) {
           src={mod.thumbnailUrl}
           alt={mod.name}
           className="w-9 h-9 rounded-lg object-cover shrink-0"
-          style={{ background: '#1C1C21' }}
+          style={{ background: 'var(--surface-2)' }}
           onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
         />
       ) : null}
       <div
-        className="w-9 h-9 rounded-lg shrink-0 items-center justify-center text-xs font-bold text-[#4A4A55]"
+        className="w-9 h-9 rounded-lg shrink-0 items-center justify-center text-xs font-bold text-fg-3"
         style={{
-          background: '#1C1C21',
+          background: 'var(--surface-2)',
           border: '1px solid rgba(255,255,255,0.06)',
           display: mod.thumbnailUrl ? 'none' : 'flex',
         }}
@@ -300,15 +300,15 @@ function ModRow({ mod }) {
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[#F0F0F0] truncate">{mod.name}</p>
+        <p className="text-sm font-medium text-fg truncate">{mod.name}</p>
         {mod.summary && (
-          <p className="text-xs text-[#4A4A55] truncate leading-relaxed">{mod.summary}</p>
+          <p className="text-xs text-fg-3 truncate leading-relaxed">{mod.summary}</p>
         )}
       </div>
 
       {/* Downloads */}
       {mod.downloadCount > 0 && (
-        <span className="text-[11px] text-[#4A4A55] flex items-center gap-1 shrink-0">
+        <span className="text-[11px] text-fg-3 flex items-center gap-1 shrink-0">
           <Download size={10} strokeWidth={1.5} />
           {mod.downloadCount >= 1_000_000
             ? `${(mod.downloadCount / 1_000_000).toFixed(1)}M`
@@ -324,7 +324,7 @@ function ModRow({ mod }) {
           href={mod.websiteUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 text-[#4A4A55] hover:text-[#F0F0F0] transition-colors"
+          className="shrink-0 text-fg-3 hover:text-fg transition-colors"
           onClick={e => e.stopPropagation()}
         >
           <ExternalLink size={13} strokeWidth={1.5} />

@@ -134,7 +134,9 @@
     "onlineModeOn": "Activado — skins reales, auth Mojang. Las cuentas crackeadas no pueden conectarse.",
     "onlineModeOff": "Desactivado — modo cracked, todos los jugadores aceptados (sin skins oficiales).",
     "deploying": "Creando...",
-    "deploy": "Desplegar servidor"
+    "deploy": "Desplegar servidor",
+    "portTaken": "Puerto ya usado por «{name}».",
+    "useFreePort": "Usar {port}"
   },
   "server": {
     "tabs": {
@@ -226,7 +228,9 @@
       "iconUpdated": "Icon updated — restart server to apply",
       "iconError": "Error uploading icon"
     },
-    "needsRecreate": "Recreación necesaria"
+    "needsRecreate": "Recreación necesaria",
+    "copyAddress": "Copiar la dirección del servidor",
+    "addressCopied": "Dirección copiada: {address}"
   },
   "console": {
     "placeholder": "Escribe un comando...",
@@ -351,7 +355,8 @@
     "curseforgeDesc": "Obtén tu clave en console.curseforge.com — necesaria para acceder al catálogo CurseForge",
     "modrinthDesc": "Mejora el límite de velocidad para búsquedas Modrinth. Disponible en modrinth.com/settings/pats",
     "modrinthOptional": "Clave API Modrinth (opcional)",
-    "appearance": "Apariencia en Minecraft"
+    "appearance": "Apariencia en Minecraft",
+    "system": "Sistema"
   },
   "sources": {
     "title": "Fuentes",
@@ -372,7 +377,21 @@
     "testError": "Conexión fallida",
     "deleteConfirm": "¿Eliminar esta fuente?",
     "deleteSuccess": "Fuente eliminada",
-    "saveSuccess": "Fuente guardada"
+    "saveSuccess": "Fuente guardada",
+    "testing": "Probando…",
+    "imported": "{count} fuente(s) importada(s)",
+    "invalidJson": "Archivo JSON no válido",
+    "builtin": "Nativa",
+    "fillFirst": "Indica el nombre y la URL antes de probar",
+    "invalidMapper": "El mapper JSON no es válido",
+    "created": "Fuente «{name}» añadida",
+    "formTitle": "Añadir una fuente de modpacks",
+    "presets": "Ajustes predefinidos",
+    "namePlaceholder": "Mi API de modpacks",
+    "apiKeyHint": "Guardada cifrada (AES-256)",
+    "mapper": "Mapper JSON (campos → rutas en la respuesta)",
+    "testConnection": "Probar la conexión",
+    "saving": "Guardando…"
   },
   "common": {
     "confirm": "Confirmar",
@@ -444,5 +463,30 @@
     "eventKick": "Expulsión",
     "eventBan": "Baneo",
     "eventUnban": "Desbaneo"
+  },
+  "crash": {
+    "eyebrow": "Error de interfaz",
+    "title": "Un creeper pasó por aquí",
+    "bodyApp": "La interfaz ha fallado. Tus servidores de Minecraft siguen funcionando.",
+    "bodyPanel": "Esta parte de la interfaz ha fallado. El resto funciona y tus servidores siguen activos.",
+    "retry": "Reintentar",
+    "reload": "Recargar la página",
+    "copy": "Copiar informe",
+    "copied": "Informe copiado",
+    "details": "Detalles técnicos"
+  },
+  "connection": {
+    "lost": "Conexión con Craftarr perdida — reconectando",
+    "restored": "Conexión restablecida"
+  },
+  "confirm": {
+    "typeToConfirm": "Escribe «{name}» para confirmar",
+    "deleteServerTitle": "Eliminar servidor",
+    "deleteServerBody": "El mundo, los mods y la configuración de «{name}» se eliminarán definitivamente. Las copias se conservan en data/backups."
+  },
+  "notFound": {
+    "title": "Chunk no encontrado",
+    "body": "Esta página nunca se generó.",
+    "back": "Volver al catálogo"
   }
 }
