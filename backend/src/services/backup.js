@@ -127,7 +127,7 @@ async function restoreBackup(server, backup) {
 
   // Redémarrage
   if (server.container_id) {
-    await dockerService.startContainer(server.container_id);
+    await dockerService.startContainer(server.container_id, server);
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('running', server.id);
   }
 

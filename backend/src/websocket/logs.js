@@ -1,6 +1,7 @@
 const { getDb } = require('../config/database');
 const dockerService = require('../services/docker');
 const metrics = require('../services/metrics');
+const { createDiagnoser } = require('../services/logDiagnostics');
 
 // ─── Player log parsing ───────────────────────────────────────────────────────
 // Cache UUID: serverId -> { playerName -> uuid }
@@ -168,10 +169,16 @@ function startLogStream(io, serverId, attempt = 0) {
 
   // since: maintenant → pas de relecture des anciens logs (évite les doublons d'events joueurs)
   const since = Math.floor(Date.now() / 1000);
+  const diagnose = createDiagnoser();
   const stopStream = dockerService.streamContainerLogs(
     server.container_id,
     line => {
       io.to(`server:${serverId}`).emit('log', { serverId, line, timestamp: Date.now() });
+      const hint = diagnose(line);
+      if (hint) {
+        console.warn(`[Logs] ${serverId.slice(0, 8)} ${hint}`);
+        io.to(`server:${serverId}`).emit('log', { serverId, line: hint, timestamp: Date.now() });
+      }
       parsePlayerEvent(serverId, line);
       if (line.includes(']: Done (') || line.includes(': Done (')) {
         const changed = db.prepare('UPDATE servers SET status = ? WHERE id = ? AND status = ?')

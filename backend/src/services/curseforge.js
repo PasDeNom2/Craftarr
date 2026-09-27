@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { isMcVersion } = require('./mcVersion');
 
 const BASE_URL = 'https://api.curseforge.com';
 const MINECRAFT_GAME_ID = 432;
@@ -92,7 +93,7 @@ async function getModpackFiles(apiKey, modpackId) {
       isServerPack: f.isServerPack || false,
       serverPackFileId: f.serverPackFileId ? String(f.serverPackFileId) : null,
       gameVersions: gv,
-      mcVersions: gv.filter(v => /^1\.\d+/.test(v)),
+      mcVersions: gv.filter(isMcVersion),
       loaders: detectLoaders(gv),
       releaseType: f.releaseType,
       fileSize: f.fileLength,
@@ -154,7 +155,7 @@ function detectLoaders(versions = []) {
 function extractMcVersions(indexes) {
   const versions = new Set();
   indexes.forEach(i => {
-    if (i.gameVersion && /^1\.\d+/.test(i.gameVersion)) {
+    if (isMcVersion(i.gameVersion)) {
       versions.add(i.gameVersion);
     }
   });

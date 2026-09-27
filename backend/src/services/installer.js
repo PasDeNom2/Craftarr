@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const crypto = require('crypto');
 const axios = require('axios');
 const AdmZip = require('adm-zip');
 const { getDb } = require('../config/database');
@@ -8,6 +8,8 @@ const dockerService = require('./docker');
 const { getSourceApiKey } = require('./sourceAggregator');
 const curseforge = require('./curseforge');
 const modrinth = require('./modrinth');
+const { startLogStream } = require('../websocket/logs');
+const { isMcVersion, mcVersionFromNeoForge, requiredJava, loaderVersionFromSetupConfig } = require('./mcVersion');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
 const HOST_DATA_PATH = process.env.HOST_DATA_PATH || DATA_PATH;
@@ -27,20 +29,6 @@ function cancelClientPack(serverId) {
   if (p) { pendingClientPackConfirm.delete(serverId); p.reject(new Error('Installation annulée par l\'utilisateur')); }
 }
 
-function startLogStreamImmediate(ioInstance, serverId, containerId) {
-  dockerService.streamContainerLogs(
-    containerId,
-    line => {
-      ioInstance.to(`server:${serverId}`).emit('log', { serverId, line, timestamp: Date.now() });
-      if (line.includes(']: Done (') || line.includes(': Done (')) {
-        const db = getDb();
-        db.prepare('UPDATE servers SET status = ? WHERE id = ? AND status = ?').run('running', serverId, 'starting');
-      }
-    },
-    err => console.error(`[Installer][Logs] ${serverId.slice(0,8)}:`, err.message)
-  );
-}
-
 function emit(serverId, event, data) {
   if (io) io.to(`server:${serverId}`).emit(event, { serverId, ...data });
 }
@@ -48,6 +36,19 @@ function emit(serverId, event, data) {
 function progress(serverId, step, message, percent) {
   emit(serverId, 'install:progress', { step, message, percent });
   console.log(`[Installer][${serverId.slice(0, 8)}] ${step}: ${message}`);
+}
+
+/**
+ * Callback de progression d'un docker pull : n'émet qu'une ligne par couche,
+ * au lieu d'une par événement "Downloading" (des centaines de lignes identiques).
+ */
+function pullProgress(serverId, step, label, percent) {
+  const seen = new Set();
+  return (evt) => {
+    if (evt.status !== 'Downloading' || !evt.id || seen.has(evt.id)) return;
+    seen.add(evt.id);
+    progress(serverId, step, `${label}: ${evt.id}`, percent);
+  };
 }
 
 /**
@@ -73,20 +74,22 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
 
   const { docker } = dockerService;
 
+  // Le JDK doit correspondre au loader : NeoForge 26.x (MC 26.x) exige Java 25,
+  // un JDK 21 fait planter l'installeur/le serveur (UnsupportedClassVersionError).
+  const javaVersion = Math.max(17, requiredJava(server.mc_version, loaderVersionFromSetupConfig(serverDir)));
+  const jdkImage = `eclipse-temurin:${javaVersion}-jdk`;
+
   // Pull image si absente (silencieux si déjà présente)
-  progress(server.id, 'thin_setup', 'Vérification image eclipse-temurin:21-jdk...', 31);
+  progress(server.id, 'thin_setup', `Vérification image ${jdkImage}...`, 31);
   await new Promise((res) => {
-    docker.pull('eclipse-temurin:21-jdk', (err, stream) => {
+    docker.pull(jdkImage, (err, stream) => {
       if (err || !stream) return res();
-      docker.modem.followProgress(stream,
-        () => res(),
-        (evt) => { if (evt.status === 'Downloading') progress(server.id, 'thin_setup', `Pull JDK: ${evt.id || ''}`, 32); }
-      );
+      docker.modem.followProgress(stream, () => res(), pullProgress(server.id, 'thin_setup', 'Pull JDK', 32));
     });
   });
 
   const container = await docker.createContainer({
-    Image: 'eclipse-temurin:21-jdk',
+    Image: jdkImage,
     Cmd: ['bash', thinScriptDataPath],
     WorkingDir: workDir,
     Env: env,
@@ -102,6 +105,8 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
   const logStream = await container.attach({ stream: true, stdout: true, stderr: true });
   let done = false;
   let setupContainer = container;
+  const tail = []; // dernières lignes, pour un message d'erreur utile si le setup échoue
+  const remember = (line) => { tail.push(line); if (tail.length > 15) tail.shift(); };
 
   container.modem = docker.modem;
   docker.modem.demuxStream(logStream, {
@@ -109,6 +114,7 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
       const lines = chunk.toString().split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
+        remember(line);
         emit(server.id, 'log', { line, timestamp: Date.now() });
         if (!done && (line.includes(']: Done (') || line.includes(': Done ('))) {
           done = true;
@@ -121,7 +127,9 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
     write: (chunk) => {
       const lines = chunk.toString().split('\n');
       for (const line of lines) {
-        if (line.trim()) emit(server.id, 'log', { line, timestamp: Date.now() });
+        if (!line.trim()) continue;
+        remember(line);
+        emit(server.id, 'log', { line, timestamp: Date.now() });
       }
     }
   });
@@ -134,15 +142,26 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
       reject(new Error('Timeout: setup ServerStarter > 30 min'));
     }, 30 * 60 * 1000);
 
-    container.wait((err, result) => {
+    container.wait((err) => {
       clearTimeout(timeout);
       if (err && !done) return reject(err);
-      const yamlSrc = path.join(serverDir, 'server-setup-config.yaml');
-      if (fs.existsSync(yamlSrc)) fs.renameSync(yamlSrc, yamlSrc + '.done');
-      progress(server.id, 'thin_setup_done', 'Installation ServerStarter terminée — NeoForge + mods prêts', 75);
       resolve();
     });
   });
+
+  // Le container s'arrête aussi quand ServerStarter plante : vérifier que le loader et les mods sont bien là
+  // avant de continuer, sinon on démarrerait un serveur cassé qui crashe en boucle.
+  const modsDir = path.join(serverDir, 'mods');
+  const jarCount = fs.existsSync(modsDir) ? fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length : 0;
+  const librariesDir = path.join(serverDir, 'libraries');
+  if (!done && (jarCount === 0 || !fs.existsSync(librariesDir))) {
+    throw new Error(`ServerStarter a échoué (${jarCount} mods, loader ${fs.existsSync(librariesDir) ? 'présent' : 'absent'}). `
+      + `Dernières lignes :\n${tail.join('\n')}`);
+  }
+
+  const yamlSrc = path.join(serverDir, 'server-setup-config.yaml');
+  if (fs.existsSync(yamlSrc)) fs.renameSync(yamlSrc, yamlSrc + '.done');
+  progress(server.id, 'thin_setup_done', `Installation ServerStarter terminée — loader + ${jarCount} mods prêts`, 75);
 }
 
 async function installServer(server) {
@@ -159,7 +178,7 @@ async function installServer(server) {
 
     progress(server.id, 'pull', 'Téléchargement de l\'image Docker itzg/minecraft-server', 15);
     await dockerService.pullImage('itzg/minecraft-server:latest',
-      evt => { if (evt.status === 'Downloading') progress(server.id, 'pull', `Docker pull: ${evt.id || ''}`, 15); }
+      pullProgress(server.id, 'pull', 'Docker pull', 15)
     );
 
     // Téléchargement et installation des mods selon la source
@@ -172,21 +191,19 @@ async function installServer(server) {
     const updatedServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
 
     progress(server.id, 'container', 'Téléchargement de l\'image Java (première fois uniquement)...', 82);
-    const { containerId, containerName } = await dockerService.createServerContainer(updatedServer, (event) => {
-      if (event.status && event.progress) {
-        progress(server.id, 'container', `Image Docker : ${event.status} ${event.progress}`, 82);
-      }
-    });
+    const { containerId, containerName } = await dockerService.createServerContainer(updatedServer,
+      pullProgress(server.id, 'container', 'Image Java', 82));
 
     progress(server.id, 'start', 'Démarrage du serveur Minecraft', 92);
-    await dockerService.startContainer(containerId);
+    await dockerService.startContainer(containerId, updatedServer);
 
     db.prepare('UPDATE servers SET status = ?, container_id = ?, container_name = ? WHERE id = ?')
       .run('starting', containerId, containerName, server.id);
     progress(server.id, 'done', 'Container démarré — initialisation Minecraft en cours...', 100);
     emit(server.id, 'install:done', { status: 'starting' });
 
-    if (io) startLogStreamImmediate(io, server.id, containerId);
+    // Flux de logs standard (statut running sur "Done", joueurs, diagnostics) — le même que pour un start normal
+    if (io) startLogStream(io, server.id);
   } catch (err) {
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('error', server.id);
     emit(server.id, 'install:error', { message: err.message });
@@ -250,13 +267,16 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
     });
     // Attendre la confirmation (max 5 minutes)
     await new Promise((resolve, reject) => {
-      pendingClientPackConfirm.set(server.id, { resolve, reject });
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (pendingClientPackConfirm.has(server.id)) {
           pendingClientPackConfirm.delete(server.id);
           reject(new Error('Délai dépassé — installation annulée (aucune réponse)'));
         }
       }, 5 * 60 * 1000);
+      pendingClientPackConfirm.set(server.id, {
+        resolve: () => { clearTimeout(timer); resolve(); },
+        reject: (err) => { clearTimeout(timer); reject(err); },
+      });
     });
     progress(server.id, 'info', 'Installation avec le pack client confirmée', 24);
   }
@@ -306,6 +326,11 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
     const thinScript = dockerService.detectThinPackStartScript(serverDir);
     if (thinScript) {
       await runThinPackSetup(server, serverDir, thinScript);
+      // CurseForge ne liste pas toujours la version MC (schéma 26.x) → la déduire du NeoForge installé
+      if (!isMcVersion(resolvedMcVersion)) {
+        const mc = mcVersionFromNeoForge(loaderVersionFromSetupConfig(serverDir));
+        if (mc) db.prepare('UPDATE servers SET mc_version = ? WHERE id = ?').run(mc, server.id);
+      }
     }
     return;
   }
@@ -338,12 +363,21 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
   const totalMods = manifest.files?.length || 0;
   console.log(`[Installer] ${totalMods} mods à télécharger pour ${server.modpack_id}`);
 
+  // Version MC + loader exacts déclarés par le pack (ex: modLoaders[0].id = "neoforge-21.1.77")
+  const primaryLoader = (manifest.minecraft?.modLoaders || []).find(l => l.primary) || manifest.minecraft?.modLoaders?.[0];
+  const loaderMatch = primaryLoader?.id?.match(/^(neoforge|forge|fabric|quilt)-(.+)$/i);
+  writePackMeta(serverDir, {
+    mcVersion: isMcVersion(manifest.minecraft?.version) ? manifest.minecraft.version : null,
+    loader: loaderMatch ? loaderMatch[1].toLowerCase() : null,
+    loaderVersion: loaderMatch ? loaderMatch[2] : null,
+  });
+
   // Extraire les overrides (configs, scripts, etc.)
   const overridesDir = manifest.overrides || 'overrides';
   zip.getEntries().forEach(entry => {
     if (entry.entryName.startsWith(overridesDir + '/') && !entry.isDirectory) {
       const relative = entry.entryName.slice(overridesDir.length + 1);
-      const dest = path.join(serverDir, relative);
+      const dest = safeJoin(serverDir, relative);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, entry.getData());
     }
@@ -354,9 +388,16 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
 
   progress(server.id, 'mods', `Résolution de ${totalMods} mods...`, 38);
 
-  // Batch: récupérer les infos de tous les fichiers en 1 appel (CurseForge bulk endpoint)
+  // Batch: récupérer les infos de tous les fichiers (CurseForge bulk endpoint)
   const fileIds = manifest.files.map(f => f.fileID);
   const modFiles = await fetchModFilesBulk(apiKey, fileIds);
+
+  // Un fichier absent de la réponse API = un mod qu'on ne pourra pas installer → le serveur crasherait
+  const returnedIds = new Set(modFiles.map(f => String(f.id)));
+  const unresolved = fileIds.filter(id => !returnedIds.has(String(id)));
+  if (unresolved.length) {
+    throw new Error(`${unresolved.length} mod(s) introuvable(s) sur l'API CurseForge (fileID : ${formatFailures(unresolved)})`);
+  }
 
   // Lire les projets à ignorer depuis server-setup-config.yaml (mods client-only listés par le modpack)
   const ignoredProjectIds = readIgnoredProjects(serverDir);
@@ -366,12 +407,13 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
 
   let downloaded = 0;
   let skipped = 0;
+  const failures = [];
   const CONCURRENCY = 5;
 
   for (let i = 0; i < modFiles.length; i += CONCURRENCY) {
     const batch = modFiles.slice(i, i + CONCURRENCY);
     await Promise.all(batch.map(async (file) => {
-      if (!file || !file.fileName) { skipped++; return; }
+      if (!file.fileName) { failures.push(`fileID ${file.id}`); return; }
 
       // Ignorer les mods client-only listés dans server-setup-config.yaml
       if (file.modId && ignoredProjectIds.has(String(file.modId))) { skipped++; return; }
@@ -379,23 +421,29 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
       // Ignorer les mods explicitement marqués "Client" uniquement par CurseForge
       if (isClientOnlyMod(file)) { skipped++; return; }
 
-      const dest = path.join(modsDir, file.fileName);
+      const dest = safeJoin(modsDir, file.fileName);
       if (fs.existsSync(dest)) { downloaded++; return; }
 
       // CurseForge peut retourner downloadUrl: null (restrictions CDN)
       const url = file.downloadUrl || buildCurseForgeUrl(file.id, file.fileName);
+      const sha1 = (file.hashes || []).find(h => h.algo === 1)?.value;
       try {
-        await downloadFile(url, dest);
+        await downloadFile(url, dest, null, sha1 ? { sha1 } : {});
         downloaded++;
-      } catch {
-        skipped++;
+      } catch (err) {
+        console.warn(`[Installer] ${err.message}`);
+        failures.push(file.fileName);
       }
     }));
-    const pct = Math.round((i + CONCURRENCY) / modFiles.length * 100);
+    const pct = Math.min(100, Math.round((i + CONCURRENCY) / modFiles.length * 100));
     progress(server.id, 'mods', `Mods : ${downloaded}/${totalMods} téléchargés`, 38 + Math.floor(pct * 0.42));
   }
 
-  console.log(`[Installer] Mods téléchargés: ${downloaded}, ignorés: ${skipped}`);
+  console.log(`[Installer] Mods téléchargés: ${downloaded}, client-only ignorés: ${skipped}, échecs: ${failures.length}`);
+  if (failures.length) {
+    // Mieux vaut échouer clairement que démarrer un serveur qui crashera en boucle (mods manquants)
+    throw new Error(`${failures.length} mod(s) n'ont pas pu être téléchargés : ${formatFailures(failures)}. Relancez l'installation.`);
+  }
   progress(server.id, 'mods_done', `${downloaded} mods installés`, 80);
 }
 
@@ -454,18 +502,22 @@ function isClientOnlyMod(file) {
 }
 
 async function fetchModFilesBulk(apiKey, fileIds) {
-  // CurseForge bulk files endpoint — max 50 par appel
+  // CurseForge bulk files endpoint — max 50 par appel, 3 tentatives par lot
   const results = [];
   for (let i = 0; i < fileIds.length; i += 50) {
     const chunk = fileIds.slice(i, i + 50);
-    try {
-      const res = await axios.post('https://api.curseforge.com/v1/mods/files', { fileIds: chunk }, {
-        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
-        timeout: 30000,
-      });
-      results.push(...(res.data.data || []));
-    } catch (err) {
-      console.error(`[Installer] Bulk files error:`, err.response?.status, err.message);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await axios.post('https://api.curseforge.com/v1/mods/files', { fileIds: chunk }, {
+          headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+          timeout: 30000,
+        });
+        results.push(...(res.data.data || []));
+        break;
+      } catch (err) {
+        console.error(`[Installer] Bulk files error (tentative ${attempt}/3):`, err.response?.status, err.message);
+        if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
+      }
     }
   }
   return results;
@@ -509,8 +561,11 @@ async function installGenericModpack(server, serverDir) {
     );
 
     progress(server.id, 'extract', 'Extraction et installation des mods serveur', 50);
-    await installMrpack(server, mrpackPath, serverDir, apiKey);
+    const packMeta = await installMrpack(server, mrpackPath, serverDir, apiKey);
     fs.unlinkSync(mrpackPath);
+    // L'index du pack fait foi (la liste mcVersions de la version Modrinth peut en contenir plusieurs)
+    if (packMeta?.mcVersion) mcVersion = packMeta.mcVersion;
+    if (packMeta?.loader) loaderType = packMeta.loader;
   }
 
   db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
@@ -537,28 +592,29 @@ async function installMrpack(server, mrpackPath, serverDir, apiKey) {
   const index = JSON.parse(zip.readAsText('modrinth.index.json'));
   console.log(`[Installer] Modrinth index v${index.formatVersion}, ${index.files?.length || 0} fichiers`);
 
-  // Extraire overrides/ (client + serveur) et server-overrides/ (serveur uniquement)
-  zip.getEntries().forEach(entry => {
-    for (const prefix of ['overrides/', 'server-overrides/']) {
-      if (entry.entryName.startsWith(prefix) && !entry.isDirectory) {
-        const relative = entry.entryName.slice(prefix.length);
-        const dest = path.join(serverDir, relative);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, entry.getData());
-        return;
-      }
-    }
-  });
+  // Version MC + loader exacts déclarés par le pack (dependencies: minecraft, fabric-loader, neoforge…)
+  const deps = index.dependencies || {};
+  const loaderKey = ['neoforge', 'forge', 'fabric-loader', 'quilt-loader'].find(k => deps[k]);
+  const packMeta = {
+    mcVersion: isMcVersion(deps.minecraft) ? deps.minecraft : null,
+    loader: loaderKey ? loaderKey.replace('-loader', '') : null,
+    loaderVersion: loaderKey ? deps[loaderKey] : null,
+  };
+  writePackMeta(serverDir, packMeta);
 
-  // Inclure tous les fichiers sauf ceux explicitement client-only ET sans aucun côté serveur déclaré.
-  // On garde les "unsupported" car certains mods (ex: JEI) sont marqués client-only dans l'index
-  // mais sont requis comme dépendances par d'autres mods côté serveur.
-  const serverFiles = (index.files || []).filter(f => {
-    const env = f.env || {};
-    // Exclure uniquement si client=required ET server=unsupported (purement client-only)
-    if (env.client === 'required' && env.server === 'unsupported') return false;
-    return true;
-  });
+  // Extraire overrides/ puis server-overrides/ (le second écrase le premier, comme le fait Modrinth)
+  for (const prefix of ['overrides/', 'server-overrides/']) {
+    for (const entry of zip.getEntries()) {
+      if (!entry.entryName.startsWith(prefix) || entry.isDirectory) continue;
+      const dest = safeJoin(serverDir, entry.entryName.slice(prefix.length));
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, entry.getData());
+    }
+  }
+
+  // Spécification Modrinth : env.server = "unsupported" → le fichier ne doit PAS être installé côté serveur
+  // (mods de rendu, shaders… qui font crasher un serveur dédié). "optional" et "required" sont gardés.
+  const serverFiles = (index.files || []).filter(f => f.env?.server !== 'unsupported');
 
   const clientOnlySkipped = (index.files?.length || 0) - serverFiles.length;
   if (clientOnlySkipped > 0) {
@@ -567,37 +623,43 @@ async function installMrpack(server, mrpackPath, serverDir, apiKey) {
   progress(server.id, 'mods', `Téléchargement de ${serverFiles.length} mods serveur...`, 55);
 
   let downloaded = 0;
-  let failed = 0;
+  const failures = [];
   const CONCURRENCY = 5;
 
   for (let i = 0; i < serverFiles.length; i += CONCURRENCY) {
     const batch = serverFiles.slice(i, i + CONCURRENCY);
     await Promise.all(batch.map(async (file) => {
       // Le chemin dans l'index est relatif à la racine du serveur (ex: "mods/mod.jar")
-      const dest = path.join(serverDir, file.path);
+      const dest = safeJoin(serverDir, file.path);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       if (fs.existsSync(dest)) { downloaded++; return; }
 
+      // Hash fourni par l'index (sha512 prioritaire) → détecte les fichiers corrompus
+      const expected = file.hashes?.sha512 ? { sha512: file.hashes.sha512 }
+        : file.hashes?.sha1 ? { sha1: file.hashes.sha1 } : {};
+
       // Essayer chaque URL de téléchargement dans l'ordre
-      const urls = file.downloads || [];
-      for (const url of urls) {
+      for (const url of file.downloads || []) {
         try {
-          await downloadFile(url, dest);
+          await downloadFile(url, dest, null, expected);
           downloaded++;
           return;
-        } catch {
-          // Essayer l'URL suivante
+        } catch (err) {
+          console.warn(`[Installer] ${err.message} (${url})`);
         }
       }
-      console.warn(`[Installer] Impossible de télécharger: ${file.path}`);
-      failed++;
+      failures.push(file.path);
     }));
-    const pct = Math.round((i + CONCURRENCY) / serverFiles.length * 100);
+    const pct = Math.min(100, Math.round((i + CONCURRENCY) / serverFiles.length * 100));
     progress(server.id, 'mods', `Mods : ${downloaded}/${serverFiles.length}`, 55 + Math.floor(pct * 0.25));
   }
 
-  console.log(`[Installer] Modrinth mods: ${downloaded} téléchargés, ${failed} échoués, ${clientOnlySkipped} client-only ignorés`);
+  console.log(`[Installer] Modrinth mods: ${downloaded} téléchargés, ${failures.length} échoués, ${clientOnlySkipped} client-only ignorés`);
+  if (failures.length) {
+    throw new Error(`${failures.length} fichier(s) du modpack n'ont pas pu être téléchargés : ${formatFailures(failures)}. Relancez l'installation.`);
+  }
   progress(server.id, 'mods_done', `${downloaded} mods installés`, 80);
+  return packMeta;
 }
 
 async function resolveModpackMeta(server) {
@@ -607,32 +669,96 @@ async function resolveModpackMeta(server) {
   return { mcVersion: server.mc_version, loaderType: server.loader_type, apiKey };
 }
 
-async function downloadFile(url, dest, onProgress) {
-  const res = await axios.get(url, { responseType: 'stream', timeout: 120000 });
-  const total = parseInt(res.headers['content-length'] || '0', 10);
-  let downloaded = 0;
+const DOWNLOAD_RETRIES = 3;
+const DOWNLOAD_STALL_MS = 60000;
 
-  return new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(dest);
-    res.data.on('data', chunk => {
-      downloaded += chunk.length;
-      if (total > 0 && onProgress) onProgress(Math.round((downloaded / total) * 100));
-    });
-    res.data.pipe(writer);
-    writer.on('finish', resolve);
-    writer.on('error', reject);
-    res.data.on('error', reject);
-  });
+/**
+ * Télécharge url → dest de façon sûre :
+ *  - écrit dans dest.part puis renomme (jamais de fichier tronqué à la place du vrai),
+ *  - abandonne si aucun octet reçu pendant 60 s (stream bloqué),
+ *  - vérifie la taille (content-length) et le hash si fourni ({ sha1 } ou { sha512 }),
+ *  - réessaie 3 fois avec backoff.
+ */
+async function downloadFile(url, dest, onProgress, expected = {}) {
+  let lastErr;
+  for (let attempt = 1; attempt <= DOWNLOAD_RETRIES; attempt++) {
+    try {
+      await downloadOnce(url, dest, onProgress, expected);
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (err.response?.status === 404 || err.response?.status === 403) break; // inutile de réessayer
+      if (attempt < DOWNLOAD_RETRIES) await new Promise(r => setTimeout(r, 2000 * attempt));
+    }
+  }
+  throw new Error(`Téléchargement échoué (${path.basename(dest)}) : ${lastErr?.message}`);
 }
 
-function extractModpack(zipPath, targetDir) {
+async function downloadOnce(url, dest, onProgress, expected) {
+  const tmp = `${dest}.part`;
+  const res = await axios.get(url, { responseType: 'stream', timeout: 120000 });
+  const total = parseInt(res.headers['content-length'] || '0', 10);
+  const algo = expected.sha512 ? 'sha512' : expected.sha1 ? 'sha1' : null;
+  const hash = algo ? crypto.createHash(algo) : null;
+  let downloaded = 0;
+
   try {
-    const zip = new AdmZip(zipPath);
-    zip.extractAllTo(targetDir, true);
-  } catch {
-    const { execSync } = require('child_process');
-    execSync(`tar -xf "${zipPath}" -C "${targetDir}"`, { timeout: 60000 });
+    await new Promise((resolve, reject) => {
+      const writer = fs.createWriteStream(tmp);
+      let stall = setTimeout(() => res.data.destroy(new Error('téléchargement bloqué (aucune donnée depuis 60 s)')), DOWNLOAD_STALL_MS);
+      res.data.on('data', chunk => {
+        clearTimeout(stall);
+        stall = setTimeout(() => res.data.destroy(new Error('téléchargement bloqué (aucune donnée depuis 60 s)')), DOWNLOAD_STALL_MS);
+        downloaded += chunk.length;
+        if (hash) hash.update(chunk);
+        if (total > 0 && onProgress) onProgress(Math.round((downloaded / total) * 100));
+      });
+      res.data.on('end', () => clearTimeout(stall));
+      res.data.on('error', err => { clearTimeout(stall); writer.destroy(); reject(err); });
+      writer.on('error', err => { clearTimeout(stall); reject(err); });
+      writer.on('finish', resolve);
+      res.data.pipe(writer);
+    });
+
+    if (total > 0 && downloaded !== total) throw new Error(`taille incorrecte (${downloaded}/${total} octets)`);
+    if (hash) {
+      const digest = hash.digest('hex');
+      if (digest.toLowerCase() !== String(expected[algo]).toLowerCase()) throw new Error(`hash ${algo} invalide`);
+    }
+    fs.renameSync(tmp, dest);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch {}
+    throw err;
   }
+}
+
+/** Joint un chemin d'archive à baseDir en refusant toute sortie du dossier (zip-slip). */
+function safeJoin(baseDir, relative) {
+  const dest = path.resolve(baseDir, relative);
+  const base = path.resolve(baseDir);
+  if (dest !== base && !dest.startsWith(base + path.sep)) {
+    throw new Error(`Chemin d'archive refusé (sort du dossier serveur) : ${relative}`);
+  }
+  return dest;
+}
+
+/**
+ * Métadonnées du pack (version MC + loader exact) écrites dans serverDir/.craftarr-pack.json.
+ * Lues par docker.js pour épingler la version du loader (FORGE_VERSION, FABRIC_LOADER_VERSION…)
+ * au lieu de laisser itzg prendre la dernière — cause classique de crash au démarrage.
+ */
+function writePackMeta(serverDir, meta) {
+  try {
+    fs.writeFileSync(path.join(serverDir, '.craftarr-pack.json'), JSON.stringify(meta, null, 2));
+  } catch (err) {
+    console.warn('[Installer] Impossible d\'écrire .craftarr-pack.json :', err.message);
+  }
+}
+
+/** Formate une liste d'échecs pour un message d'erreur lisible. */
+function formatFailures(failures) {
+  const shown = failures.slice(0, 10).join(', ');
+  return failures.length > 10 ? `${shown} … (+${failures.length - 10})` : shown;
 }
 
 /**
@@ -646,12 +772,9 @@ function buildCurseForgeUrl(fileId, fileName) {
 }
 
 function extractMcVer(versions = []) {
-  // Minecraft versions always start with "1." AND have at most 3 numeric segments
-  // Ignore NeoForge versions (26.1.2, 21.1.x), Forge versions (47.2.0), etc.
-  // Minecraft patch versions are always single-digit (e.g. 1.21.1, 1.20.4, 1.8.9).
-  // Reject anything like "1.21.11" (two-digit patch) which is not a real MC version
-  // and is likely a NeoForge/Forge build number misidentified as MC version.
-  return versions.find(v => /^1\.\d{1,2}(\.\d)?$/.test(v)) || null;
+  // Minecraft : 1.x.y ou schéma annuel 26.x.y (voir mcVersion.js).
+  // Ignore les versions Forge (47.2.0) et les tags de loader ("NeoForge", "Server"…).
+  return versions.find(isMcVersion) || null;
 }
 
 function detectLoader(versions = []) {

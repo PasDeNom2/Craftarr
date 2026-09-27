@@ -1,7 +1,6 @@
 const cron = require('node-cron');
 const path = require('path');
 const fs = require('fs');
-const AdmZip = require('adm-zip');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../config/database');
 const backupService = require('./backup');
@@ -66,35 +65,59 @@ const USER_CONFIG_FILES = ['server.properties', 'ops.json', 'whitelist.json', 'b
 const USER_CONFIG_DIRS = ['config', 'plugins'];
 
 /**
- * Extrait les données utilisateur (monde + configs) d'un backup zip vers serverDir.
- * Écrase les fichiers correspondants issus de l'installation fraîche.
+ * Copie les données utilisateur (monde + configs) de l'ancienne installation vers la nouvelle.
+ * Le serveur est arrêté à ce moment-là : la copie est plus fraîche que le backup pré-update
+ * (aucune perte de la progression faite pendant l'installation).
  */
-function restoreUserDataFromBackup(backupPath, serverDir) {
-  const zip = new AdmZip(backupPath);
-  const entries = zip.getEntries();
-
-  for (const entry of entries) {
-    const name = entry.entryName;
-    // Monde (world/, world_nether/, world_the_end/)
-    const isWorld = USER_WORLD_DIRS.some(d => name === d + '/' || name.startsWith(d + '/'));
-    // Fichiers config racine (ops.json, server.properties, …)
-    const isConfigFile = USER_CONFIG_FILES.includes(name);
-    // Répertoires config/ et plugins/
-    const isConfigDir = USER_CONFIG_DIRS.some(d => name === d + '/' || name.startsWith(d + '/'));
-
-    if (!isWorld && !isConfigFile && !isConfigDir) continue;
-    if (entry.isDirectory) continue;
-
-    const dest = path.join(serverDir, name);
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.writeFileSync(dest, entry.getData());
+function copyUserData(oldDir, newDir) {
+  for (const name of [...USER_WORLD_DIRS, ...USER_CONFIG_FILES, ...USER_CONFIG_DIRS]) {
+    const src = path.join(oldDir, name);
+    if (!fs.existsSync(src)) continue;
+    fs.cpSync(src, path.join(newDir, name), { recursive: true, force: true });
   }
 }
 
+function fixOwnership(dir) {
+  // Node tourne en root, MC en uid=1000
+  try {
+    execSync(`chown -R 1000:1000 "${dir}"`);
+  } catch {
+    try { execSync(`chmod -R 755 "${dir}"`); } catch {}
+  }
+}
+
+async function recreateAndStart(serverId) {
+  const db = getDb();
+  const fresh = db.prepare('SELECT * FROM servers WHERE id = ?').get(serverId);
+  const { containerId, containerName } = await dockerService.createServerContainer(fresh);
+  db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ? WHERE id = ?')
+    .run(containerId, containerName, 'starting', serverId);
+  await dockerService.startContainer(containerId, fresh);
+}
+
+/**
+ * Mise à jour d'un modpack sans risque de perdre le serveur :
+ *   1. backup pré-update,
+ *   2. arrêt du serveur,
+ *   3. installation de la nouvelle version dans server.staging/ (l'ancienne reste intacte),
+ *   4. bascule : server/ → server.old/, server.staging/ → server/, copie monde + configs,
+ *   5. redémarrage ; server.old/ n'est supprimé qu'une fois le nouveau container démarré.
+ * En cas d'échec, l'ancienne installation est remise en place et redémarrée.
+ */
 async function applyUpdate(server, updateInfo) {
   const db = getDb();
-  const DATA_PATH = process.env.DATA_PATH || '/data';
-  const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+  const baseDir = path.join(DATA_PATH, 'servers', server.id);
+  const serverDir = path.join(baseDir, 'server');
+  const stagingDir = path.join(baseDir, 'server.staging');
+  const oldDir = path.join(baseDir, 'server.old');
+  // L'installation réécrit aussi mc_version / loader_type : tout restaurer en cas de rollback
+  const previous = {
+    modpack_version_id: server.modpack_version_id,
+    modpack_version: server.modpack_version,
+    mc_version: server.mc_version,
+    loader_type: server.loader_type,
+  };
+  let swapped = false;
 
   const histId = uuidv4();
   db.prepare(`
@@ -106,49 +129,41 @@ async function applyUpdate(server, updateInfo) {
   if (io) io.to(`server:${server.id}`).emit('server:update-start', { serverId: server.id, ...updateInfo });
 
   try {
-    // 1. Backup complet pré-update (monde + inventaire + configs)
+    // 1. Backup complet pré-update (monde + inventaire + configs) — filet de sécurité
     const backup = await backupService.createBackup(server, 'pre-update');
     db.prepare('UPDATE update_history SET backup_id = ? WHERE id = ?').run(backup.id, histId);
     console.log(`[Updater] Backup pré-update créé: ${backup.filename}`);
 
-    // 2. Arrêt et suppression du container existant
+    // 2. Arrêt et suppression du container existant (le monde est sauvegardé à l'arrêt)
     if (server.container_id) {
       try { await dockerService.stopContainer(server.container_id, 30); } catch {}
       await dockerService.removeContainer(server.container_id);
       db.prepare('UPDATE servers SET container_id = NULL, container_name = NULL WHERE id = ?').run(server.id);
     }
 
-    // 3. Mise à jour de la version en DB avant l'install fraîche
+    // 3. Installation fraîche dans le dossier de staging — server/ n'est pas touché
     db.prepare('UPDATE servers SET modpack_version_id = ?, modpack_version = ? WHERE id = ?')
       .run(updateInfo.latestVersionId, updateInfo.latestVersion, server.id);
-
-    // 4. Installation fraîche (wipe complet du serverDir + téléchargement de la nouvelle version)
     const serverWithNewVersion = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
-    console.log(`[Updater] Installation fraîche de ${updateInfo.latestVersion}…`);
-    await installer.freshInstallModpack(serverWithNewVersion, serverDir);
+    console.log(`[Updater] Installation fraîche de ${updateInfo.latestVersion} (staging)…`);
+    await installer.freshInstallModpack(serverWithNewVersion, stagingDir);
 
-    // 5. Restauration des données utilisateur depuis le backup pré-update
-    //    (monde, inventaires joueurs, server.properties, ops, whitelist, configs mods)
-    console.log(`[Updater] Restauration des données monde et configs depuis ${backup.filename}…`);
-    restoreUserDataFromBackup(backup.path, serverDir);
+    // 4. Bascule + reprise des données utilisateur depuis l'ancienne installation
+    if (fs.existsSync(oldDir)) fs.rmSync(oldDir, { recursive: true, force: true });
+    fs.renameSync(serverDir, oldDir);
+    fs.renameSync(stagingDir, serverDir);
+    swapped = true;
+    console.log('[Updater] Reprise du monde et des configs de l\'ancienne installation…');
+    copyUserData(oldDir, serverDir);
+    fixOwnership(serverDir);
 
-    // 6. Correction des permissions (Node tourne en root, MC en uid=1000)
-    try {
-      execSync(`chown -R 1000:1000 ${serverDir}`);
-    } catch {
-      try { execSync(`chmod -R 755 ${serverDir}`); } catch {}
-    }
-
-    // 7. Création du nouveau container avec les env vars de la nouvelle version
-    const freshServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
-    const { containerId, containerName } = await dockerService.createServerContainer(freshServer);
-    db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ? WHERE id = ?')
-      .run(containerId, containerName, 'starting', freshServer.id);
-    await dockerService.startContainer(containerId);
+    // 5. Nouveau container avec les env vars de la nouvelle version
+    await recreateAndStart(server.id);
+    fs.rmSync(oldDir, { recursive: true, force: true });
 
     db.prepare('UPDATE update_history SET status = ? WHERE id = ?').run('success', histId);
 
-    // 8. Nettoyage des anciens backups (garde les 15 derniers)
+    // 6. Nettoyage des anciens backups (garde les 15 derniers)
     await backupService.cleanOldBackups(server.id, 15);
 
     if (io) io.to(`server:${server.id}`).emit('server:update-done', {
@@ -159,10 +174,25 @@ async function applyUpdate(server, updateInfo) {
 
     console.log(`[Updater] Serveur ${server.id} mis à jour vers ${updateInfo.latestVersion}`);
   } catch (err) {
-    db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('error', server.id);
+    console.error(`[Updater] Échec update serveur ${server.id}:`, err.message);
     db.prepare('UPDATE update_history SET status = ? WHERE id = ?').run('failed', histId);
     if (io) io.to(`server:${server.id}`).emit('server:update-error', { serverId: server.id, error: err.message });
-    console.error(`[Updater] Échec update serveur ${server.id}:`, err.message);
+
+    // Rollback : remettre l'ancienne installation et la redémarrer
+    try {
+      if (swapped) {
+        fs.rmSync(serverDir, { recursive: true, force: true });
+        fs.renameSync(oldDir, serverDir);
+      }
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+      db.prepare('UPDATE servers SET modpack_version_id = ?, modpack_version = ?, mc_version = ?, loader_type = ? WHERE id = ?')
+        .run(previous.modpack_version_id, previous.modpack_version, previous.mc_version, previous.loader_type, server.id);
+      await recreateAndStart(server.id);
+      console.log(`[Updater] Rollback effectué — ${server.id} relancé sur ${previous.modpack_version}`);
+    } catch (rollbackErr) {
+      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('error', server.id);
+      console.error(`[Updater] Rollback impossible pour ${server.id}:`, rollbackErr.message);
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 const Docker = require('dockerode');
 const path = require('path');
 const fs = require('fs');
+const { isMcVersion, mcVersionFromNeoForge, requiredJava, loaderVersionFromSetupConfig } = require('./mcVersion');
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const DATA_PATH = process.env.DATA_PATH || '/data';
@@ -25,20 +26,22 @@ async function ensureNetwork() {
 function extractMcVersionFromSetupConfig(setupConfigPath) {
   try {
     const content = fs.readFileSync(setupConfigPath, 'utf8');
-    const isMcVer = v => /^1\.\d{1,2}(\.\d)?$/.test(v);
-
     // Format 1 : mcVersion: "1.21.1"  (ServerStarter classique)
-    const m1 = content.match(/mcVersion:\s*["']?(1\.\d[\d.]{0,8})["']?/i);
-    if (m1 && isMcVer(m1[1])) return m1[1];
+    const m1 = content.match(/mcVersion:[ \t]*["']?(\d+\.\d[\d.]{0,8})["']?/i);
+    if (m1 && isMcVersion(m1[1])) return m1[1];
 
     // Format 2 :  minecraft:\n    version: "1.21.1"
-    const m2 = content.match(/^minecraft:\s*\n\s+version:\s*["']?(1\.\d[\d.]{0,8})["']?/im);
-    if (m2 && isMcVer(m2[1])) return m2[1];
+    const m2 = content.match(/^minecraft:\s*\n\s+version:\s*["']?(\d+\.\d[\d.]{0,8})["']?/im);
+    if (m2 && isMcVersion(m2[1])) return m2[1];
 
     // Format 3 : version: "1.21.1"  (uniquement si valeur correspond à MC)
-    for (const m of content.matchAll(/^\s*version:\s*["']?(1\.\d[\d.]{0,8})["']?/gm)) {
-      if (isMcVer(m[1])) return m[1];
+    for (const m of content.matchAll(/^\s*version:\s*["']?(\d+\.\d[\d.]{0,8})["']?/gm)) {
+      if (isMcVersion(m[1])) return m[1];
     }
+
+    // mcVersion vide (ex: Craftoria 2) → déduire du loaderVersion NeoForge
+    const fromLoader = mcVersionFromNeoForge(content.match(/^\s*loaderVersion:\s*["']?([0-9][^\s"'#]*)/m)?.[1]);
+    if (fromLoader) return fromLoader;
   } catch {}
   return null;
 }
@@ -82,6 +85,21 @@ function detectNeoForgeVersionFromStartScript(serverDir) {
   return found[found.length - 1];
 }
 
+function isNeoForgeInstalled(serverDir, version) {
+  return fs.existsSync(path.join(serverDir, 'libraries', 'net', 'neoforged', 'neoforge', version, 'unix_args.txt'));
+}
+
+/**
+ * Version NeoForge voulue par le pack et déjà installée sur disque.
+ * Priorité au loaderVersion de server-setup-config.yaml(.done) : un autre NeoForge a pu être
+ * installé à côté (ex: itzg en VERSION=LATEST) — ne pas prendre aveuglément le plus récent.
+ */
+function detectPackNeoForgeVersion(serverDir) {
+  const fromConfig = loaderVersionFromSetupConfig(serverDir);
+  if (fromConfig && isNeoForgeInstalled(serverDir, fromConfig)) return fromConfig;
+  return detectInstalledNeoForgeVersion(serverDir);
+}
+
 /**
  * Détecte la version NeoForge déjà installée dans libraries/net/neoforged/neoforge/.
  * Utilisé après un setup thin pack (ServerStarter) pour passer la version exacte à itzg
@@ -91,9 +109,7 @@ function detectInstalledNeoForgeVersion(serverDir) {
   try {
     const nfDir = path.join(serverDir, 'libraries', 'net', 'neoforged', 'neoforge');
     if (!fs.existsSync(nfDir)) return null;
-    const versions = fs.readdirSync(nfDir).filter(v => {
-      return fs.statSync(path.join(nfDir, v)).isDirectory();
-    });
+    const versions = fs.readdirSync(nfDir).filter(v => isNeoForgeInstalled(serverDir, v));
     if (!versions.length) return null;
     versions.sort((a, b) => {
       const an = a.replace(/-.*/, '').split('.').map(Number);
@@ -164,6 +180,23 @@ function detectThinPackStartScript(serverDir) {
   }
 }
 
+// Variable itzg qui épingle la version exacte de chaque loader
+const LOADER_VERSION_ENV = {
+  neoforge: 'NEOFORGE_VERSION',
+  forge: 'FORGE_VERSION',
+  fabric: 'FABRIC_LOADER_VERSION',
+  quilt: 'QUILT_LOADER_VERSION',
+};
+
+/** Lit serverDir/.craftarr-pack.json écrit par l'installeur (version MC + loader du pack), ou null. */
+function readPackMeta(serverDir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(serverDir, '.craftarr-pack.json'), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 function buildEnvVars(server) {
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
 
@@ -172,10 +205,10 @@ function buildEnvVars(server) {
   const hasSetupConfig = fs.existsSync(setupConfigPath);
 
   // Si NeoForge est déjà installé (thin pack setup via ServerStarter), utiliser cette version
-  // pour éviter qu'itzg réinstalle un loader différent.
-  const runShExists = fs.existsSync(path.join(serverDir, 'run.sh'));
-  const installedNeoForgeVersion = (server.loader_type === 'neoforge' && runShExists)
-    ? detectInstalledNeoForgeVersion(serverDir)
+  // pour éviter qu'itzg réinstalle un loader différent. On ne se fie pas à run.sh :
+  // ServerStarter ne le laisse pas toujours derrière lui (ex: Craftoria 2).
+  const installedNeoForgeVersion = (server.loader_type === 'neoforge' && !hasSetupConfig)
+    ? detectPackNeoForgeVersion(serverDir)
     : null;
 
   // Détecte la version NeoForge depuis startserver.sh/bat (ATM11 et packs similaires)
@@ -193,6 +226,7 @@ function buildEnvVars(server) {
     : null;
 
   const loaderType = server.loader_type?.toLowerCase() || 'forge';
+  const packMeta = readPackMeta(serverDir);
 
   const env = [
     'EULA=TRUE',
@@ -211,29 +245,17 @@ function buildEnvVars(server) {
     // NeoForge déjà installé par ServerStarter — passer la version exacte pour qu'itzg ne réinstalle pas
     console.log(`[Docker] NeoForge déjà installé (libraries/) : ${installedNeoForgeVersion}`);
     env.push(`NEOFORGE_VERSION=${installedNeoForgeVersion}`);
-    if (server.mc_version && /^1\.\d{1,2}(\.\d)?$/.test(server.mc_version)) {
-      env.push(`VERSION=${server.mc_version}`);
-    }
+    // Sans VERSION, itzg prend LATEST et installe un NeoForge d'une autre version MC
+    const mc = mcVersionFromNeoForge(installedNeoForgeVersion) || (isMcVersion(server.mc_version) ? server.mc_version : null);
+    if (mc) env.push(`VERSION=${mc}`);
   } else if (neoForgeVersionFromScript) {
     // Le server pack fournit son propre startserver.sh avec la version NeoForge exacte
     // (ex: ATM11 → NEOFORGE_VERSION=26.1.2.12-beta)
     console.log(`[Docker] NeoForge version (startserver script) : ${neoForgeVersionFromScript}`);
     env.push(`NEOFORGE_VERSION=${neoForgeVersionFromScript}`);
-    // Dériver la version MC depuis la version NeoForge pour que itzg sélectionne la bonne image Java
-    // Schéma : 21.x.y = MC 1.21.x  |  26.1.x.y (nouveau schéma) = MC 1.21.1
-    const nfParts = neoForgeVersionFromScript.replace(/-.*/, '').split('.').map(Number);
-    let derivedMc = null;
-    if (nfParts[0] === 21 && nfParts.length >= 2) {
-      // Ancien schéma : 21.1.226 → MC 1.21.1
-      derivedMc = `1.${nfParts[0]}.${nfParts[1]}`;
-    } else if (nfParts[0] >= 20 && nfParts[0] <= 25 && nfParts.length >= 2) {
-      // 20.x.y → MC 1.20.x  /  21.x.y → MC 1.21.x
-      derivedMc = `1.${nfParts[0]}.${nfParts[1]}`;
-    } else if (nfParts[0] === 26 && nfParts.length >= 2) {
-      // Nouveau schéma : 26.1.x.y → MC 1.21.1  (26 = NeoForge pour 1.21.x série)
-      derivedMc = `1.21.${nfParts[1]}`;
-    }
-    if (derivedMc && /^1\.\d{1,2}(\.\d)?$/.test(derivedMc)) {
+    // Dériver la version MC depuis la version NeoForge (21.1.x → 1.21.1, 26.1.2.x → 26.1.2)
+    const derivedMc = mcVersionFromNeoForge(neoForgeVersionFromScript);
+    if (derivedMc) {
       console.log(`[Docker] MC version déduite de NeoForge ${neoForgeVersionFromScript} : ${derivedMc}`);
       env.push(`VERSION=${derivedMc}`);
     }
@@ -248,12 +270,19 @@ function buildEnvVars(server) {
     if (mcFromConfig) {
       console.log(`[Docker] MC version (server-setup-config.yaml) : ${mcFromConfig}`);
       env.push(`VERSION=${mcFromConfig}`);
-    } else if (server.mc_version && /^1\.\d{1,2}(\.\d)?$/.test(server.mc_version)) {
+    } else if (isMcVersion(server.mc_version)) {
       env.push(`VERSION=${server.mc_version}`);
     }
-  } else if (server.mc_version && /^1\.\d{1,2}(\.\d)?$/.test(server.mc_version)) {
-    // VERSION uniquement si c'est une vraie version Minecraft (ex: 1.21.1, 1.20.1)
-    // Jamais les versions NeoForge/Forge (ex: 26.1.2, 47.2.0) qui cassent mc-image-helper
+  } else if (packMeta?.loaderVersion && packMeta.loader === loaderType && LOADER_VERSION_ENV[loaderType]) {
+    // Version exacte du loader déclarée par le pack (manifest CurseForge / index Modrinth) :
+    // sans elle itzg installe le dernier loader, souvent incompatible avec les mods du pack.
+    const mc = packMeta.mcVersion || (isMcVersion(server.mc_version) ? server.mc_version : null);
+    console.log(`[Docker] Loader épinglé par le pack : ${loaderType} ${packMeta.loaderVersion} (MC ${mc || '?'})`);
+    if (mc) env.push(`VERSION=${mc}`);
+    env.push(`${LOADER_VERSION_ENV[loaderType]}=${packMeta.loaderVersion}`);
+  } else if (isMcVersion(server.mc_version)) {
+    // VERSION uniquement si c'est une vraie version Minecraft (ex: 1.21.1, 26.1.2)
+    // Jamais les versions Forge (ex: 47.2.0) qui cassent mc-image-helper
     env.push(`VERSION=${server.mc_version}`);
   }
 
@@ -269,7 +298,9 @@ function buildEnvVars(server) {
   // server-setup-config.yaml → ServerStarter (NE PAS combiner avec MODPACK)
   if (hasSetupConfig) {
     env.push('SERVER_SETUP_CONFIG=/data/server-setup-config.yaml');
-  } else if (server.modpack_download_url) {
+  } else if (server.modpack_download_url && !/\.mrpack(\?|$)/i.test(server.modpack_download_url)) {
+    // Pas pour les .mrpack : Craftarr a déjà installé les mods, itzg re-téléchargerait
+    // et extrairait le pack brut (index + overrides) à chaque démarrage.
     env.push(`MODPACK=${server.modpack_download_url}`);
   }
 
@@ -284,38 +315,12 @@ function buildEnvVars(server) {
  *  1.17            → Java 16
  *  1.18 – 1.20.4   → Java 17
  *  1.20.5 – 1.21.x → Java 21
- *
- * Java requis par version NeoForge (nouveau schéma 26.x) :
- *  NeoForge 26.x.y  → Java 25  (class file 69.0, ex: ATM11 avec 26.1.2.12-beta)
+ *  26.x (schéma annuel) / NeoForge 26.x → Java 25 (class file 69.0)
  *
  * Utiliser la mauvaise version Java provoque ClassCastException ou UnsupportedClassVersionError.
  */
 function resolveMinecraftImage(mcVersion, neoforgeVersion) {
-  // NeoForge nouveau schéma (26.x.y) nécessite Java 25 (class file version 69)
-  if (neoforgeVersion) {
-    const nfMajor = parseInt(neoforgeVersion.split('.')[0], 10);
-    if (nfMajor >= 26) return 'itzg/minecraft-server:java25';
-  }
-
-  if (!mcVersion) return 'itzg/minecraft-server:java21'; // safe default
-
-  // Extraire les deux premiers segments : "1.12.2" → [1, 12]
-  const parts = mcVersion.replace(/[^0-9.]/g, '').split('.').map(Number);
-  const major = parts[0] ?? 1;
-  const minor = parts[1] ?? 0;
-
-  if (major === 1) {
-    if (minor < 17) return 'itzg/minecraft-server:java8';
-    if (minor === 17) return 'itzg/minecraft-server:java16';
-    if (minor <= 20) {
-      const patch = parts[2] ?? 0;
-      if (minor === 20 && patch >= 5) return 'itzg/minecraft-server:java21';
-      return 'itzg/minecraft-server:java17';
-    }
-    return 'itzg/minecraft-server:java21';
-  }
-
-  return 'itzg/minecraft-server:java21';
+  return `itzg/minecraft-server:java${requiredJava(mcVersion, neoforgeVersion)}`;
 }
 
 /**
@@ -369,16 +374,29 @@ async function createServerContainer(server, onProgress) {
   const hostServerDir = path.join(HOST_DATA_PATH, 'servers', server.id, 'server');
   const containerName = `mc-${server.id.slice(0, 8)}`;
 
+  // Un ancien container du même nom (réinstallation, DB désynchronisée) ferait échouer la création
+  // avec "Conflict: name already in use" — on l'arrête proprement (sauvegarde du monde) puis on le supprime.
+  const stale = await docker.listContainers({ all: true, filters: { name: [`^/${containerName}$`] } });
+  for (const c of stale) {
+    console.log(`[Docker] Suppression de l'ancien container ${containerName} (${c.Id.slice(0, 12)})`);
+    const old = docker.getContainer(c.Id);
+    try { await old.stop({ t: 30 }); } catch {}
+    await old.remove({ force: true });
+  }
+
   // Supprime les marqueurs d'installation pour forcer itzg à réinstaller le bon loader
   clearLoaderInstallMarkers(serverDir);
 
-  // Détecter la version NeoForge depuis startserver.sh pour choisir la bonne image Java
-  const neoforgeVersionFromScript = server.loader_type === 'neoforge'
-    ? detectNeoForgeVersionFromStartScript(serverDir)
+  // Version NeoForge (installée, config ServerStarter, métadonnées du pack ou startserver.sh) pour choisir la bonne image Java
+  const packMeta = readPackMeta(serverDir);
+  const neoforgeVersion = server.loader_type === 'neoforge'
+    ? (detectPackNeoForgeVersion(serverDir) || loaderVersionFromSetupConfig(serverDir)
+      || (packMeta?.loader === 'neoforge' ? packMeta.loaderVersion : null)
+      || detectNeoForgeVersionFromStartScript(serverDir))
     : null;
 
-  const image = resolveMinecraftImage(server.mc_version, neoforgeVersionFromScript);
-  console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'}${neoforgeVersionFromScript ? ` / NeoForge ${neoforgeVersionFromScript}` : ''} : ${image}`);
+  const image = resolveMinecraftImage(packMeta?.mcVersion || server.mc_version, neoforgeVersion);
+  console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'}${neoforgeVersion ? ` / NeoForge ${neoforgeVersion}` : ''} : ${image}`);
   await ensureImage(image, onProgress);
 
   const container = await docker.createContainer({
@@ -406,7 +424,51 @@ async function createServerContainer(server, onProgress) {
   return { containerId: container.id, containerName };
 }
 
-async function startContainer(containerId) {
+/**
+ * Certains modpacks (ex: DeceasedCraft) embarquent le mod "Default Server Properties"
+ * qui remplace intégralement server.properties par default-server.properties à chaque
+ * démarrage du serveur, écrasant la config RCON injectée par itzg via les variables
+ * d'environnement (enable-rcon retombe à false → console/op/stats RCON en ECONNREFUSED).
+ * On fusionne donc les réglages RCON directement dans default-server.properties,
+ * à chaque démarrage pour couvrir aussi les réinstallations/mises à jour de pack.
+ */
+function ensureRconInDefaultServerProperties(server) {
+  if (!server?.id || !server?.rcon_password) return;
+  const file = path.join(DATA_PATH, 'servers', server.id, 'server', 'default-server.properties');
+  try {
+    if (!fs.existsSync(file)) return;
+    let content = fs.readFileSync(file, 'utf8');
+    const settings = {
+      'enable-rcon': 'true',
+      'rcon.port': '25575',
+      'rcon.password': server.rcon_password,
+      'broadcast-rcon-to-ops': 'true',
+    };
+    let changed = false;
+    for (const [key, value] of Object.entries(settings)) {
+      const line = `${key}=${value}`;
+      // 'g' : java.util.Properties garde la dernière occurrence — il faut toutes les remplacer
+      const re = new RegExp(`^${key.replace(/\./g, '\\.')}\\s*=.*$`, 'gm');
+      if (re.test(content)) {
+        const updated = content.replace(re, line);
+        if (updated !== content) { content = updated; changed = true; }
+      } else {
+        if (content.length && !content.endsWith('\n')) content += '\n';
+        content += `${line}\n`;
+        changed = true;
+      }
+    }
+    if (changed) {
+      fs.writeFileSync(file, content, 'utf8');
+      console.log(`[Docker] Config RCON fusionnée dans default-server.properties (mod Default Server Properties) pour ${server.id}`);
+    }
+  } catch (e) {
+    console.warn(`[Docker] Impossible de patcher default-server.properties : ${e.message}`);
+  }
+}
+
+async function startContainer(containerId, server = null) {
+  if (server) ensureRconInDefaultServerProperties(server);
   const container = docker.getContainer(containerId);
   await container.start();
 }
@@ -416,7 +478,8 @@ async function stopContainer(containerId, timeout = 30) {
   await container.stop({ t: timeout });
 }
 
-async function restartContainer(containerId) {
+async function restartContainer(containerId, server = null) {
+  if (server) ensureRconInDefaultServerProperties(server);
   const container = docker.getContainer(containerId);
   await container.restart({ t: 30 });
 }
@@ -589,6 +652,7 @@ async function removeContainerAndImage(containerId) {
 module.exports = {
   docker,
   detectThinPackStartScript,
+  ensureRconInDefaultServerProperties,
   createServerContainer,
   startContainer,
   stopContainer,

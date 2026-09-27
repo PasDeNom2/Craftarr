@@ -11,6 +11,7 @@ const updater = require('../services/updater');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
 const { startLogStream } = require('../websocket/logs');
+const { isMcVersion } = require('../services/mcVersion');
 
 // Multer pour l'upload de fichiers (world zip)
 let multer;
@@ -116,7 +117,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
     `).run(id, name, effectiveModpackId, modpack_name || effectiveModpackId, effectiveModpackSource, modpack_version || null,
       modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
       seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
-      (mc_version && /^1\.\d{1,2}(\.\d{1,2})?$/.test(mc_version) ? mc_version : null),
+      (isMcVersion(mc_version) ? mc_version : null),
       loader_type, auto_update ? 1 : 0);
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
@@ -170,7 +171,7 @@ router.post('/:id/install-mods', authMiddleware, async (req, res, next) => {
       .then(async () => {
         console.log(`[install-mods] Mods installés pour ${server.id}`);
         if (wasRunning && server.container_id) {
-          await dockerService.startContainer(server.container_id);
+          await dockerService.startContainer(server.container_id, server);
           db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
         }
       })
@@ -221,7 +222,7 @@ router.post('/:id/recreate', authMiddleware, async (req, res, next) => {
     db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
       .run(containerId, containerName, 'starting', server.id);
 
-    await dockerService.startContainer(containerId);
+    await dockerService.startContainer(containerId, fresh);
     startLogStream(req.app.get('io'), server.id);
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
@@ -243,9 +244,9 @@ router.post('/:id/start', authMiddleware, async (req, res, next) => {
       const { containerId, containerName } = await dockerService.createServerContainer(server);
       db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
         .run(containerId, containerName, 'starting', server.id);
-      await dockerService.startContainer(containerId);
+      await dockerService.startContainer(containerId, server);
     } else {
-      await dockerService.startContainer(server.container_id);
+      await dockerService.startContainer(server.container_id, server);
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     }
     startLogStream(req.app.get('io'), server.id);
@@ -286,10 +287,10 @@ router.post('/:id/restart', authMiddleware, async (req, res, next) => {
       const { containerId, containerName } = await dockerService.createServerContainer(server);
       db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
         .run(containerId, containerName, 'starting', server.id);
-      await dockerService.startContainer(containerId);
+      await dockerService.startContainer(containerId, server);
       startLogStream(req.app.get('io'), server.id);
     } else {
-      await dockerService.restartContainer(server.container_id);
+      await dockerService.restartContainer(server.container_id, server);
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('running', server.id);
     }
     res.json({ ok: true, status: 'starting' });
@@ -457,7 +458,7 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
 
       // Redémarrage si était actif
       if (wasRunning && server.container_id) {
-        await dockerService.startContainer(server.container_id);
+        await dockerService.startContainer(server.container_id, server);
         db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('running', server.id);
       }
 
