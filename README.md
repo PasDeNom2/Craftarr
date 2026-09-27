@@ -60,13 +60,13 @@ The setup scripts automatically set `HOST_DATA_PATH` to the current directory an
 ### 3 — Open the UI
 
 ```
-http://localhost:8080
+http://localhost:1024
 ```
 
-Admin credentials are **auto-generated** on first start. Retrieve them with:
+On first start, the UI asks you to create the admin account. To prove you own the server, it asks for a **setup token** printed in the backend logs:
 
 ```bash
-docker compose logs backend | grep -i "admin"
+docker compose logs backend | grep -i "jeton"
 ```
 
 ### 4 — Add a CurseForge API key *(optional)*
@@ -84,14 +84,12 @@ docker compose logs backend | grep -i "admin"
 | Variable | Default | Description |
 |---|---|---|
 | `HOST_DATA_PATH` | *(required)* | Absolute path on the host where data is stored (set automatically by the setup scripts) |
-| `UI_PORT` | `8080` | Port exposed for the web UI |
+| `UI_PORT` | `1024` | Port exposed for the web UI |
 | `CURSEFORGE_API_KEY` | — | CurseForge API key (required for CurseForge catalogue) |
 | `MODRINTH_API_KEY` | — | Modrinth API key (optional) |
 | `UPDATE_CHECK_INTERVAL_HOURS` | `6` | How often Craftarr checks for modpack updates |
-| `ADMIN_USERNAME` | `admin` | Override the auto-generated admin username |
-| `ADMIN_PASSWORD` | auto-generated | Override the auto-generated admin password |
 
-> Secrets (JWT secret, encryption key, admin password) are **auto-generated** on first start and stored in `data/secrets.json`. Never commit this file.
+> Secrets (JWT secret, encryption key) are **auto-generated** on first start and stored in `data/secrets.json`. Never commit this file.
 
 ---
 
@@ -101,13 +99,14 @@ docker compose logs backend | grep -i "admin"
 data/
 ├── craftarr.db        ← SQLite database (servers, players, backups metadata)
 ├── secrets.json       ← Auto-generated secrets — do NOT commit
+├── backups/
+│   └── {server-id}/   ← Timestamped .zip snapshots (kept when a server is deleted)
 └── servers/
     └── {server-id}/
-        ├── server/    ← Bind-mounted into the Minecraft container
-        │   ├── world/
-        │   ├── mods/
-        │   └── config/
-        └── backups/   ← Timestamped .tar.gz snapshots
+        └── server/    ← Bind-mounted into the Minecraft container
+            ├── world/
+            ├── mods/
+            └── config/
 ```
 
 ---
@@ -172,9 +171,9 @@ server {
 → Change `UI_PORT` in `.env` and run `docker compose up -d --force-recreate`.
 
 **Admin password lost**  
-→ Set `ADMIN_PASSWORD=newpassword` in `.env` and restart:  
+→ Reset it from the backend container (a random password is printed if you omit it):  
 ```bash
-docker compose up -d --force-recreate
+docker exec -it craftarr-backend node src/scripts/reset-password.js [username] [new-password]
 ```
 
 **CurseForge modpacks don't appear**  

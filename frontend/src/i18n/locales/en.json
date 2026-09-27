@@ -21,6 +21,8 @@
     "error": "Invalid credentials"
   },
   "setup": {
+    "token": "Setup token",
+    "tokenHint": "Shown in the backend logs: docker logs craftarr-backend",
     "subtitle": "First run — create admin account",
     "notice": "This account will be the sole administrator of the panel. Choose a strong password.",
     "username": "Username",
@@ -63,7 +65,19 @@
     "filterVersion": "MC Version",
     "filterCategory": "Category",
     "filterSource": "Source",
-    "category": { "adventure": "Adventure & RPG", "technology": "Technology", "magic": "Magic", "exploration": "Exploration", "combat": "Combat / PvP", "quests": "Quests", "multiplayer": "Multiplayer", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Lightweight", "sci-fi": "Sci-Fi" }
+    "category": {
+      "adventure": "Adventure & RPG",
+      "technology": "Technology",
+      "magic": "Magic",
+      "exploration": "Exploration",
+      "combat": "Combat / PvP",
+      "quests": "Quests",
+      "multiplayer": "Multiplayer",
+      "challenging": "Hardcore",
+      "kitchen-sink": "Kitchen Sink",
+      "lightweight": "Lightweight",
+      "sci-fi": "Sci-Fi"
+    }
   },
   "modpack": {
     "deploy": "Deploy",
@@ -139,7 +153,6 @@
       "update": "Update",
       "backup": "Backup",
       "importWorld": "Import world",
-      "downloadWorld": "Download world",
       "downloadWorld": "Download world",
       "delete": "Delete",
       "installMods": "Install mods",

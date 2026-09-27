@@ -21,6 +21,8 @@
     "error": "Ungültige Anmeldedaten"
   },
   "setup": {
+    "token": "Einrichtungstoken",
+    "tokenHint": "Wird in den Backend-Logs angezeigt: docker logs craftarr-backend",
     "subtitle": "Erststart — Admin-Konto erstellen",
     "notice": "Dieses Konto ist der einzige Administrator des Panels. Wähle ein sicheres Passwort.",
     "username": "Benutzername",
@@ -58,8 +60,24 @@
     "noResultsHint": "Versuche einen anderen Suchbegriff",
     "vanilla": "+ Vanilla",
     "vanillaHint": "Vanilla-Minecraft-Server erstellen",
-    "filters": "Filter", "filtersClear": "Alle löschen", "filterVersion": "MC-Version", "filterCategory": "Kategorie", "filterSource": "Quelle",
-    "category": { "adventure": "Abenteuer & RPG", "technology": "Technologie", "magic": "Magie", "exploration": "Erkundung", "combat": "Kampf / PvP", "quests": "Quests", "multiplayer": "Mehrspieler", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Leichtgewicht", "sci-fi": "Sci-Fi" }
+    "filters": "Filter",
+    "filtersClear": "Alle löschen",
+    "filterVersion": "MC-Version",
+    "filterCategory": "Kategorie",
+    "filterSource": "Quelle",
+    "category": {
+      "adventure": "Abenteuer & RPG",
+      "technology": "Technologie",
+      "magic": "Magie",
+      "exploration": "Erkundung",
+      "combat": "Kampf / PvP",
+      "quests": "Quests",
+      "multiplayer": "Mehrspieler",
+      "challenging": "Hardcore",
+      "kitchen-sink": "Kitchen Sink",
+      "lightweight": "Leichtgewicht",
+      "sci-fi": "Sci-Fi"
+    }
   },
   "modpack": {
     "deploy": "Bereitstellen",
@@ -69,7 +87,20 @@
     "versions": "Versionen",
     "close": "Schließen",
     "openPage": "Seite öffnen",
-    "tabOverview": "Übersicht", "tabMods": "Mods", "officialSite": "Offizielle Seite", "by": "Von", "noDescription": "Keine Beschreibung verfügbar.", "searchMod": "Mod suchen…", "modsLoading": "Modliste wird abgerufen…", "modsLoadingHint": "Das Modpack wird heruntergeladen und analysiert, dies kann einige Sekunden dauern.", "modsError": "Liste konnte nicht abgerufen werden", "modsErrorHint": "Das Modpack verwendet möglicherweise kein Standardformat (mrpack / manifest.json).", "modsCount": "{count} Mods in diesem Modpack", "modsResults": "{count} Ergebnis(se) von {total} Mods", "modsNoMatch": "Kein Mod passend zu \"{search}\"", "modsEmpty": "Keine Mods in diesem Modpack gefunden."
+    "tabOverview": "Übersicht",
+    "tabMods": "Mods",
+    "officialSite": "Offizielle Seite",
+    "by": "Von",
+    "noDescription": "Keine Beschreibung verfügbar.",
+    "searchMod": "Mod suchen…",
+    "modsLoading": "Modliste wird abgerufen…",
+    "modsLoadingHint": "Das Modpack wird heruntergeladen und analysiert, dies kann einige Sekunden dauern.",
+    "modsError": "Liste konnte nicht abgerufen werden",
+    "modsErrorHint": "Das Modpack verwendet möglicherweise kein Standardformat (mrpack / manifest.json).",
+    "modsCount": "{count} Mods in diesem Modpack",
+    "modsResults": "{count} Ergebnis(se) von {total} Mods",
+    "modsNoMatch": "Kein Mod passend zu \"{search}\"",
+    "modsEmpty": "Keine Mods in diesem Modpack gefunden."
   },
   "deploy": {
     "title": "Bereitstellen",

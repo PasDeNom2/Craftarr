@@ -59,8 +59,7 @@ async function checkServerUpdate(server) {
   return isNew ? { latestVersionId, latestVersion, downloadUrl, changelog } : null;
 }
 
-// Dossiers et fichiers "données utilisateur" à préserver lors d'une mise à jour
-const USER_WORLD_DIRS = ['world', 'world_nether', 'world_the_end'];
+// Fichiers "données utilisateur" à préserver lors d'une mise à jour (les mondes : backupService.getWorldDirs)
 const USER_CONFIG_FILES = ['server.properties', 'ops.json', 'whitelist.json', 'banned-players.json', 'banned-ips.json', 'usercache.json'];
 const USER_CONFIG_DIRS = ['config', 'plugins'];
 
@@ -70,7 +69,7 @@ const USER_CONFIG_DIRS = ['config', 'plugins'];
  * (aucune perte de la progression faite pendant l'installation).
  */
 function copyUserData(oldDir, newDir) {
-  for (const name of [...USER_WORLD_DIRS, ...USER_CONFIG_FILES, ...USER_CONFIG_DIRS]) {
+  for (const name of [...backupService.getWorldDirs(oldDir), ...USER_CONFIG_FILES, ...USER_CONFIG_DIRS]) {
     const src = path.join(oldDir, name);
     if (!fs.existsSync(src)) continue;
     fs.cpSync(src, path.join(newDir, name), { recursive: true, force: true });
@@ -136,7 +135,7 @@ async function applyUpdate(server, updateInfo) {
 
     // 2. Arrêt et suppression du container existant (le monde est sauvegardé à l'arrêt)
     if (server.container_id) {
-      try { await dockerService.stopContainer(server.container_id, 30); } catch {}
+      try { await dockerService.stopContainer(server.container_id); } catch {}
       await dockerService.removeContainer(server.container_id);
       db.prepare('UPDATE servers SET container_id = NULL, container_name = NULL WHERE id = ?').run(server.id);
     }

@@ -5,6 +5,9 @@ const api = axios.create({
   timeout: 30000,
 });
 
+// Opérations qui arrêtent un serveur : Docker laisse jusqu'à 120 s à Minecraft pour sauvegarder
+const LONG = { timeout: 180000 };
+
 // Injection automatique du token JWT
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('mcm_token');
@@ -27,8 +30,8 @@ api.interceptors.response.use(
 // Auth
 export const checkSetupNeeded = () =>
   api.get('/auth/setup-needed').then(r => r.data);
-export const setupAdmin = (username, password) =>
-  api.post('/auth/setup', { username, password }).then(r => r.data);
+export const setupAdmin = (username, password, setupToken) =>
+  api.post('/auth/setup', { username, password, setupToken }).then(r => r.data);
 export const login = (username, password) =>
   api.post('/auth/login', { username, password }).then(r => r.data);
 
@@ -44,11 +47,11 @@ export const getModpackMods     = (source, id) => api.get(`/catalog/${source}/${
 export const getServers = () => api.get('/servers').then(r => r.data);
 export const getServer = (id) => api.get(`/servers/${id}`).then(r => r.data);
 export const createServer = (data) => api.post('/servers', data).then(r => r.data);
-export const deleteServer = (id) => api.delete(`/servers/${id}`).then(r => r.data);
+export const deleteServer = (id) => api.delete(`/servers/${id}`, LONG).then(r => r.data);
 export const startServer = (id) => api.post(`/servers/${id}/start`).then(r => r.data);
-export const stopServer = (id) => api.post(`/servers/${id}/stop`).then(r => r.data);
-export const restartServer = (id) => api.post(`/servers/${id}/restart`).then(r => r.data);
-export const backupServer = (id) => api.post(`/servers/${id}/backup`).then(r => r.data);
+export const stopServer = (id) => api.post(`/servers/${id}/stop`, null, LONG).then(r => r.data);
+export const restartServer = (id) => api.post(`/servers/${id}/restart`, null, LONG).then(r => r.data);
+export const backupServer = (id) => api.post(`/servers/${id}/backup`, null, LONG).then(r => r.data);
 export const sendRcon = (id, command) => api.post(`/servers/${id}/rcon`, { command }).then(r => r.data);
 export const getServerMetrics = (id) => api.get(`/servers/${id}/metrics`).then(r => r.data);
 export const updateServer = (id, versionId) =>
@@ -58,7 +61,7 @@ export const importWorld = (id, file) => {
   fd.append('world', file);
   return api.post(`/servers/${id}/world-import`, fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120000,
+    timeout: 30 * 60 * 1000, // upload jusqu'à 2 Go + arrêt du serveur
   }).then(r => r.data);
 };
 
@@ -75,7 +78,7 @@ export const downloadWorld = async (id, serverName) => {
 };
 
 export const patchServer = (id, data) => api.patch(`/servers/${id}`, data).then(r => r.data);
-export const recreateContainer = (id) => api.post(`/servers/${id}/recreate`).then(r => r.data);
+export const recreateContainer = (id) => api.post(`/servers/${id}/recreate`, null, LONG).then(r => r.data);
 export const installMods = (id) => api.post(`/servers/${id}/install-mods`).then(r => r.data);
 export const reinstallServer = (id) => api.post(`/servers/${id}/reinstall`).then(r => r.data);
 export const confirmClientPack = (id) => api.post(`/servers/${id}/install/confirm-client-pack`).then(r => r.data);
@@ -93,7 +96,7 @@ export const putFileContent = (id, path, content) => api.put(`/servers/${id}/fil
 // Backups
 export const getBackups = (serverId) => api.get(`/servers/${serverId}/backups`).then(r => r.data);
 export const deleteBackup = (serverId, backupId) => api.delete(`/servers/${serverId}/backups/${backupId}`).then(r => r.data);
-export const restoreBackup = (serverId, backupId) => api.post(`/servers/${serverId}/backups/${backupId}/restore`).then(r => r.data);
+export const restoreBackup = (serverId, backupId) => api.post(`/servers/${serverId}/backups/${backupId}/restore`, null, LONG).then(r => r.data);
 
 // Players
 export const getPlayers = (serverId) => api.get(`/servers/${serverId}/players`).then(r => r.data);

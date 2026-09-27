@@ -21,6 +21,8 @@
     "error": "凭据无效"
   },
   "setup": {
+    "token": "设置令牌",
+    "tokenHint": "显示在后端日志中：docker logs craftarr-backend",
     "subtitle": "首次运行 — 创建管理员账户",
     "notice": "此账户将是面板的唯一管理员。请选择强密码。",
     "username": "用户名",
@@ -58,8 +60,24 @@
     "noResultsHint": "尝试其他搜索词",
     "vanilla": "+ Vanilla",
     "vanillaHint": "创建原版 Minecraft 服务器",
-    "filters": "筛选", "filtersClear": "清除全部", "filterVersion": "MC版本", "filterCategory": "类别", "filterSource": "来源",
-    "category": { "adventure": "冒险与RPG", "technology": "科技", "magic": "魔法", "exploration": "探索", "combat": "战斗/PvP", "quests": "任务", "multiplayer": "多人游戏", "challenging": "硬核", "kitchen-sink": "大杂烩", "lightweight": "轻量级", "sci-fi": "科幻" }
+    "filters": "筛选",
+    "filtersClear": "清除全部",
+    "filterVersion": "MC版本",
+    "filterCategory": "类别",
+    "filterSource": "来源",
+    "category": {
+      "adventure": "冒险与RPG",
+      "technology": "科技",
+      "magic": "魔法",
+      "exploration": "探索",
+      "combat": "战斗/PvP",
+      "quests": "任务",
+      "multiplayer": "多人游戏",
+      "challenging": "硬核",
+      "kitchen-sink": "大杂烩",
+      "lightweight": "轻量级",
+      "sci-fi": "科幻"
+    }
   },
   "modpack": {
     "deploy": "部署",
@@ -69,7 +87,20 @@
     "versions": "版本",
     "close": "关闭",
     "openPage": "查看页面",
-    "tabOverview": "概览", "tabMods": "模组", "officialSite": "官方网站", "by": "作者", "noDescription": "暂无描述。", "searchMod": "搜索模组…", "modsLoading": "正在获取模组列表…", "modsLoadingHint": "正在下载和分析模组包，这可能需要几秒钟。", "modsError": "无法获取列表", "modsErrorHint": "该模组包可能未使用标准格式（mrpack / manifest.json）。", "modsCount": "此模组包共有 {count} 个模组", "modsResults": "{total} 个模组中找到 {count} 个结果", "modsNoMatch": "没有与\"{search}\"匹配的模组", "modsEmpty": "此模组包中未找到模组。"
+    "tabOverview": "概览",
+    "tabMods": "模组",
+    "officialSite": "官方网站",
+    "by": "作者",
+    "noDescription": "暂无描述。",
+    "searchMod": "搜索模组…",
+    "modsLoading": "正在获取模组列表…",
+    "modsLoadingHint": "正在下载和分析模组包，这可能需要几秒钟。",
+    "modsError": "无法获取列表",
+    "modsErrorHint": "该模组包可能未使用标准格式（mrpack / manifest.json）。",
+    "modsCount": "此模组包共有 {count} 个模组",
+    "modsResults": "{total} 个模组中找到 {count} 个结果",
+    "modsNoMatch": "没有与\"{search}\"匹配的模组",
+    "modsEmpty": "此模组包中未找到模组。"
   },
   "deploy": {
     "title": "部署",

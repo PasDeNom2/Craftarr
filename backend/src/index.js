@@ -1,20 +1,20 @@
 require('dotenv').config();
 
 // Génération/chargement des secrets persistants AVANT tout le reste
-const { loadOrCreateSecrets } = require('./config/secrets');
+const { loadOrCreateSecrets, getJwtSecret } = require('./config/secrets');
 loadOrCreateSecrets();
+getJwtSecret(); // échoue immédiatement (et lisiblement) si le secret est invalide
 
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const { initDb } = require('./config/database');
-const { ensureAdminUser } = require('./routes/auth');
+const { initSetupToken } = require('./routes/auth');
 const errorHandler = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/auth').router;
@@ -33,6 +33,7 @@ const PORT = process.env.PORT || 3000;
 
 // ─── Init DB ────────────────────────────────────────────────
 initDb();
+require('./services/backup').migrateBackupLocation();
 
 // Reset stuck installs/updates from a previous process crash
 {
@@ -47,12 +48,28 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: '*', credentials: true }));
+// Pas de CORS : l'UI est servie sur la même origine (nginx en prod, proxy Vite en dev).
+// L'ancien cors({ origin: '*' }) permettait à n'importe quel site d'appeler l'API.
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('tiny'));
 
+// Le backend n'est joignable que via nginx (1 proxy) : req.ip = vraie IP du client (X-Forwarded-For)
+app.set('trust proxy', 1);
+
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 200, standardHeaders: true });
 app.use('/api/', limiter);
+
+// Anti brute-force : 10 échecs / 15 min par IP sur la connexion et la création du compte admin.
+// Les connexions réussies ne sont pas comptées (l'admin ne se bloque pas lui-même).
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  skipSuccessfulRequests: true,
+  message: { error: 'Trop de tentatives — réessayez dans 15 minutes' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/setup', authLimiter);
 
 // ─── Routes ─────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -68,17 +85,17 @@ app.use(errorHandler);
 
 // ─── Socket.io ──────────────────────────────────────────────
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
   transports: ['websocket', 'polling'],
 });
 
 // Authentification socket via JWT
 const jwt = require('jsonwebtoken');
 io.use((socket, next) => {
-  const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+  // Token uniquement via auth (pas en query string : il finirait dans les logs d'accès)
+  const token = socket.handshake.auth?.token;
   if (!token) return next(new Error('Token manquant'));
   try {
-    socket.user = jwt.verify(token, process.env.JWT_SECRET || 'change-me');
+    socket.user = jwt.verify(token, getJwtSecret());
     next();
   } catch {
     next(new Error('Token invalide'));
@@ -128,7 +145,7 @@ async function reconcileServerStates() {
 
 server.listen(PORT, async () => {
   console.log(`[Craftarr] Backend démarré sur le port ${PORT}`);
-  await ensureAdminUser();
+  initSetupToken();
   await reconcileServerStates();
   metrics.startPolling();
   updater.scheduleUpdater();

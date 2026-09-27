@@ -21,6 +21,8 @@
     "error": "Ongeldige inloggegevens"
   },
   "setup": {
+    "token": "Installatietoken",
+    "tokenHint": "Te zien in de backend-logs: docker logs craftarr-backend",
     "subtitle": "Eerste start — beheerdersaccount aanmaken",
     "notice": "Dit account wordt de enige beheerder van het paneel. Kies een sterk wachtwoord.",
     "username": "Gebruikersnaam",
@@ -58,8 +60,24 @@
     "noResultsHint": "Probeer een andere zoekterm",
     "vanilla": "+ Vanilla",
     "vanillaHint": "Maak een Vanilla Minecraft-server",
-    "filters": "Filters", "filtersClear": "Alles wissen", "filterVersion": "MC-versie", "filterCategory": "Categorie", "filterSource": "Bron",
-    "category": { "adventure": "Avontuur & RPG", "technology": "Technologie", "magic": "Magie", "exploration": "Verkenning", "combat": "Gevecht / PvP", "quests": "Quests", "multiplayer": "Multiplayer", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Lichtgewicht", "sci-fi": "Sci-Fi" }
+    "filters": "Filters",
+    "filtersClear": "Alles wissen",
+    "filterVersion": "MC-versie",
+    "filterCategory": "Categorie",
+    "filterSource": "Bron",
+    "category": {
+      "adventure": "Avontuur & RPG",
+      "technology": "Technologie",
+      "magic": "Magie",
+      "exploration": "Verkenning",
+      "combat": "Gevecht / PvP",
+      "quests": "Quests",
+      "multiplayer": "Multiplayer",
+      "challenging": "Hardcore",
+      "kitchen-sink": "Kitchen Sink",
+      "lightweight": "Lichtgewicht",
+      "sci-fi": "Sci-Fi"
+    }
   },
   "modpack": {
     "deploy": "Implementeren",
@@ -69,7 +87,20 @@
     "versions": "Versies",
     "close": "Sluiten",
     "openPage": "Pagina bekijken",
-    "tabOverview": "Overzicht", "tabMods": "Mods", "officialSite": "Officiële site", "by": "Door", "noDescription": "Geen beschrijving beschikbaar.", "searchMod": "Zoek een mod…", "modsLoading": "Modlijst ophalen…", "modsLoadingHint": "Het modpack wordt gedownload en geanalyseerd, dit kan enkele seconden duren.", "modsError": "Kan lijst niet ophalen", "modsErrorHint": "Het modpack gebruikt mogelijk geen standaardformaat (mrpack / manifest.json).", "modsCount": "{count} mods in dit modpack", "modsResults": "{count} resultaat/resultaten van {total} mods", "modsNoMatch": "Geen mod overeenkomend met \"{search}\"", "modsEmpty": "Geen mods gevonden in dit modpack."
+    "tabOverview": "Overzicht",
+    "tabMods": "Mods",
+    "officialSite": "Officiële site",
+    "by": "Door",
+    "noDescription": "Geen beschrijving beschikbaar.",
+    "searchMod": "Zoek een mod…",
+    "modsLoading": "Modlijst ophalen…",
+    "modsLoadingHint": "Het modpack wordt gedownload en geanalyseerd, dit kan enkele seconden duren.",
+    "modsError": "Kan lijst niet ophalen",
+    "modsErrorHint": "Het modpack gebruikt mogelijk geen standaardformaat (mrpack / manifest.json).",
+    "modsCount": "{count} mods in dit modpack",
+    "modsResults": "{count} resultaat/resultaten van {total} mods",
+    "modsNoMatch": "Geen mod overeenkomend met \"{search}\"",
+    "modsEmpty": "Geen mods gevonden in dit modpack."
   },
   "deploy": {
     "title": "Implementeren",

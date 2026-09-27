@@ -1,12 +1,40 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { getDb } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+const { getJwtSecret } = require('../config/secrets');
+
+// ─── Jeton de premier démarrage ───────────────────────────────
+// Tant qu'aucun compte n'existe, /setup exige ce jeton, affiché uniquement dans les logs du backend.
+// Sans lui, n'importe qui atteignant l'UI avant l'admin pouvait créer le compte et prendre la main.
+let setupToken = null;
+
+function initSetupToken() {
+  const { n } = getDb().prepare('SELECT COUNT(*) as n FROM users').get();
+  if (n > 0) { setupToken = null; return; }
+  setupToken = crypto.randomBytes(6).toString('hex').toUpperCase(); // 12 caractères
+  console.log('');
+  console.log('╔══════════════════════════════════════════════════╗');
+  console.log('║           Craftarr — Premier démarrage           ║');
+  console.log('╠══════════════════════════════════════════════════╣');
+  console.log(`║  Jeton de configuration : ${setupToken.padEnd(23)}║`);
+  console.log("║  À saisir dans l'interface pour créer le compte  ║");
+  console.log('║  administrateur (docker logs craftarr-backend).  ║');
+  console.log('╚══════════════════════════════════════════════════╝');
+  console.log('');
+}
+
+function isValidSetupToken(candidate) {
+  if (!setupToken || typeof candidate !== 'string') return false;
+  const a = Buffer.from(candidate.trim().toUpperCase());
+  const b = Buffer.from(setupToken);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 
 // ─── GET /api/auth/setup-needed ───────────────────────────────
 // Retourne { needed: true } si aucun utilisateur n'existe encore.
@@ -28,7 +56,10 @@ router.post('/setup', async (req, res, next) => {
       return res.status(403).json({ error: 'Un compte administrateur existe déjà.' });
     }
 
-    const { username, password } = req.body;
+    const { username, password, setupToken: candidate } = req.body;
+    if (!isValidSetupToken(candidate)) {
+      return res.status(403).json({ error: 'Jeton de configuration invalide — voir les logs du backend (docker logs craftarr-backend)' });
+    }
     if (!username || !password) {
       return res.status(400).json({ error: 'Identifiants requis' });
     }
@@ -42,9 +73,10 @@ router.post('/setup', async (req, res, next) => {
     const id = uuidv4();
     const hash = await bcrypt.hash(password, 10);
     db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run(id, username.trim(), hash);
+    setupToken = null; // usage unique
     console.log(`[Auth] Compte admin créé via setup : ${username.trim()}`);
 
-    const token = jwt.sign({ id, username: username.trim() }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id, username: username.trim() }, getJwtSecret(), { expiresIn: '7d' });
     res.json({ token, username: username.trim() });
   } catch (err) {
     next(err);
@@ -69,7 +101,7 @@ router.post('/login', async (req, res, next) => {
     }
     const token = jwt.sign(
       { id: user.id, username: user.username },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
     res.json({ token, username: user.username });
@@ -83,7 +115,4 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json({ id: req.user.id, username: req.user.username });
 });
 
-// Conservé pour compatibilité — n'est plus appelé au démarrage
-async function ensureAdminUser() {}
-
-module.exports = { router, ensureAdminUser };
+module.exports = { router, initSetupToken };

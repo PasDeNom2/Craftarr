@@ -8,6 +8,7 @@ import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { Layers, ShieldCheck } from 'lucide-react';
 
 export default function SetupPage() {
+  const [setupToken, setSetupToken] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -18,7 +19,7 @@ export default function SetupPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!username || !password || !confirm) return;
+    if (!setupToken || !username || !password || !confirm) return;
     if (password !== confirm) {
       toast.error(t('setup.passwordMismatch'));
       return;
@@ -29,7 +30,7 @@ export default function SetupPage() {
     }
     setLoading(true);
     try {
-      const data = await setupAdmin(username, password);
+      const data = await setupAdmin(username, password, setupToken);
       setToken(data.token);
       setUser({ username: data.username });
       toast.success(t('setup.success'));
@@ -53,7 +54,7 @@ export default function SetupPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F0F0F0] rounded-xl mb-4">
             <Layers size={20} strokeWidth={2} className="text-black" />
           </div>
-          <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">MCManager</h1>
+          <h1 className="text-xl font-semibold text-[#F0F0F0] tracking-tight">Craftarr</h1>
           <p className="text-[#6B6B76] text-sm mt-1">{t('setup.subtitle')}</p>
         </div>
 
@@ -71,6 +72,22 @@ export default function SetupPage() {
           style={{ background: '#131316', border: '1px solid rgba(255,255,255,0.06)' }}
         >
           <div>
+            <label className="label">{t('setup.token')}</label>
+            <input
+              type="text"
+              className="input font-mono uppercase tracking-widest"
+              value={setupToken}
+              onChange={e => setSetupToken(e.target.value)}
+              placeholder="XXXXXXXXXXXX"
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              required
+            />
+            <p className="text-[11px] text-[#4A4A55] mt-1">{t('setup.tokenHint')}</p>
+          </div>
+
+          <div>
             <label className="label">{t('setup.username')}</label>
             <input
               type="text"
@@ -79,7 +96,6 @@ export default function SetupPage() {
               onChange={e => setUsername(e.target.value)}
               placeholder="admin"
               minLength={3}
-              autoFocus
               autoComplete="username"
               required
             />

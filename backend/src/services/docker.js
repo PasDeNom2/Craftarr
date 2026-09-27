@@ -9,6 +9,10 @@ const DATA_PATH = process.env.DATA_PATH || '/data';
 // (Docker daemon interprète les chemins de bind mounts depuis le point de vue de l'hôte)
 const HOST_DATA_PATH = process.env.HOST_DATA_PATH || DATA_PATH;
 const MC_NETWORK = 'craftarr';
+// Délai max (s) laissé à Minecraft pour sauvegarder avant que Docker ne tue le process.
+// Un gros modpack peut mettre bien plus de 30 s : un SIGKILL en pleine sauvegarde corrompt des chunks.
+// Docker rend la main dès que le serveur s'est arrêté : ce n'est qu'un plafond.
+const STOP_TIMEOUT = 120;
 
 async function ensureNetwork() {
   const networks = await docker.listNetworks({ filters: { name: [MC_NETWORK] } });
@@ -239,6 +243,9 @@ function buildEnvVars(server) {
     `RCON_PORT=25575`,
     `RCON_PASSWORD=${server.rcon_password}`,
     `MOTD=${server.motd || `${server.name} — Powered by Craftarr`}`,
+    // mc-server-runner attend STOP_DURATION s après "stop" avant de tuer Java (défaut 60 s) :
+    // on l'aligne juste sous le délai Docker pour que la sauvegarde puisse se terminer
+    `STOP_DURATION=${STOP_TIMEOUT - 10}`,
   ];
 
   if (installedNeoForgeVersion) {
@@ -380,7 +387,7 @@ async function createServerContainer(server, onProgress) {
   for (const c of stale) {
     console.log(`[Docker] Suppression de l'ancien container ${containerName} (${c.Id.slice(0, 12)})`);
     const old = docker.getContainer(c.Id);
-    try { await old.stop({ t: 30 }); } catch {}
+    try { await old.stop({ t: STOP_TIMEOUT }); } catch {}
     await old.remove({ force: true });
   }
 
@@ -405,17 +412,20 @@ async function createServerContainer(server, onProgress) {
     Env: buildEnvVars(server),
     ExposedPorts: {
       '25565/tcp': {},
-      '25575/tcp': {},
     },
     HostConfig: {
       Binds: [`${hostServerDir}:/data`],
+      // RCON (25575) volontairement NON publié sur l'hôte : le backend y accède via le réseau
+      // Docker interne (rcon.js → container_name:25575). Le publier exposait la console du
+      // serveur à tout le réseau, protégée uniquement par le mot de passe RCON.
       PortBindings: {
         '25565/tcp': [{ HostPort: String(server.port) }],
-        '25575/tcp': [{ HostPort: String(server.rcon_port) }],
       },
       RestartPolicy: { Name: 'unless-stopped' },
       Memory: server.ram_mb * 1024 * 1024 * 2,
     },
+    // Laisse à Docker le temps d'un arrêt propre (voir STOP_TIMEOUT) même hors Craftarr (docker stop)
+    StopTimeout: STOP_TIMEOUT,
     NetworkingConfig: {
       EndpointsConfig: { [MC_NETWORK]: {} },
     },
@@ -473,7 +483,7 @@ async function startContainer(containerId, server = null) {
   await container.start();
 }
 
-async function stopContainer(containerId, timeout = 30) {
+async function stopContainer(containerId, timeout = STOP_TIMEOUT) {
   const container = docker.getContainer(containerId);
   await container.stop({ t: timeout });
 }
@@ -481,12 +491,12 @@ async function stopContainer(containerId, timeout = 30) {
 async function restartContainer(containerId, server = null) {
   if (server) ensureRconInDefaultServerProperties(server);
   const container = docker.getContainer(containerId);
-  await container.restart({ t: 30 });
+  await container.restart({ t: STOP_TIMEOUT });
 }
 
 async function removeContainer(containerId) {
   const container = docker.getContainer(containerId);
-  try { await container.stop({ t: 10 }); } catch {}
+  try { await container.stop({ t: STOP_TIMEOUT }); } catch {}
   await container.remove({ force: true });
 }
 

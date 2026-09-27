@@ -21,6 +21,8 @@
     "error": "Credenciais inválidas"
   },
   "setup": {
+    "token": "Token de configuração",
+    "tokenHint": "Exibido nos logs do backend: docker logs craftarr-backend",
     "subtitle": "Primeiro acesso — criar conta de administrador",
     "notice": "Esta conta será o único administrador do painel. Escolha uma senha forte.",
     "username": "Usuário",
@@ -58,8 +60,24 @@
     "noResultsHint": "Tente outro termo de pesquisa",
     "vanilla": "+ Vanilla",
     "vanillaHint": "Criar um servidor Minecraft Vanilla",
-    "filters": "Filtros", "filtersClear": "Limpar tudo", "filterVersion": "Versão MC", "filterCategory": "Categoria", "filterSource": "Fonte",
-    "category": { "adventure": "Aventura e RPG", "technology": "Tecnologia", "magic": "Magia", "exploration": "Exploração", "combat": "Combate / PvP", "quests": "Missões", "multiplayer": "Multijogador", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Leve", "sci-fi": "Ficção científica" }
+    "filters": "Filtros",
+    "filtersClear": "Limpar tudo",
+    "filterVersion": "Versão MC",
+    "filterCategory": "Categoria",
+    "filterSource": "Fonte",
+    "category": {
+      "adventure": "Aventura e RPG",
+      "technology": "Tecnologia",
+      "magic": "Magia",
+      "exploration": "Exploração",
+      "combat": "Combate / PvP",
+      "quests": "Missões",
+      "multiplayer": "Multijogador",
+      "challenging": "Hardcore",
+      "kitchen-sink": "Kitchen Sink",
+      "lightweight": "Leve",
+      "sci-fi": "Ficção científica"
+    }
   },
   "modpack": {
     "deploy": "Implantar",
@@ -69,7 +87,20 @@
     "versions": "Versões",
     "close": "Fechar",
     "openPage": "Ver página",
-    "tabOverview": "Visão geral", "tabMods": "Mods", "officialSite": "Site oficial", "by": "Por", "noDescription": "Nenhuma descrição disponível.", "searchMod": "Pesquisar mod…", "modsLoading": "Obtendo lista de mods…", "modsLoadingHint": "O modpack está sendo baixado e analisado, isso pode levar alguns segundos.", "modsError": "Não foi possível obter a lista", "modsErrorHint": "O modpack pode não usar um formato padrão (mrpack / manifest.json).", "modsCount": "{count} mods neste modpack", "modsResults": "{count} resultado(s) de {total} mods", "modsNoMatch": "Nenhum mod correspondente a \"{search}\"", "modsEmpty": "Nenhum mod encontrado neste modpack."
+    "tabOverview": "Visão geral",
+    "tabMods": "Mods",
+    "officialSite": "Site oficial",
+    "by": "Por",
+    "noDescription": "Nenhuma descrição disponível.",
+    "searchMod": "Pesquisar mod…",
+    "modsLoading": "Obtendo lista de mods…",
+    "modsLoadingHint": "O modpack está sendo baixado e analisado, isso pode levar alguns segundos.",
+    "modsError": "Não foi possível obter a lista",
+    "modsErrorHint": "O modpack pode não usar um formato padrão (mrpack / manifest.json).",
+    "modsCount": "{count} mods neste modpack",
+    "modsResults": "{count} resultado(s) de {total} mods",
+    "modsNoMatch": "Nenhum mod correspondente a \"{search}\"",
+    "modsEmpty": "Nenhum mod encontrado neste modpack."
   },
   "deploy": {
     "title": "Implantar",

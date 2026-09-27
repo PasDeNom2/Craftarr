@@ -21,6 +21,8 @@
     "error": "Identifiants invalides"
   },
   "setup": {
+    "token": "Jeton de configuration",
+    "tokenHint": "Affiché dans les logs du backend : docker logs craftarr-backend",
     "subtitle": "Premier démarrage — création du compte",
     "notice": "Ce compte sera le seul administrateur du panel. Choisissez un mot de passe robuste.",
     "username": "Nom d'utilisateur",
@@ -63,7 +65,19 @@
     "filterVersion": "Version MC",
     "filterCategory": "Catégorie",
     "filterSource": "Source",
-    "category": { "adventure": "Aventure & RPG", "technology": "Technologie", "magic": "Magie", "exploration": "Exploration", "combat": "Combat / PvP", "quests": "Quêtes", "multiplayer": "Multijoueur", "challenging": "Hardcore", "kitchen-sink": "Kitchen Sink", "lightweight": "Léger", "sci-fi": "Sci-Fi" }
+    "category": {
+      "adventure": "Aventure & RPG",
+      "technology": "Technologie",
+      "magic": "Magie",
+      "exploration": "Exploration",
+      "combat": "Combat / PvP",
+      "quests": "Quêtes",
+      "multiplayer": "Multijoueur",
+      "challenging": "Hardcore",
+      "kitchen-sink": "Kitchen Sink",
+      "lightweight": "Léger",
+      "sci-fi": "Sci-Fi"
+    }
   },
   "modpack": {
     "deploy": "Déployer",
