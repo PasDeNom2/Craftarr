@@ -279,7 +279,8 @@
     transition: color .2s, background-color .2s, transform .15s cubic-bezier(.2, .8, .2, 1);
   }
   .icon-btn:hover { color: var(--fg); background: rgba(255, 255, 255, 0.08); }
-  .icon-btn:active { transform: scale(.9); }
+  .icon-btn:active:not(:disabled) { transform: scale(.9); }
+  .icon-btn:disabled { opacity: .3; cursor: default; background: transparent; }
   .icon-btn[aria-pressed="true"] { color: var(--fg); background: rgba(255, 255, 255, 0.14); }
 
   /* Puits sombre pour le terminal, posé dans une carte de verre */
@@ -345,6 +346,28 @@
 }
 .pop-in { animation: pop-in .32s cubic-bezier(.2, .9, .25, 1.15) both; }
 
+/* ── Éditeur de fichiers ── */
+.code-ta::selection { background: rgba(10, 132, 255, 0.38); color: transparent; }
+.code-hl .tk-key   { color: #9CDCFE; }
+.code-hl .tk-str   { color: #F5C97A; }
+.code-hl .tk-num   { color: #B5E3A1; }
+.code-hl .tk-bool  { color: #FF9F7A; }
+.code-hl .tk-com   { color: rgba(235, 235, 245, 0.34); font-style: italic; }
+.code-hl .tk-sec   { color: #D7A6FF; font-weight: 600; }
+.code-hl .tk-punct { color: rgba(235, 235, 245, 0.45); }
+.code-hl .tk-err   { color: var(--danger); }
+.code-hl .tk-warn  { color: var(--warn); }
+
+/* Damier derrière les aperçus d'images (transparence) */
+.checker {
+  background-color: rgba(255, 255, 255, 0.03);
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.05) 75%),
+    linear-gradient(45deg, rgba(255,255,255,.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.05) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
 /* Changement de page : léger zoom + flou qui se dissipe */
 @keyframes page-in {
   from { opacity: 0; transform: translateY(8px) scale(.99); filter: blur(6px); }
@@ -368,8 +391,23 @@
 .stagger > *:nth-child(6) { animation-delay: .2s; }
 .stagger > *:nth-child(n+7) { animation-delay: .24s; }
 
+/* Lignes de liste : cascade courte (les 12 premières), le reste apparaît d'un coup */
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.stagger-fast > * { animation: row-in .3s cubic-bezier(.2, .8, .2, 1) both; }
+.stagger-fast > *:nth-child(2)  { animation-delay: 15ms; }
+.stagger-fast > *:nth-child(3)  { animation-delay: 30ms; }
+.stagger-fast > *:nth-child(4)  { animation-delay: 45ms; }
+.stagger-fast > *:nth-child(5)  { animation-delay: 60ms; }
+.stagger-fast > *:nth-child(6)  { animation-delay: 75ms; }
+.stagger-fast > *:nth-child(7)  { animation-delay: 90ms; }
+.stagger-fast > *:nth-child(8)  { animation-delay: 105ms; }
+.stagger-fast > *:nth-child(n+9) { animation-delay: 120ms; }
+
 @media (prefers-reduced-motion: reduce) {
-  .page-in, .tab-in, .card-in, .pop-in, .stagger > * { animation: none !important; }
+  .page-in, .tab-in, .card-in, .pop-in, .stagger > *, .stagger-fast > * { animation: none !important; }
   .segmented-thumb { transition: none; }
 }
 

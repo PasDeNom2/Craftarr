@@ -11,6 +11,7 @@ import {
   LogOut, MessageSquareWarning, ShieldCheck, Clock, Hash, Crown,
 } from 'lucide-react';
 import clsx from 'clsx';
+import Modal from '../ui/Modal';
 
 
 
@@ -55,23 +56,15 @@ function ActionModal({ title, placeholder, onConfirm, onClose, confirmLabel, con
   const [reason, setReason] = useState('');
   const { t } = useI18n();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="rounded-2xl p-6 space-y-4 w-full max-w-sm" style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <h3 className="text-sm font-semibold text-fg">{title}</h3>
-        <input
-          className="input w-full"
-          placeholder={placeholder}
-          value={reason}
-          onChange={e => setReason(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && onConfirm(reason)}
-          autoFocus
-        />
-        <div className="flex gap-2 pt-1">
-          <button className="btn-ghost flex-1" onClick={onClose}>{t('common.cancel')}</button>
-          <button className={`${confirmClass} flex-1`} onClick={() => onConfirm(reason)}>{confirmLabel}</button>
+    <Modal open onClose={onClose} title={title} size="sm">
+      <form className="px-6 pb-6 space-y-4" onSubmit={e => { e.preventDefault(); onConfirm(reason); }}>
+        <input className="input w-full" placeholder={placeholder} value={reason} onChange={e => setReason(e.target.value)} autoFocus />
+        <div className="flex gap-2">
+          <button type="button" className="btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
+          <button type="submit" className={`${confirmClass} ml-auto`}>{confirmLabel}</button>
         </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -95,14 +88,13 @@ function PlayerEvents({ server, player, onBack }) {
   return (
     <div className="space-y-4 max-w-3xl">
       <div className="flex items-center gap-3">
-        <button className="btn-ghost text-xs py-1 px-2.5 gap-1.5" onClick={onBack}>
-          <ChevronLeft size={13} strokeWidth={1.5} />
-          {t('players.backToList')}
+        <button className="icon-btn !h-9 !min-w-9" onClick={onBack} title={t('players.backToList')}>
+          <ChevronLeft size={18} />
         </button>
         <div className="flex items-center gap-2">
-          <PlayerAvatar username={player.username} size={32} className="rounded-lg" />
+          <PlayerAvatar username={player.username} size={40} className="rounded-xl" />
           <div>
-            <p className="text-sm font-semibold text-fg">{player.username}</p>
+            <p className="text-[17px] font-semibold text-fg">{player.username}</p>
             <p className="text-xs text-fg-2">{events.length} {t('players.events')}</p>
           </div>
           {player.is_banned === 1 && (
@@ -118,13 +110,12 @@ function PlayerEvents({ server, player, onBack }) {
       ) : events.length === 0 ? (
         <div className="text-center py-12 text-sm text-fg-2">{t('players.noEvents')}</div>
       ) : (
-        <div className="space-y-1">
+        <div className="card !p-0 overflow-hidden divide-y divide-white/[0.06] stagger-fast">
           {events.map(ev => {
             const meta = EVENT_ICONS[ev.type] || { icon: '•', color: 'var(--fg-2)' };
             return (
               <div key={ev.id}
-                className="flex items-start gap-3 px-3 py-2 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
+                className="flex items-start gap-3 px-4 py-2.5"
               >
                 <span className="text-sm w-5 text-center shrink-0 mt-0.5" style={{ color: meta.color }}>{meta.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -221,7 +212,7 @@ export default function PlayersPanel({ server }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h3 className="text-sm font-semibold text-fg">{t('players.title')}</h3>
+          <h3 className="text-[17px] font-semibold text-fg">{t('players.title')}</h3>
           <p className="text-xs text-fg-2 mt-0.5">
             {players.length} {t('players.totalPlayers')}
             {players.filter(p => p.is_banned).length > 0 && (
@@ -232,9 +223,9 @@ export default function PlayersPanel({ server }) {
           </p>
         </div>
         <div className="relative">
-          <Search size={13} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
+          <Search size={13} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
           <input
-            className="input pl-8 text-xs py-1.5 w-44"
+            className="input !h-9 !rounded-full !pl-8 text-xs w-52"
             placeholder={t('players.search')}
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -254,34 +245,34 @@ export default function PlayersPanel({ server }) {
           {!search && <p className="text-xs text-fg-3">{t('players.noPlayersHint')}</p>}
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div className="card !p-0 overflow-hidden divide-y divide-white/[0.06] stagger-fast">
           {filtered.map(player => (
             <div
               key={player.username}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl group transition-colors duration-150"
-              style={{ background: 'var(--surface)', border: `1px solid ${player.is_banned ? 'rgba(var(--danger-rgb),0.15)' : 'rgba(255,255,255,0.06)'}` }}
+              className="flex items-center gap-3 px-4 py-3 group transition-colors duration-150 hover:bg-white/[0.03]"
+              style={player.is_banned ? { background: 'rgba(var(--danger-rgb),0.05)' } : undefined}
             >
               {/* Avatar */}
               <div className="shrink-0 relative" style={{ opacity: player.is_banned ? 0.5 : 1 }}>
-                <PlayerAvatar username={player.username} size={36} className="rounded-lg" />
+                <PlayerAvatar username={player.username} size={38} className="rounded-xl" />
                 {player.is_online === 1 && (
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                    style={{ background: 'var(--accent)', borderColor: 'var(--surface)' }} />
+                    style={{ background: 'var(--accent)', borderColor: 'rgb(30,30,36)', boxShadow: '0 0 6px var(--accent)' }} />
                 )}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-fg">{player.username}</span>
+                  <span className="text-[14px] font-medium text-fg">{player.username}</span>
                   {player.is_op === 1 && (
-                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(var(--warn-rgb),0.1)', color: 'var(--warn)' }}>
+                    <span className="flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(var(--warn-rgb),0.1)', color: 'var(--warn)' }}>
                       <Crown size={9} strokeWidth={2} />
                       {t('players.op')}
                     </span>
                   )}
                   {player.is_banned === 1 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(var(--danger-rgb),0.1)', color: 'var(--danger)' }}>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(var(--danger-rgb),0.12)', color: 'var(--danger)' }}>
                       {t('players.banned')}
                     </span>
                   )}
@@ -308,7 +299,7 @@ export default function PlayersPanel({ server }) {
                 {/* Bouton unban toujours visible pour les joueurs bannis */}
                 {player.is_banned === 1 && (
                   <button
-                    className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                    className="btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1"
                     onClick={() => unbanMut.mutate({ username: player.username })}
                     disabled={unbanMut.isPending}
                     style={{ color: 'var(--accent)' }}
@@ -320,7 +311,7 @@ export default function PlayersPanel({ server }) {
                 {/* Actions secondaires visibles au survol */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
-                    className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                    className="btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1"
                     onClick={() => setSelectedPlayer(player)}
                     title={t('players.viewLogs')}
                   >
@@ -330,7 +321,7 @@ export default function PlayersPanel({ server }) {
                   {player.is_banned !== 1 && (
                     player.is_op === 1 ? (
                       <button
-                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        className="btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1"
                         onClick={() => deopMut.mutate({ username: player.username })}
                         disabled={deopMut.isPending}
                         title={t('players.deop')}
@@ -340,7 +331,7 @@ export default function PlayersPanel({ server }) {
                       </button>
                     ) : (
                       <button
-                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        className="btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1"
                         onClick={() => opMut.mutate({ username: player.username })}
                         disabled={opMut.isPending}
                         title={t('players.op')}
@@ -353,7 +344,7 @@ export default function PlayersPanel({ server }) {
                   {server.status === 'running' && player.is_banned !== 1 && (
                     <>
                       <button
-                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        className="btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1"
                         onClick={() => setModal({ type: 'warn', player })}
                         title={t('players.warn')}
                         style={{ color: 'var(--orange)' }}
@@ -361,7 +352,7 @@ export default function PlayersPanel({ server }) {
                         <AlertTriangle size={11} strokeWidth={1.5} />
                       </button>
                       <button
-                        className="btn-secondary text-[11px] py-1 px-2 gap-1"
+                        className="btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1"
                         onClick={() => setModal({ type: 'kick', player })}
                         title={t('players.kick')}
                       >
@@ -371,7 +362,7 @@ export default function PlayersPanel({ server }) {
                   )}
                   {player.is_banned !== 1 && (
                     <button
-                      className="btn-danger text-[11px] py-1 px-2 gap-1"
+                      className="btn-danger !h-8 !px-2.5 text-[11.5px] gap-1"
                       onClick={() => setModal({ type: 'ban', player })}
                       title={t('players.ban')}
                     >

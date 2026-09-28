@@ -28,11 +28,27 @@ export const useServerStore = create((set, get) => ({
   })),
 }));
 
+// Historique gardé en mémoire (~10 min à un point toutes les 2 s) : survit aux changements d'onglet
+const METRICS_HISTORY = 300;
+
 export const useMetricsStore = create((set) => ({
   metrics: {},  // { [serverId]: metricsObject }
-  updateMetrics: (serverId, data) => set(state => ({
-    metrics: { ...state.metrics, [serverId]: data },
-  })),
+  history: {},  // { [serverId]: [{ t, memUsed, cpu, tps, players }] }
+  updateMetrics: (serverId, data) => set(state => {
+    const prev = state.history[serverId] || [];
+    const point = {
+      t: Date.now(),
+      memUsed: data.memUsed ?? null,
+      cpu: data.cpu != null ? +data.cpu.toFixed(1) : null,
+      tps: data.tps?.tps1 ?? prev[prev.length - 1]?.tps ?? null,
+      players: data.players?.online ?? prev[prev.length - 1]?.players ?? null,
+    };
+    const next = prev.length >= METRICS_HISTORY ? [...prev.slice(1 - METRICS_HISTORY), point] : [...prev, point];
+    return {
+      metrics: { ...state.metrics, [serverId]: data },
+      history: { ...state.history, [serverId]: next },
+    };
+  }),
 }));
 
 export const useThemeStore = create((set) => {

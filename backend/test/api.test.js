@@ -148,6 +148,47 @@ test('téléchargement de monde : lien signé, usage unique, zip streamé', asyn
   assert.strictEqual((await fetch(`http://127.0.0.1:${PORT}${data.url}`)).status, 401);
 });
 
+test('fichiers : traversée refusée, édition avec détection de conflit, gestion complète', async () => {
+  const f = (u) => `/servers/${id}/files${u}`;
+  // Traversée
+  assert.strictEqual((await req('GET', f('?path=../../..'), null, jwt)).status, 403);
+  assert.strictEqual((await req('GET', f('/content?path=..%2F..%2Fcraftarr.db'), null, jwt)).status, 403);
+  assert.strictEqual((await req('PUT', f('/content'), { path: '../evil.txt', content: 'x' }, jwt)).status, 403);
+  assert.strictEqual((await req('POST', f('/delete'), { paths: [''] }, jwt)).status, 400);
+
+  // Création, lecture, conflit
+  assert.strictEqual((await req('POST', f('/mkdir'), { path: 'config' }, jwt)).status, 200);
+  const w = await req('PUT', f('/content'), { path: 'config/a.toml', content: 'x = 1\n' }, jwt);
+  assert.strictEqual(w.status, 200);
+  const r = await req('GET', f('/content?path=config/a.toml'), null, jwt);
+  assert.strictEqual(r.data.content, 'x = 1\n');
+  fs.writeFileSync(path.join(serverDir, 'config', 'a.toml'), 'x = 2\n');
+  fs.utimesSync(path.join(serverDir, 'config', 'a.toml'), new Date(), new Date(Date.now() + 5000));
+  assert.strictEqual((await req('PUT', f('/content'), { path: 'config/a.toml', content: 'x = 3\n', baseMtime: r.data.mtime }, jwt)).status, 409);
+  assert.strictEqual((await req('PUT', f('/content'), { path: 'config/a.toml', content: 'x = 3\n', baseMtime: r.data.mtime, force: true }, jwt)).status, 200);
+
+  // Binaire refusé dans l'éditeur
+  fs.writeFileSync(path.join(serverDir, 'config', 'b.dat'), Buffer.from([1, 0, 2]));
+  assert.strictEqual((await req('GET', f('/content?path=config/b.dat'), null, jwt)).status, 415);
+
+  // Upload, renommage, téléchargement zip, suppression
+  const fd = new FormData();
+  fd.append('files', new Blob(['hello']), 'up.txt');
+  const up = await fetch(BASE + f('/upload?path=config'), { method: 'POST', headers: { Authorization: `Bearer ${jwt}` }, body: fd });
+  assert.deepStrictEqual((await up.json()).saved, ['up.txt']);
+  assert.strictEqual((await req('POST', f('/rename'), { from: 'config/up.txt', to: 'config/../../x.txt' }, jwt)).status, 403);
+  assert.strictEqual((await req('POST', f('/rename'), { from: 'config/up.txt', to: 'config/up2.txt' }, jwt)).status, 200);
+  const list = await req('GET', f('?path=config'), null, jwt);
+  assert.deepStrictEqual(list.data.entries.map(e => e.name), ['a.toml', 'b.dat', 'up2.txt']);
+  assert.ok(list.data.entries.every(e => e.mtime > 0));
+  const tok = await req('POST', f('/download-token'), { paths: ['config'] }, jwt);
+  const zip = await fetch(`http://127.0.0.1:${PORT}${tok.data.url}`);
+  const names = new AdmZip(Buffer.from(await zip.arrayBuffer())).getEntries().map(e => e.entryName);
+  assert.ok(names.includes('config/up2.txt'), names.join(','));
+  assert.strictEqual((await req('POST', f('/delete'), { paths: ['config'] }, jwt)).status, 200);
+  assert.ok(!fs.existsSync(path.join(serverDir, 'config')));
+});
+
 test('suppression : dossier effacé, backups et autres dossiers conservés', async () => {
   const other = path.join(DATA, 'servers', 'dossier-inconnu');
   fs.mkdirSync(other, { recursive: true });
@@ -164,6 +205,6 @@ test('reset-password.js puis redémarrage', async () => {
   await new Promise(r => proc.once('exit', r));
   await startBackend();
   assert.ok(!/Jeton de configuration/.test(out), 'pas de jeton quand un compte existe');
-  assert.match(out, /Backups planifiés toutes les 6 h/);
+  await waitFor(/Backups planifiés toutes les 6 h/);
   assert.strictEqual((await req('POST', '/auth/login', { username: 'admin', password: 'nouveau-mdp-42' })).status, 200);
 });

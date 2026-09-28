@@ -4,6 +4,7 @@ import { getWhitelist, addToWhitelist, removeFromWhitelist, patchServer } from '
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import { UserPlus, Trash2, ShieldCheck, ShieldOff } from 'lucide-react';
+import Switch from '../ui/Switch';
 
 export default function WhitelistPanel({ server }) {
   const { t } = useI18n();
@@ -58,12 +59,9 @@ export default function WhitelistPanel({ server }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-3xl">
       {/* Toggle */}
-      <div
-        className="flex items-center justify-between p-4 rounded-xl"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-      >
+      <div className="card flex items-center justify-between gap-4 !py-3.5 !px-4">
         <div className="flex items-center gap-3">
           {server.whitelist_enabled
             ? <ShieldCheck size={18} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
@@ -76,22 +74,11 @@ export default function WhitelistPanel({ server }) {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleToggle}
-          disabled={togglingWhitelist}
-          className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
-          style={{ background: server.whitelist_enabled ? 'var(--accent)' : 'rgba(255,255,255,0.1)' }}
-        >
-          <span
-            className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200"
-            style={{ transform: server.whitelist_enabled ? 'translateX(24px)' : 'translateX(4px)' }}
-          />
-        </button>
+        <Switch checked={!!server.whitelist_enabled} onChange={handleToggle} disabled={togglingWhitelist} label={t('whitelist.toggle')} />
       </div>
 
       {/* Add player */}
-      <form onSubmit={handleAdd} className="flex gap-2">
+      <form onSubmit={handleAdd} className="flex gap-2 items-center">
         <input
           className="input flex-1"
           placeholder={t('whitelist.addPlaceholder')}
@@ -101,7 +88,7 @@ export default function WhitelistPanel({ server }) {
         />
         <button
           type="submit"
-          className="btn-primary px-4 py-2 gap-2 shrink-0"
+          className="btn-primary !h-10 shrink-0"
           disabled={adding || !username.trim()}
         >
           <UserPlus size={14} strokeWidth={1.5} />
@@ -110,33 +97,33 @@ export default function WhitelistPanel({ server }) {
       </form>
 
       {/* List */}
-      <div
-        className="rounded-xl overflow-hidden"
-        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-      >
+      <div className="card !p-0 overflow-hidden">
         {isLoading ? (
           <div className="p-6 text-center text-sm text-fg-3">{t('common.loading')}</div>
         ) : list.length === 0 ? (
           <div className="p-6 text-center text-sm text-fg-3">{t('whitelist.empty')}</div>
         ) : (
-          <ul className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+          <ul className="divide-y divide-white/[0.06] stagger-fast">
             {list.map(player => (
-              <li key={player.name} className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
+              <li key={player.name} className="group flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors">
                 <div className="flex items-center gap-3">
                   <img
-                    src={`https://mc-heads.net/avatar/${player.name}/24`}
+                    src={`https://mc-heads.net/avatar/${player.name}/64`}
                     alt={player.name}
-                    width={24} height={24}
-                    className="rounded"
+                    width={32} height={32}
+                    className="rounded-lg"
+                    style={{ imageRendering: 'pixelated' }}
                     onError={e => { e.target.style.display = 'none'; }}
                   />
-                  <span className="text-sm text-fg font-medium">{player.name}</span>
-                  <span className="text-[10px] text-fg-3 font-mono">{player.uuid}</span>
+                  <div className="min-w-0">
+                    <p className="text-[14px] text-fg font-medium">{player.name}</p>
+                    <p className="text-[10.5px] text-fg-3 font-mono truncate">{player.uuid}</p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleRemove(player.name)}
-                  className="p-1.5 rounded-lg text-fg-3 hover:text-danger hover:bg-white/[0.04] transition-colors"
+                  className="icon-btn !h-8 !min-w-8 hover:!text-danger opacity-60 group-hover:opacity-100"
                   title={t('whitelist.remove')}
                 >
                   <Trash2 size={13} strokeWidth={1.5} />

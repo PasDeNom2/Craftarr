@@ -90,7 +90,30 @@ export const uploadServerIcon = (id, file) => {
 export const getServerIconUrl = (id) => `/api/servers/${id}/icon`;
 export const getFiles = (id, path = '') => api.get(`/servers/${id}/files`, { params: { path } }).then(r => r.data);
 export const getFileContent = (id, path) => api.get(`/servers/${id}/files/content`, { params: { path } }).then(r => r.data);
-export const putFileContent = (id, path, content) => api.put(`/servers/${id}/files/content`, { path, content }).then(r => r.data);
+export const putFileContent = (id, path, content, opts = {}) => api.put(`/servers/${id}/files/content`, { path, content, ...opts }).then(r => r.data);
+export const makeDir = (id, path) => api.post(`/servers/${id}/files/mkdir`, { path }).then(r => r.data);
+export const renameFile = (id, from, to) => api.post(`/servers/${id}/files/rename`, { from, to }).then(r => r.data);
+export const deleteFiles = (id, paths) => api.post(`/servers/${id}/files/delete`, { paths }).then(r => r.data);
+export const getFileBlob = (id, path) => api.get(`/servers/${id}/files/raw`, { params: { path }, responseType: 'blob' }).then(r => r.data);
+export const uploadFiles = (id, dir, files, { overwrite = false, onProgress } = {}) => {
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f, f.name);
+  return api.post(`/servers/${id}/files/upload`, fd, {
+    params: { path: dir, overwrite: overwrite ? '1' : undefined },
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60 * 60 * 1000,
+    onUploadProgress: e => onProgress?.(e.total ? e.loaded / e.total : 0),
+  }).then(r => r.data);
+};
+// Téléchargement natif (fichier seul, ou zip pour un dossier / une sélection) via lien signé
+export const downloadFiles = async (id, paths) => {
+  const { url } = await api.post(`/servers/${id}/files/download-token`, { paths }).then(r => r.data);
+  const a = document.createElement('a');
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
 
 // Backups
 export const getBackups = (serverId) => api.get(`/servers/${serverId}/backups`).then(r => r.data);
