@@ -13,7 +13,7 @@ export default function NotFoundPage() {
           <LogoMark size={48} className="opacity-40" />
         </div>
         <p className="eyebrow mb-2">404</p>
-        <h1 className="text-xl font-semibold text-fg tracking-tight">{t('notFound.title')}</h1>
+        <h1 className="text-[28px] leading-tight font-bold text-fg tracking-tight">{t('notFound.title')}</h1>
         <p className="text-sm text-fg-2 mt-2">{t('notFound.body')}</p>
         <Link to="/catalog" className="btn-primary mt-6">
           <Compass size={14} strokeWidth={2} /> {t('notFound.back')}

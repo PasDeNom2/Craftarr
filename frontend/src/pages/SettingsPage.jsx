@@ -146,7 +146,7 @@ export default function SettingsPage() {
   return (
     <div className="p-7 max-w-3xl mx-auto space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-fg tracking-tight mb-1">{t('settings.title')}</h1>
+        <h1 className="text-[28px] leading-tight font-bold text-fg tracking-tight mb-1">{t('settings.title')}</h1>
         <p className="text-fg-2 text-sm">{t('settings.subtitle')}</p>
       </div>
 

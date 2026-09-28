@@ -15,6 +15,7 @@ import MetricsPanel from '../components/servers/MetricsPanel';
 import BackupList from '../components/servers/BackupList';
 import FileExplorer from '../components/servers/FileExplorer';
 import Modal from '../components/ui/Modal';
+import Segmented from '../components/ui/Segmented';
 import ServerAvatar from '../components/ui/ServerAvatar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -673,23 +674,20 @@ export default function ServerDetailPage() {
   ].filter(Boolean);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col gap-3">
       {/* ── En-tête ── */}
-      <header
-        className="relative shrink-0 border-b border-line overflow-hidden"
-        style={{ background: 'var(--bg-2)' }}
-      >
-        <div className="px-6 pt-5 pb-0">
+      <header className="glass relative shrink-0 rounded-[26px] overflow-hidden card-in">
+        <div className="px-5 pt-5 pb-4">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             {/* Identité */}
             <div className="flex items-center gap-4 min-w-0">
               <div className="relative shrink-0">
                 <input type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden" onChange={onHeaderIcon} />
-                <ServerAvatar server={server} size={48} showDot={false} />
+                <ServerAvatar server={server} size={52} showDot={false} />
                 <label
                   htmlFor="header-icon-input"
                   className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
-                  style={{ background: 'var(--fg)', color: '#000', boxShadow: '0 0 0 3px var(--bg-2)' }}
+                  style={{ background: 'var(--fg)', color: '#000', boxShadow: '0 0 0 3px rgba(40,40,46,1)' }}
                   title={t('server.settings.icon')}
                 >
                   <Pencil size={9} strokeWidth={2.5} />
@@ -701,7 +699,7 @@ export default function ServerDetailPage() {
                   {editingName ? (
                     <input
                       autoFocus
-                      className="text-lg font-semibold text-fg bg-transparent border-b outline-none min-w-[12rem]"
+                      className="text-[22px] font-bold text-fg bg-transparent border-b outline-none min-w-[12rem] tracking-tight"
                       style={{ borderColor: 'var(--fg-3)' }}
                       value={headerName}
                       onChange={e => setHeaderName(e.target.value)}
@@ -710,7 +708,7 @@ export default function ServerDetailPage() {
                     />
                   ) : (
                     <h1
-                      className="group text-lg font-semibold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
+                      className="group text-[22px] font-bold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
                       onClick={() => { setHeaderName(server.name); setEditingName(true); }}
                       title={t('server.settings.serverName')}
                     >
@@ -721,7 +719,7 @@ export default function ServerDetailPage() {
                   <StatusBadge status={server.status} />
                   {server.needs_recreate && (
                     <span
-                      className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md font-medium"
+                      className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-semibold"
                       style={{ background: 'rgba(var(--warn-rgb),0.1)', color: 'var(--warn)', border: '1px solid rgba(var(--warn-rgb),0.25)' }}
                     >
                       <AlertTriangle size={11} strokeWidth={2} /> {t('server.needsRecreate')}
@@ -732,7 +730,7 @@ export default function ServerDetailPage() {
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <button
                     onClick={copyAddress}
-                    className="group inline-flex items-center gap-1.5 h-7 pl-2 pr-2.5 rounded-lg font-mono text-xs text-fg bg-surface-2 border border-line hover:border-line-strong transition-colors"
+                    className="group inline-flex items-center gap-1.5 h-7 pl-2.5 pr-3 rounded-full font-mono text-xs text-fg bg-white/[0.08] hover:bg-white/[0.14] active:scale-95 transition-all"
                     title={t('server.copyAddress')}
                   >
                     <Wifi size={12} strokeWidth={1.75} className="text-fg-2" />
@@ -740,7 +738,7 @@ export default function ServerDetailPage() {
                     <Copy size={11} strokeWidth={2} className="text-fg-3 group-hover:text-fg-2" />
                   </button>
                   {meta.map(({ icon: Icon, value, capitalize }) => (
-                    <span key={value} className={clsx('inline-flex items-center gap-1.5 h-7 px-2 rounded-lg text-xs text-fg-2', capitalize && 'capitalize')}>
+                    <span key={value} className={clsx('inline-flex items-center gap-1.5 h-7 px-2 rounded-full text-xs text-fg-2', capitalize && 'capitalize')}>
                       <Icon size={12} strokeWidth={1.75} className="text-fg-3" />
                       <span className="truncate max-w-[14rem]">{value}</span>
                     </span>
@@ -761,11 +759,11 @@ export default function ServerDetailPage() {
                 </button>
               )}
               {canStop && (
-                <div className="inline-flex rounded-[10px] border border-line bg-surface-2 p-0.5">
-                  <button className="btn px-3 py-1.5 text-fg hover:bg-surface-3" onClick={() => stopMut.mutate()} disabled={isBusy}>
+                <div className="inline-flex rounded-full bg-white/[0.08] border border-white/10 p-[3px] gap-0.5">
+                  <button className="btn h-[30px] px-3.5 text-fg hover:bg-white/10" onClick={() => stopMut.mutate()} disabled={isBusy}>
                     <Square size={12} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
                   </button>
-                  <button className="btn px-3 py-1.5 text-fg hover:bg-surface-3" onClick={() => restartMut.mutate()} disabled={isBusy}>
+                  <button className="btn h-[30px] px-3.5 text-fg hover:bg-white/10" onClick={() => restartMut.mutate()} disabled={isBusy}>
                     <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
                   </button>
                 </div>
@@ -776,7 +774,7 @@ export default function ServerDetailPage() {
                 </button>
               )}
               <button
-                className="btn-danger px-2.5"
+                className="btn-danger w-9 px-0"
                 onClick={() => setConfirmDelete(true)}
                 disabled={deleteMut.isPending}
                 title={t('server.actions.delete')}
@@ -787,43 +785,25 @@ export default function ServerDetailPage() {
             </div>
           </div>
 
-          {/* Onglets */}
-          <nav className="flex gap-0.5 mt-4 -mb-px overflow-x-auto" role="tablist">
-            {TABS.map(({ id: tabId, Icon, labelKey }) => {
-              const active = tab === tabId;
-              return (
-                <button
-                  key={tabId}
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setTab(tabId)}
-                  className={clsx(
-                    'relative flex items-center gap-2 px-4 h-10 text-xs font-medium whitespace-nowrap transition-colors uppercase tracking-[0.06em]',
-                    active ? 'text-fg' : 'text-fg-2 hover:text-fg',
-                  )}
-                >
-                  <Icon size={14} strokeWidth={1.5} />
-                  {t(labelKey)}
-                  {active && (
-                    <span
-                      className="absolute left-0 right-0 bottom-0 h-[2px] bg-fg"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Onglets : contrôle segmenté à pastille glissante */}
+          <div className="mt-4 -mx-1 px-1 overflow-x-auto">
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              items={TABS.map(({ id: tabId, Icon, labelKey }) => ({ id: tabId, icon: Icon, label: t(labelKey) }))}
+            />
+          </div>
         </div>
       </header>
 
       {/* ── Contenu : chaque onglet est isolé (un onglet qui plante n'emporte pas la page) ── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className={clsx('h-full', tab !== 'console' && 'hidden')}>
+        <div className={clsx('h-full', tab !== 'console' && 'hidden', tab === 'console' && 'card-in')}>
           <ErrorBoundary resetKey="console"><Console server={server} /></ErrorBoundary>
         </div>
         {tab !== 'console' && (
           <ErrorBoundary resetKey={tab}>
-            <div key={tab} className={clsx('fade-in', tab === 'files' ? 'h-full' : 'p-6 max-w-screen-xl')}>
+            <div key={tab} className={clsx('tab-in', tab === 'files' ? 'h-full' : 'px-1 py-3 max-w-screen-xl')}>
               {tab === 'metrics' && <MetricsPanel server={server} />}
               {tab === 'backups' && <BackupList server={server} />}
               {tab === 'files' && <FileExplorer server={server} />}

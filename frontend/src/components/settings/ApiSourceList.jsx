@@ -112,7 +112,7 @@ export default function ApiSourceList() {
           {sources.map(source => (
             <div
               key={source.id}
-              className="flex items-center gap-4 px-4 py-3 rounded-xl bg-bg-2 border border-line transition-opacity"
+              className="flex items-center gap-4 px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.07] transition-opacity"
               style={{ opacity: source.enabled ? 1 : 0.55 }}
             >
               <div className="flex-1 min-w-0 space-y-1">

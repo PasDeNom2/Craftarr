@@ -25,18 +25,15 @@ function NavItem({ to, icon: Icon, label, collapsed }) {
       end
       title={collapsed ? label : undefined}
       className={({ isActive }) => clsx(
-        'flex items-center gap-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative',
+        'flex items-center gap-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 relative',
         collapsed ? 'justify-center px-0 w-10 mx-auto' : 'px-3',
         isActive
-          ? 'bg-surface-2 text-fg'
+          ? 'bg-white/[0.12] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]'
           : 'text-fg-2 hover:bg-surface-2 hover:text-fg'
       )}
     >
       {({ isActive }) => (
         <>
-          {isActive && !collapsed && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-fg rounded-r-full" />
-          )}
           <Icon size={18} strokeWidth={1.5} className="shrink-0" />
           {!collapsed && <span>{label}</span>}
         </>
@@ -66,13 +63,11 @@ export default function Sidebar() {
   return (
     <aside
       style={{
-        width: collapsed ? '64px' : '240px',
-        transition: 'width 0.3s cubic-bezier(0.16,1,0.3,1)',
+        width: collapsed ? '68px' : '248px',
+        transition: 'width 0.35s cubic-bezier(0.2,0.8,0.2,1)',
         flexShrink: 0,
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        background: 'var(--bg-sidebar)',
       }}
-      className="flex flex-col overflow-hidden"
+      className="glass flex flex-col overflow-hidden rounded-[26px]"
     >
       {/* Logo */}
       <div
@@ -81,7 +76,7 @@ export default function Sidebar() {
           collapsed ? 'justify-center px-0' : 'gap-3 px-4'
         )}
       >
-        <div className="w-8 h-8 rounded-lg bg-fg flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-[10px] bg-fg flex items-center justify-center shrink-0">
           <Layers size={16} strokeWidth={2} className="text-black" />
         </div>
         {!collapsed && (
@@ -113,7 +108,7 @@ export default function Sidebar() {
             </button>
 
             {serversOpen && (
-              <div className="mt-0.5 ml-4 pl-3 border-l space-y-0.5" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="mt-0.5 ml-4 pl-2 space-y-0.5">
                 {servers.length === 0 ? (
                   <p className="text-xs text-fg-3 px-3 py-2">{t('nav.noServers')}</p>
                 ) : (
@@ -122,17 +117,14 @@ export default function Sidebar() {
                       key={server.id}
                       to={`/servers/${server.id}`}
                       className={({ isActive }) => clsx(
-                        'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative',
+                        'flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all duration-200 relative',
                         isActive
-                          ? 'bg-surface-2 text-fg font-medium'
+                          ? 'bg-white/[0.12] text-fg font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]'
                           : 'text-fg-2 hover:bg-surface-2 hover:text-fg'
                       )}
                     >
                       {({ isActive }) => (
                         <>
-                          {isActive && (
-                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-fg rounded-r-full" />
-                          )}
                           <ServerAvatar server={server} size={22} showDot />
                           <span className="truncate flex-1">{server.name}</span>
                         </>
@@ -159,7 +151,7 @@ export default function Sidebar() {
                 title={`${server.name} — ${server.status}`}
                 className={({ isActive }) => clsx(
                   'flex items-center justify-center w-10 mx-auto py-1.5 rounded-lg transition-all duration-200',
-                  isActive ? 'bg-surface-2' : 'hover:bg-surface-2'
+                  isActive ? 'bg-white/[0.12]' : 'hover:bg-surface-2'
                 )}
               >
                 <ServerAvatar server={server} size={30} showDot />
@@ -172,7 +164,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-2 pb-3 pt-2 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="px-2 pb-3 pt-2 space-y-1 border-t border-line">
         {!collapsed && (
           <div className="flex items-center justify-between px-2 py-1">
             <div className="flex items-center gap-2 min-w-0">

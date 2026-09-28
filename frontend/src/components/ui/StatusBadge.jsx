@@ -17,7 +17,7 @@ export default function StatusBadge({ status, className }) {
 
   return (
     <span
-      className={clsx('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium', className)}
+      className={clsx('inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold', className)}
       style={{ color: s.text, background: s.bg, border: `1px solid ${s.border}` }}
     >
       <span

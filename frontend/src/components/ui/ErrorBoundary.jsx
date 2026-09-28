@@ -95,7 +95,7 @@ function CrashScreen({ error, info, onRetry, scope }) {
           <ChevronDown size={12} style={{ transform: showDetails ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
         </button>
         {showDetails && (
-          <pre className="mt-3 text-left text-[11px] leading-relaxed font-mono text-danger bg-bg-2 border border-line rounded-xl p-3 max-h-48 overflow-auto whitespace-pre-wrap fade-in">
+          <pre className="mt-3 text-left text-[11px] leading-relaxed font-mono text-danger bg-black/40 border border-white/[0.07] rounded-2xl p-3 max-h-48 overflow-auto whitespace-pre-wrap fade-in">
             {error?.message || String(error)}
             {'\n\n'}
             <span className="text-fg-3">{(error?.stack || '').split('\n').slice(1, 6).join('\n')}</span>

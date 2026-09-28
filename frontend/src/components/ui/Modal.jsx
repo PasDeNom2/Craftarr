@@ -22,20 +22,19 @@ export default function Modal({ open, onClose, title, icon: Icon, children, size
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 fade-in" style={{ background: 'rgba(var(--bg-rgb),0.72)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
+      <div className="absolute inset-0 fade-in" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
       <div
-        className={clsx('relative w-full rounded-2xl overflow-hidden pop-in', sizeClass)}
-        style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-pop)' }}
+        className={clsx('glass-strong relative w-full rounded-[28px] overflow-hidden pop-in', sizeClass)}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
-          <h2 className="font-semibold text-fg text-sm flex items-center gap-2.5">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4">
+          <h2 className="font-semibold text-fg text-[17px] flex items-center gap-2.5">
             {Icon && <Icon size={16} strokeWidth={1.75} style={{ color: toneColor }} />}
             {title}
           </h2>
           <button
             onClick={onClose}
             aria-label={t('common.close')}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-2 hover:text-fg hover:bg-surface-2 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-2 text-fg-2 hover:text-fg hover:bg-white/15 transition-colors"
           >
             <X size={16} strokeWidth={1.75} />
           </button>

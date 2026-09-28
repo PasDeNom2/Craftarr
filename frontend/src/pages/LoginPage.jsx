@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4">
       {/* Language switcher top-right */}
       <div className="fixed top-4 right-4">
         <LanguageSwitcher />
@@ -49,8 +49,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 p-6 rounded-xl"
-          style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}
+          className="glass space-y-4 p-7 rounded-[28px]"
         >
           <div>
             <label className="label">{t('login.username')}</label>

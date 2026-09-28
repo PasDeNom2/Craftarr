@@ -12,6 +12,7 @@ import { useLogsStore, useMetricsStore } from '../../store';
 import { useI18n } from '../../i18n';
 import { parseLine, groupEntries } from './console/parseLog';
 import McText, { Highlight } from './console/McText';
+import Segmented from '../ui/Segmented';
 import CommandInput from './console/CommandInput';
 import LivePanel from './console/LivePanel';
 
@@ -265,43 +266,37 @@ export default function Console({ server }) {
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={clsx('h-7 min-w-7 px-1.5 rounded-md flex items-center justify-center gap-1 text-[11px] transition-colors',
-        active ? 'bg-surface-2 text-fg' : 'text-fg-3 hover:text-fg hover:bg-surface-2')}
+      className="icon-btn"
     >
       {children}
     </button>
   );
 
   return (
-    <div className="flex h-full overflow-hidden bg-bg">
-      <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex h-full overflow-hidden gap-3">
+      <div className="glass flex-1 flex flex-col min-w-0 rounded-[26px] overflow-hidden">
         {/* ── Barre d'outils ── */}
-        <div className="flex items-center gap-3 px-3 h-11 shrink-0 border-b border-line bg-bg-2">
-          <div className="flex items-center gap-0.5 p-0.5 rounded-lg border border-line" role="tablist">
-            {FILTERS.map(f => (
-              <button
-                key={f.id}
-                role="tab"
-                aria-selected={filter === f.id}
-                onClick={() => setFilter(f.id)}
-                className={clsx('h-6 px-2.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition-colors',
-                  filter === f.id ? 'bg-fg text-black' : 'text-fg-2 hover:text-fg')}
-              >
-                {t(`console.filter.${f.id}`)}
-                {f.id !== 'all' && counts[f.id] > 0 && (
-                  <span className={clsx('font-mono text-[10px]', filter === f.id ? 'text-black/60' : 'text-fg-3')}
-                    style={filter !== f.id && f.id === 'error' ? { color: 'var(--danger)' } : filter !== f.id && f.id === 'warn' ? { color: 'var(--warn)' } : undefined}>
-                    {counts[f.id]}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center gap-3 px-3 h-12 shrink-0">
+          <Segmented
+            size="sm"
+            value={filter}
+            onChange={setFilter}
+            items={FILTERS.map(f => ({
+              id: f.id,
+              label: t(`console.filter.${f.id}`),
+              badge: f.id !== 'all' && counts[f.id] > 0 && (
+                <span className="font-mono text-[10px] text-fg-3"
+                  style={f.id === 'error' ? { color: 'var(--danger)' } : f.id === 'warn' ? { color: 'var(--warn)' } : undefined}>
+                  {counts[f.id]}
+                </span>
+              ),
+            }))}
+          />
 
           <div className="relative flex-1 max-w-xs">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
+            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
             <input
-              className="w-full h-7 pl-7 pr-14 rounded-md bg-bg border border-line text-xs text-fg placeholder:text-fg-3 outline-none focus:border-line-strong"
+              className="w-full h-7 pl-7 pr-14 rounded-full bg-[rgba(118,118,128,0.2)] border border-transparent text-xs text-fg placeholder:text-fg-3 outline-none focus:border-white/20 focus:bg-[rgba(118,118,128,0.28)] transition-colors"
               placeholder={t('console.search')}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -334,7 +329,7 @@ export default function Console({ server }) {
 
         {/* ── Installation en cours ── */}
         {server.status === 'installing' && !noServerPack && (
-          <div className="shrink-0 px-4 py-2.5 border-b border-line bg-bg-2">
+          <div className="shrink-0 px-4 pb-2.5">
             <div className="flex items-center justify-between mb-1.5 gap-3">
               <span className="text-[11px] font-mono text-fg-2 truncate">{installProgress?.message ?? t('console.installing')}</span>
               <span className="text-[11px] font-mono text-fg-3">{installProgress?.percent ?? 0}%</span>
@@ -369,7 +364,7 @@ export default function Console({ server }) {
         )}
 
         {/* ── Logs ── */}
-        <div className="relative flex-1 min-h-0">
+        <div className="well relative flex-1 min-h-0 mx-2 rounded-[18px] overflow-hidden">
           <div
             ref={containerRef}
             onScroll={onScroll}
@@ -392,7 +387,7 @@ export default function Console({ server }) {
           {!following && (
             <button
               onClick={jumpToBottom}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-fg text-black font-medium shadow-lg fade-in"
+              className="glass-strong absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs px-3.5 h-8 rounded-full text-fg font-semibold pop-in active:scale-95 transition-transform"
             >
               <ArrowDown size={12} strokeWidth={2} />
               {unread > 0 ? t('console.newLines', { count: unread > 999 ? '999+' : unread }) : t('console.resume')}

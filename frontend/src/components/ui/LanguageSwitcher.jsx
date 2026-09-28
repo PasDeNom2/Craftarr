@@ -45,7 +45,7 @@ export default function LanguageSwitcher({ placement = "down", compact = false }
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-fg-2 hover:text-fg hover:bg-surface-2 transition-all duration-200 text-xs font-medium"
+        className="glass flex items-center gap-1.5 px-3 h-8 rounded-full text-fg-2 hover:text-fg transition-colors text-xs font-medium"
         title={t('language.label')}
       >
         <Globe size={14} strokeWidth={1.5} />
@@ -57,9 +57,8 @@ export default function LanguageSwitcher({ placement = "down", compact = false }
       {open && (
         <div
           className={placement === 'up'
-            ? 'absolute left-0 bottom-full mb-2 w-52 rounded-xl overflow-hidden z-50 pop-in'
-            : 'absolute right-0 top-full mt-1 w-52 rounded-xl overflow-hidden z-50 pop-in'}
-          style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-pop)' }}
+            ? 'glass-strong absolute left-0 bottom-full mb-2 w-56 rounded-2xl overflow-hidden z-50 pop-in'
+            : 'glass-strong absolute right-0 top-full mt-2 w-56 rounded-2xl overflow-hidden z-50 pop-in'}
         >
           {/* Search */}
           <div className="p-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>

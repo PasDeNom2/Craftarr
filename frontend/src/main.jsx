@@ -24,10 +24,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           gutter={10}
           toastOptions={{
             style: {
-              background: 'var(--surface)',
+              background: 'var(--glass-bg-strong)',
+              backdropFilter: 'blur(40px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(190%)',
               color: 'var(--fg)',
               boxShadow: 'var(--shadow-pop)',
-              borderRadius: '12px',
+              borderRadius: '18px',
               fontSize: '13px',
               padding: '10px 14px',
               maxWidth: '420px',

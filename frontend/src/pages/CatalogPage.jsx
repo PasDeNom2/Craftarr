@@ -57,18 +57,11 @@ function FilterPanel({ activeFilters, onToggle, onClear, onClose, filterDefs, t 
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full mt-2 rounded-xl z-50 flex flex-col"
-      style={{
-        width: '340px',
-        background: 'var(--surface-3)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-        maxHeight: '520px',
-        overflowY: 'auto',
-      }}
+      className="glass-strong absolute right-0 top-full mt-2 rounded-[22px] z-50 flex flex-col pop-in origin-top-right"
+      style={{ width: '340px', maxHeight: '520px', overflowY: 'auto' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 sticky top-0" style={{ background: 'var(--surface-3)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex items-center justify-between px-4 py-3 sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(30,30,36,0.72)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <span className="text-xs font-semibold text-fg uppercase tracking-widest">{t('catalog.filters')}</span>
         {totalActive > 0 && (
           <button onClick={onClear} className="text-[11px] text-danger hover:text-red-400 transition-colors">
@@ -191,7 +184,7 @@ export default function CatalogPage() {
   return (
     <div className="p-7 max-w-screen-xl mx-auto">
       <div className="mb-7">
-        <h1 className="text-xl font-semibold text-fg tracking-tight">{t('catalog.title')}</h1>
+        <h1 className="text-[28px] leading-tight font-bold text-fg tracking-tight">{t('catalog.title')}</h1>
         <p className="text-sm text-fg-2 mt-1">{t('catalog.subtitle')}</p>
       </div>
 

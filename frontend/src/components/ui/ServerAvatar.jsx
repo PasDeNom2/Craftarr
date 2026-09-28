@@ -70,7 +70,7 @@ export default function ServerAvatar({ server, size = 32, showDot = true, classN
             height: dotSize,
             borderRadius: '50%',
             background: dotColor,
-            border: '1.5px solid var(--bg-sidebar)',
+            border: '1.5px solid rgba(30,30,36,1)',
             display: 'block',
           }}
         />

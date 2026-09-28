@@ -137,11 +137,10 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
   }
 
   return (
-    <form onSubmit={submit} className="relative shrink-0 border-t border-line bg-bg-2">
+    <form onSubmit={submit} className="relative shrink-0 p-2">
       {open && (
         <ul
-          className="absolute left-3 right-3 bottom-full mb-1 rounded-lg overflow-hidden py-1 z-20 pop-in"
-          style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-pop)' }}
+          className="glass-strong absolute left-3 right-3 bottom-full mb-1 rounded-2xl overflow-hidden p-1 z-20 pop-in"
           role="listbox"
         >
           {suggestions.map((s, i) => {
@@ -153,9 +152,9 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
                 aria-selected={active}
                 onMouseDown={e => { e.preventDefault(); accept(s); }}
                 className={clsx(
-                  'flex items-center justify-between gap-3 px-3 py-1.5 font-mono text-xs',
+                  'flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl font-mono text-xs transition-colors',
                   s.insert ? 'cursor-pointer' : 'cursor-default',
-                  active ? 'bg-surface-2 text-fg' : 'text-fg-2 hover:bg-surface-2',
+                  active ? 'bg-white/[0.14] text-fg' : 'text-fg-2 hover:bg-white/[0.07]',
                 )}
               >
                 <span className="truncate">{s.label}</span>
@@ -165,7 +164,7 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
           })}
         </ul>
       )}
-      <div className="flex items-center gap-2 px-4 h-11">
+      <div className="flex items-center gap-2 pl-4 pr-1.5 h-10 rounded-full bg-[rgba(118,118,128,0.18)] border border-white/[0.06] focus-within:border-white/20 focus-within:bg-[rgba(118,118,128,0.24)] transition-colors">
         <span className={clsx('font-mono text-sm select-none', disabled ? 'text-fg-3' : 'text-fg')}>{'>'}</span>
         <input
           ref={ref}
@@ -185,7 +184,7 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
           <button
             type="submit"
             disabled={disabled || sending}
-            className="flex items-center gap-1.5 text-[11px] text-fg-2 hover:text-fg font-mono disabled:opacity-40 transition-colors"
+            className="pop-in flex items-center gap-1.5 h-7 px-3 rounded-full bg-fg text-black text-[11px] font-semibold disabled:opacity-40 active:scale-95 transition-transform"
           >
             {sending ? '…' : <><CornerDownLeft size={12} /> {t('console.send')}</>}
           </button>
