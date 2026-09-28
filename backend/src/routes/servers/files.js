@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../../config/database');
 const authMiddleware = require('../../middleware/auth');
 const { DATA_PATH } = require('./common');
+const nbt = require('../../services/nbt');
 
 const router = express.Router();
 
@@ -113,6 +114,45 @@ router.put('/:id/files/content', authMiddleware, wrap((req, res) => {
   fs.writeFileSync(tmp, content, 'utf8');
   fs.renameSync(tmp, file);
   res.json({ ok: true, mtime: fs.statSync(file).mtimeMs });
+}));
+
+// GET /api/servers/:id/files/nbt?path= — fichier NBT (level.dat, *.nbt…) converti en SNBT éditable
+router.get('/:id/files/nbt', authMiddleware, wrap((req, res) => {
+  const { root } = serverDirOf(req);
+  const file = resolveSafe(root, req.query.path);
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw httpError(404, 'Fichier introuvable');
+  const st = fs.statSync(file);
+  if (st.size > MAX_TEXT) throw httpError(413, 'Fichier trop grand pour l\'éditeur (max 5 Mo)');
+  let parsed;
+  try { parsed = nbt.parseNbt(fs.readFileSync(file)); } catch (err) { throw httpError(415, `Pas un fichier NBT lisible : ${err.message}`); }
+  const snbt = nbt.toSnbt(parsed.root);
+  if (snbt.length > 20 * 1024 * 1024) throw httpError(413, 'Contenu NBT trop volumineux pour l\'éditeur');
+  res.json({ path: relOf(root, file), content: snbt, compression: parsed.compression, rootName: parsed.name, mtime: st.mtimeMs, size: st.size });
+}));
+
+// PUT /api/servers/:id/files/nbt { path, content, baseMtime, force } — SNBT reconverti en NBT
+// (même compression et même nom de racine que l'original ; l'ancienne version est gardée en .craftarr-bak)
+router.put('/:id/files/nbt', authMiddleware, wrap((req, res) => {
+  const { path: rel, content, baseMtime, force } = req.body || {};
+  if (!rel || typeof content !== 'string') throw httpError(400, 'path et content requis');
+  const { root } = serverDirOf(req);
+  const file = resolveSafe(root, rel);
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw httpError(404, 'Fichier introuvable');
+  const st = fs.statSync(file);
+  if (baseMtime && !force && Math.abs(st.mtimeMs - baseMtime) > 1) {
+    return res.status(409).json({ error: 'Le fichier a été modifié sur le disque depuis son ouverture', mtime: st.mtimeMs });
+  }
+  const original = fs.readFileSync(file);
+  let meta;
+  try { meta = nbt.parseNbt(original); } catch { meta = { name: '', compression: 'gzip' }; }
+  let tree;
+  try { tree = nbt.parseSnbt(content); } catch (err) { throw httpError(400, err.message); }
+  const out = nbt.serializeNbt({ name: meta.name, root: tree, compression: meta.compression });
+  fs.writeFileSync(`${file}.craftarr-bak`, original);
+  const tmp = `${file}.craftarr-${process.pid}-${Date.now()}.tmp`;
+  fs.writeFileSync(tmp, out);
+  fs.renameSync(tmp, file);
+  res.json({ ok: true, mtime: fs.statSync(file).mtimeMs, size: out.length });
 }));
 
 // POST /api/servers/:id/files/mkdir { path } — créer un dossier

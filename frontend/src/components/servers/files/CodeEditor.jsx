@@ -41,6 +41,11 @@ function highlightLine(line, lang) {
     if (m) return esc(m[1]) + span('tk-key', m[2]) + span('tk-punct', m[3]) + values(m[4], lang !== 'properties');
     return values(line, lang !== 'properties');
   }
+  if (lang === 'snbt') {
+    const m = line.match(/^(\s*)([A-Za-z0-9._+-]+|"(?:[^"\\]|\\.)*")(\s*:)(.*)$/);
+    if (m) return esc(m[1]) + span('tk-key', m[2]) + span('tk-punct', m[3]) + values(m[4]);
+    return values(line);
+  }
   if (lang === 'json') {
     const m = line.match(/^(\s*)("(?:[^"\\]|\\.)*")(\s*:)(.*)$/);
     if (m) return esc(m[1]) + span('tk-key', m[2]) + span('tk-punct', m[3]) + values(m[4]);

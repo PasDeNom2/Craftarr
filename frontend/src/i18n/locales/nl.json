@@ -379,7 +379,8 @@
     "replaceOne": "Vervangen",
     "replaceAll": "Alles vervangen",
     "toggleReplace": "Vervangen tonen",
-    "closeTab": "Sluiten"
+    "closeTab": "Sluiten",
+    "nbtRunningWarning": "De server draait: hij schrijft dit bestand regelmatig opnieuw en zou je wijzigingen overschrijven. Stop hem voor het opslaan (een .craftarr-bak-kopie van het origineel wordt bewaard)."
   },
   "serverSettings": {
     "title": "Serverinstellingen",

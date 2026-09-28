@@ -379,7 +379,8 @@
     "replaceOne": "Substituir",
     "replaceAll": "Substituir tudo",
     "toggleReplace": "Mostrar substituição",
-    "closeTab": "Fechar"
+    "closeTab": "Fechar",
+    "nbtRunningWarning": "O servidor está ligado: ele reescreve este arquivo regularmente e sobrescreveria suas alterações. Pare-o antes de salvar (uma cópia .craftarr-bak do original é mantida)."
   },
   "serverSettings": {
     "title": "Configurações do servidor",

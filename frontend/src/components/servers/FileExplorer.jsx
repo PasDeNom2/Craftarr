@@ -8,7 +8,7 @@ import {
   Download, Pencil, Trash2, Check, Minus, FolderOpen, UploadCloud, Save, Lock, AlertTriangle, FileQuestion, Search as SearchIcon, PanelLeft,
 } from 'lucide-react';
 import {
-  getFiles, getFileContent, putFileContent, makeDir, renameFile, deleteFiles, uploadFiles, downloadFiles, getFileBlob,
+  getFiles, getFileContent, putFileContent, getNbt, putNbt, makeDir, renameFile, deleteFiles, uploadFiles, downloadFiles, getFileBlob,
 } from '../../services/api';
 import { useI18n } from '../../i18n';
 import { useDateLocale } from '../../utils/dateLocale';
@@ -51,9 +51,11 @@ function NameDialog({ open, title, icon, initial = '', onClose, onSubmit }) {
 function FileViewer({ server, file, onDownload, onDirty, active }) {
   const { t } = useI18n();
   const kind = kindOf(file.name);
-  const language = languageOf(file.name);
-  const readOnly = language === 'log';
+  const baseLanguage = languageOf(file.name);
+  const readOnly = baseLanguage === 'log';
   const [state, setState] = useState({ status: 'loading' }); // loading | text | image | binary | error
+  const [format, setFormat] = useState(null); // 'text' | 'nbt' (+ compression)
+  const language = format?.type === 'nbt' ? 'snbt' : baseLanguage;
   const [content, setContent] = useState('');
   const [saved, setSaved] = useState('');
   const [mtime, setMtime] = useState(null);
@@ -77,15 +79,26 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
       return;
     }
     if (kind === 'binary') { setState({ status: 'binary' }); return; }
-    try {
-      const data = await getFileContent(server.id, file.path);
+    const show = (data, fmt) => {
       setContent(data.content);
       setSaved(data.content);
       setMtime(data.mtime);
+      setFormat(fmt);
       setState({ status: 'text' });
+    };
+    // NBT (level.dat, *.nbt…) : converti en SNBT par le serveur. Fichier inconnu et binaire : on tente aussi le NBT.
+    const tryNbt = async () => {
+      try { const data = await getNbt(server.id, file.path); show(data, { type: 'nbt', compression: data.compression }); }
+      catch (err) {
+        if (err?.response?.status === 415) setState({ status: 'binary' });
+        else setState({ status: 'error', message: errMsg(err, t('files.readError')) });
+      }
+    };
+    if (kind === 'nbt') { await tryNbt(); return; }
+    try {
+      show(await getFileContent(server.id, file.path), { type: 'text' });
     } catch (err) {
-      const code = err?.response?.status;
-      if (code === 415) setState({ status: 'binary' });
+      if (err?.response?.status === 415) await tryNbt();
       else setState({ status: 'error', message: errMsg(err, t('files.readError')) });
     }
   }, [server.id, file.path, kind, t]);
@@ -105,7 +118,9 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
     if (readOnly || saving || (!dirty && !force)) return;
     setSaving(true);
     try {
-      const res = await putFileContent(server.id, file.path, content, { baseMtime: mtime, force });
+      const res = format?.type === 'nbt'
+        ? await putNbt(server.id, file.path, content, { baseMtime: mtime, force })
+        : await putFileContent(server.id, file.path, content, { baseMtime: mtime, force });
       setSaved(content);
       setMtime(res.mtime);
       setConflict(false);
@@ -119,6 +134,7 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
   }
 
   function onRootKey(e) {
+    if (e.defaultPrevented) return; // déjà géré par l'éditeur
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
     else if (mod && e.key.toLowerCase() === 'f' && editorRef.current) { e.preventDefault(); editorRef.current.openSearch(); }
@@ -144,7 +160,7 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
         <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {state.status === 'text' && (
             <span className="hidden sm:inline-flex h-6 px-2.5 items-center rounded-full bg-white/[0.07] text-[11px] font-medium text-fg-2">
-              {LANGUAGE_LABEL[language]}
+              {LANGUAGE_LABEL[language]}{format?.type === 'nbt' && format.compression !== 'none' ? ` · ${format.compression}` : ''}
             </span>
           )}
           {readOnly && (
@@ -167,6 +183,15 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
           )}
         </div>
       </div>
+
+      {/* NBT d'un monde chargé : le serveur réécrit ces fichiers et écraserait les modifications */}
+      {format?.type === 'nbt' && running && (
+        <div className="flex items-start gap-2 mx-2 mt-2 px-3.5 py-2.5 rounded-2xl text-[12px] fade-in"
+          style={{ background: 'rgba(var(--warn-rgb),0.08)', border: '1px solid rgba(var(--warn-rgb),0.2)', color: 'var(--warn)' }}>
+          <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+          <span>{t('files.nbtRunningWarning')}</span>
+        </div>
+      )}
 
       {/* Contenu */}
       <div className="well flex-1 min-h-0 flex flex-col m-2 rounded-[18px] overflow-hidden">

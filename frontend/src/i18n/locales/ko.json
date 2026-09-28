@@ -379,7 +379,8 @@
     "replaceOne": "바꾸기",
     "replaceAll": "모두 바꾸기",
     "toggleReplace": "바꾸기 표시",
-    "closeTab": "닫기"
+    "closeTab": "닫기",
+    "nbtRunningWarning": "서버가 실행 중입니다. 이 파일을 주기적으로 다시 써서 변경 사항을 덮어씁니다. 저장하기 전에 서버를 중지하세요 (원본의 .craftarr-bak 사본이 보관됩니다)."
   },
   "serverSettings": {
     "title": "서버 설정",

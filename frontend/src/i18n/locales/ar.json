@@ -379,7 +379,8 @@
     "replaceOne": "استبدال",
     "replaceAll": "استبدال الكل",
     "toggleReplace": "إظهار الاستبدال",
-    "closeTab": "إغلاق"
+    "closeTab": "إغلاق",
+    "nbtRunningWarning": "الخادم يعمل: يعيد كتابة هذا الملف بانتظام وسيكتب فوق تغييراتك. أوقفه قبل الحفظ (تُحفظ نسخة .craftarr-bak من الأصل)."
   },
   "serverSettings": {
     "title": "إعدادات الخادم",

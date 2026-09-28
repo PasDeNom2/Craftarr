@@ -379,7 +379,8 @@
     "replaceOne": "替换",
     "replaceAll": "全部替换",
     "toggleReplace": "显示替换",
-    "closeTab": "关闭"
+    "closeTab": "关闭",
+    "nbtRunningWarning": "服务器正在运行：它会定期重写此文件并覆盖你的更改。请先停止服务器再保存（会保留原文件的 .craftarr-bak 副本）。"
   },
   "serverSettings": {
     "title": "服务器设置",

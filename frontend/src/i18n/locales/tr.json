@@ -379,7 +379,8 @@
     "replaceOne": "Değiştir",
     "replaceAll": "Tümünü değiştir",
     "toggleReplace": "Değiştirmeyi göster",
-    "closeTab": "Kapat"
+    "closeTab": "Kapat",
+    "nbtRunningWarning": "Sunucu çalışıyor: bu dosyayı düzenli olarak yeniden yazar ve değişikliklerinizin üzerine yazar. Kaydetmeden önce durdurun (orijinalin .craftarr-bak kopyası saklanır)."
   },
   "serverSettings": {
     "title": "Sunucu ayarları",

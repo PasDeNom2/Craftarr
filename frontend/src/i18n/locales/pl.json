@@ -379,7 +379,8 @@
     "replaceOne": "Zamień",
     "replaceAll": "Zamień wszystko",
     "toggleReplace": "Pokaż zamianę",
-    "closeTab": "Zamknij"
+    "closeTab": "Zamknij",
+    "nbtRunningWarning": "Serwer działa: regularnie nadpisuje ten plik i zastąpiłby Twoje zmiany. Zatrzymaj go przed zapisem (kopia oryginału .craftarr-bak jest zachowywana)."
   },
   "serverSettings": {
     "title": "Ustawienia serwera",

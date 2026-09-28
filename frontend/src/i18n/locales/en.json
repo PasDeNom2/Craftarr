@@ -379,7 +379,8 @@
     "replaceOne": "Replace",
     "replaceAll": "Replace all",
     "toggleReplace": "Toggle replace",
-    "closeTab": "Close"
+    "closeTab": "Close",
+    "nbtRunningWarning": "The server is running: it rewrites this file regularly and would overwrite your changes. Stop it before saving (a .craftarr-bak copy of the original is kept)."
   },
   "serverSettings": {
     "title": "Server settings",

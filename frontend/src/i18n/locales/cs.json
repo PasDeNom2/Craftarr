@@ -379,7 +379,8 @@
     "replaceOne": "Nahradit",
     "replaceAll": "Nahradit vše",
     "toggleReplace": "Zobrazit nahrazení",
-    "closeTab": "Zavřít"
+    "closeTab": "Zavřít",
+    "nbtRunningWarning": "Server běží: tento soubor pravidelně přepisuje a přepsal by vaše změny. Před uložením ho zastavte (kopie originálu .craftarr-bak se uchová)."
   },
   "serverSettings": {
     "title": "Nastavení serveru",

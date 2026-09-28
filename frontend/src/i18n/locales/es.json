@@ -379,7 +379,8 @@
     "replaceOne": "Reemplazar",
     "replaceAll": "Reemplazar todo",
     "toggleReplace": "Mostrar reemplazo",
-    "closeTab": "Cerrar"
+    "closeTab": "Cerrar",
+    "nbtRunningWarning": "El servidor está encendido: reescribe este archivo con regularidad y sobrescribiría tus cambios. Detenlo antes de guardar (se guarda una copia .craftarr-bak del original)."
   },
   "serverSettings": {
     "title": "Ajustes del servidor",

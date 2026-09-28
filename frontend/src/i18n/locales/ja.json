@@ -379,7 +379,8 @@
     "replaceOne": "置換",
     "replaceAll": "すべて置換",
     "toggleReplace": "置換を表示",
-    "closeTab": "閉じる"
+    "closeTab": "閉じる",
+    "nbtRunningWarning": "サーバーが起動中です。このファイルは定期的に書き換えられ、変更が上書きされます。保存する前に停止してください（元ファイルの .craftarr-bak コピーが保存されます）。"
   },
   "serverSettings": {
     "title": "サーバー設定",

@@ -91,6 +91,8 @@ export const getServerIconUrl = (id) => `/api/servers/${id}/icon`;
 export const getFiles = (id, path = '') => api.get(`/servers/${id}/files`, { params: { path } }).then(r => r.data);
 export const getFileContent = (id, path) => api.get(`/servers/${id}/files/content`, { params: { path } }).then(r => r.data);
 export const putFileContent = (id, path, content, opts = {}) => api.put(`/servers/${id}/files/content`, { path, content, ...opts }).then(r => r.data);
+export const getNbt = (id, path) => api.get(`/servers/${id}/files/nbt`, { params: { path } }).then(r => r.data);
+export const putNbt = (id, path, content, opts = {}) => api.put(`/servers/${id}/files/nbt`, { path, content, ...opts }).then(r => r.data);
 export const restartPregen = (id) => api.post(`/servers/${id}/pregen/restart`).then(r => r.data);
 export const makeDir = (id, path) => api.post(`/servers/${id}/files/mkdir`, { path }).then(r => r.data);
 export const renameFile = (id, from, to) => api.post(`/servers/${id}/files/rename`, { from, to }).then(r => r.data);

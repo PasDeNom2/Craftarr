@@ -379,7 +379,8 @@
     "replaceOne": "Ersätt",
     "replaceAll": "Ersätt alla",
     "toggleReplace": "Visa ersätt",
-    "closeTab": "Stäng"
+    "closeTab": "Stäng",
+    "nbtRunningWarning": "Servern körs: den skriver om filen regelbundet och skulle skriva över dina ändringar. Stoppa den innan du sparar (en .craftarr-bak-kopia av originalet behålls)."
   },
   "serverSettings": {
     "title": "Serverinställningar",
