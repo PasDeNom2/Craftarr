@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Server fermato",
     "noServerPack": "Nessun server pack disponibile",
     "noServerPackDesc": "Questo modpack non fornisce un server pack. Installare comunque con il pack client (le mod vengono scaricate dal manifest)?",
-    "useClientPack": "Installa con il pack client"
+    "useClientPack": "Installa con il pack client",
+    "filter": {
+      "all": "Tutto",
+      "warn": "Avvisi",
+      "error": "Errori",
+      "players": "Giocatori",
+      "commands": "Comandi"
+    },
+    "search": "Cerca nei log…",
+    "noMatch": "Nessuna riga corrisponde",
+    "timestamps": "Orari",
+    "wrap": "A capo automatico",
+    "smaller": "Testo più piccolo",
+    "bigger": "Testo più grande",
+    "copy": "Copia le righe visibili",
+    "copied": "{count} riga/e copiata/e",
+    "download": "Scarica i log",
+    "pause": "Metti in pausa lo scorrimento",
+    "resume": "Segui in diretta",
+    "stackTrace": "{count} righe di stacktrace",
+    "useStopButton": "Per fermare il server usa il pulsante «Ferma»: salva correttamente il mondo.",
+    "live": "In diretta",
+    "players": "Giocatori",
+    "onlinePlayers": "Giocatori connessi",
+    "noPlayersOnline": "Nessuno online",
+    "insertPlayer": "Inserisci nel comando",
+    "quickActions": "Azioni rapide",
+    "quick": {
+      "save": "Salva",
+      "day": "Imposta giorno",
+      "weather": "Sereno",
+      "list": "Elenca",
+      "announce": "Annuncia un messaggio…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

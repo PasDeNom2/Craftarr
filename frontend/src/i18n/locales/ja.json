@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "サーバー停止中",
     "noServerPack": "サーバーパックがありません",
     "noServerPackDesc": "このModパックにはサーバーパックがありません。クライアントパックでインストールしますか（Modはマニフェストからダウンロードされます）？",
-    "useClientPack": "クライアントパックでインストール"
+    "useClientPack": "クライアントパックでインストール",
+    "filter": {
+      "all": "すべて",
+      "warn": "警告",
+      "error": "エラー",
+      "players": "プレイヤー",
+      "commands": "コマンド"
+    },
+    "search": "ログを検索…",
+    "noMatch": "一致する行がありません",
+    "timestamps": "タイムスタンプ",
+    "wrap": "折り返し",
+    "smaller": "文字を小さく",
+    "bigger": "文字を大きく",
+    "copy": "表示中の行をコピー",
+    "copied": "{count} 行をコピーしました",
+    "download": "ログをダウンロード",
+    "pause": "スクロールを一時停止",
+    "resume": "リアルタイムで追従",
+    "stackTrace": "スタックトレース {count} 行",
+    "useStopButton": "サーバーの停止には「停止」ボタンを使ってください。ワールドを正しく保存します。",
+    "live": "ライブ",
+    "players": "プレイヤー",
+    "onlinePlayers": "オンラインのプレイヤー",
+    "noPlayersOnline": "誰もいません",
+    "insertPlayer": "コマンドに挿入",
+    "quickActions": "クイック操作",
+    "quick": {
+      "save": "保存",
+      "day": "昼にする",
+      "weather": "晴れにする",
+      "list": "一覧",
+      "announce": "メッセージを告知…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

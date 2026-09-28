@@ -131,7 +131,7 @@ export default function MetricsPanel({ server }) {
           <MiniChart
             data={history}
             dataKey="memUsed"
-            stroke="var(--info)"
+            stroke="var(--fg)"
             gradientId="ramGrad"
             label={t('metrics.ramLabel')}
             formatter={(v) => [`${v} ${t('metrics.mb')}`, 'RAM']}

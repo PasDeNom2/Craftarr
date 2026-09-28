@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Server zastaven",
     "noServerPack": "Server pack není k dispozici",
     "noServerPackDesc": "Tento modpack nemá server pack. Přesto nainstalovat pomocí klientského packu (módy se stáhnou podle manifestu)?",
-    "useClientPack": "Instalovat s klientským packem"
+    "useClientPack": "Instalovat s klientským packem",
+    "filter": {
+      "all": "Vše",
+      "warn": "Varování",
+      "error": "Chyby",
+      "players": "Hráči",
+      "commands": "Příkazy"
+    },
+    "search": "Hledat v logu…",
+    "noMatch": "Žádný odpovídající řádek",
+    "timestamps": "Časové značky",
+    "wrap": "Zalamovat řádky",
+    "smaller": "Menší text",
+    "bigger": "Větší text",
+    "copy": "Kopírovat zobrazené řádky",
+    "copied": "Zkopírováno řádků: {count}",
+    "download": "Stáhnout logy",
+    "pause": "Pozastavit posouvání",
+    "resume": "Sledovat živě",
+    "stackTrace": "Řádků stacktrace: {count}",
+    "useStopButton": "K zastavení serveru použij tlačítko „Zastavit\": správně uloží svět.",
+    "live": "Živě",
+    "players": "Hráči",
+    "onlinePlayers": "Hráči online",
+    "noPlayersOnline": "Nikdo online",
+    "insertPlayer": "Vložit do příkazu",
+    "quickActions": "Rychlé akce",
+    "quick": {
+      "save": "Uložit",
+      "day": "Nastavit den",
+      "weather": "Jasno",
+      "list": "Seznam",
+      "announce": "Oznámit zprávu…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

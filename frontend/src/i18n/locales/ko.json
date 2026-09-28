@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "서버 중지됨",
     "noServerPack": "서버 팩 없음",
     "noServerPackDesc": "이 모드팩은 서버 팩을 제공하지 않습니다. 클라이언트 팩으로 설치할까요(매니페스트로 모드를 다운로드)?",
-    "useClientPack": "클라이언트 팩으로 설치"
+    "useClientPack": "클라이언트 팩으로 설치",
+    "filter": {
+      "all": "전체",
+      "warn": "경고",
+      "error": "오류",
+      "players": "플레이어",
+      "commands": "명령어"
+    },
+    "search": "로그 검색…",
+    "noMatch": "일치하는 줄이 없습니다",
+    "timestamps": "타임스탬프",
+    "wrap": "줄 바꿈",
+    "smaller": "글자 작게",
+    "bigger": "글자 크게",
+    "copy": "보이는 줄 복사",
+    "copied": "{count}줄 복사됨",
+    "download": "로그 다운로드",
+    "pause": "스크롤 일시 정지",
+    "resume": "실시간 따라가기",
+    "stackTrace": "스택 트레이스 {count}줄",
+    "useStopButton": "서버를 멈추려면 \"정지\" 버튼을 사용하세요. 월드를 안전하게 저장합니다.",
+    "live": "실시간",
+    "players": "플레이어",
+    "onlinePlayers": "접속 중인 플레이어",
+    "noPlayersOnline": "아무도 없습니다",
+    "insertPlayer": "명령어에 삽입",
+    "quickActions": "빠른 작업",
+    "quick": {
+      "save": "저장",
+      "day": "낮으로",
+      "weather": "맑은 날씨",
+      "list": "목록",
+      "announce": "메시지 공지…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

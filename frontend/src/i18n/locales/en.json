@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Server stopped",
     "noServerPack": "No server pack available",
     "noServerPackDesc": "This modpack does not provide a server pack. Install anyway using the client pack (downloads mods via manifest)?",
-    "useClientPack": "Install with client pack"
+    "useClientPack": "Install with client pack",
+    "filter": {
+      "all": "All",
+      "warn": "Warnings",
+      "error": "Errors",
+      "players": "Players",
+      "commands": "Commands"
+    },
+    "search": "Search logs…",
+    "noMatch": "No matching line",
+    "timestamps": "Timestamps",
+    "wrap": "Wrap lines",
+    "smaller": "Smaller text",
+    "bigger": "Larger text",
+    "copy": "Copy visible lines",
+    "copied": "{count} line(s) copied",
+    "download": "Download logs",
+    "pause": "Pause scrolling",
+    "resume": "Follow live",
+    "stackTrace": "{count} stack trace lines",
+    "useStopButton": "To stop the server, use the \"Stop\" button: it saves the world properly.",
+    "live": "Live",
+    "players": "Players",
+    "onlinePlayers": "Online players",
+    "noPlayersOnline": "Nobody online",
+    "insertPlayer": "Insert into command",
+    "quickActions": "Quick actions",
+    "quick": {
+      "save": "Save",
+      "day": "Set day",
+      "weather": "Clear weather",
+      "list": "List",
+      "announce": "Broadcast a message…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

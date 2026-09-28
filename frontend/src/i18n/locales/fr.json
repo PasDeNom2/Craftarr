@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Serveur arrêté",
     "noServerPack": "Aucun server pack disponible",
     "noServerPackDesc": "Ce modpack ne propose pas de server pack. Installer quand même avec le pack client (téléchargement des mods via le manifest) ?",
-    "useClientPack": "Installer avec le pack client"
+    "useClientPack": "Installer avec le pack client",
+    "filter": {
+      "all": "Tout",
+      "warn": "Alertes",
+      "error": "Erreurs",
+      "players": "Joueurs",
+      "commands": "Commandes"
+    },
+    "search": "Rechercher dans les logs…",
+    "noMatch": "Aucune ligne ne correspond",
+    "timestamps": "Horodatage",
+    "wrap": "Retour à la ligne",
+    "smaller": "Réduire le texte",
+    "bigger": "Agrandir le texte",
+    "copy": "Copier les lignes affichées",
+    "copied": "{count} ligne(s) copiée(s)",
+    "download": "Télécharger les logs",
+    "pause": "Mettre en pause le défilement",
+    "resume": "Suivre en direct",
+    "stackTrace": "{count} lignes de stacktrace",
+    "useStopButton": "Pour arrêter le serveur, utilise le bouton « Arrêter » : il sauvegarde proprement le monde.",
+    "live": "En direct",
+    "players": "Joueurs",
+    "onlinePlayers": "Joueurs connectés",
+    "noPlayersOnline": "Personne en ligne",
+    "insertPlayer": "Insérer dans la commande",
+    "quickActions": "Actions rapides",
+    "quick": {
+      "save": "Sauvegarder",
+      "day": "Mettre le jour",
+      "weather": "Beau temps",
+      "list": "Lister",
+      "announce": "Annoncer un message…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

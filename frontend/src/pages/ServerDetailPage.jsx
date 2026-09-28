@@ -18,7 +18,6 @@ import Modal from '../components/ui/Modal';
 import ServerAvatar from '../components/ui/ServerAvatar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { statusRgb } from '../components/ui/status';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import {
@@ -620,7 +619,7 @@ export default function ServerDetailPage() {
   if (isError || !server) return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-8">
       <p className="eyebrow">404</p>
-      <p className="font-display text-xl text-fg">{t('server.notFound')}</p>
+      <p className="text-lg text-fg">{t('server.notFound')}</p>
       <button className="btn-secondary mt-2" onClick={() => navigate('/catalog')}>{t('notFound.back')}</button>
     </div>
   );
@@ -629,7 +628,6 @@ export default function ServerDetailPage() {
   const canStart = ['stopped', 'error'].includes(server.status);
   const canStop = ['running', 'starting'].includes(server.status);
   const canUpdate = ['running', 'stopped'].includes(server.status);
-  const rgb = statusRgb(server.status);
   const address = `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
 
   async function copyAddress() {
@@ -679,22 +677,22 @@ export default function ServerDetailPage() {
       {/* ── En-tête ── */}
       <header
         className="relative shrink-0 border-b border-line overflow-hidden"
-        style={{ background: `radial-gradient(700px 180px at 0% 0%, rgba(${rgb},0.10), transparent 70%), var(--bg-2)` }}
+        style={{ background: 'var(--bg-2)' }}
       >
-        <div className="px-8 pt-7 pb-0">
+        <div className="px-6 pt-5 pb-0">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             {/* Identité */}
-            <div className="flex items-center gap-5 min-w-0 card-in">
+            <div className="flex items-center gap-4 min-w-0">
               <div className="relative shrink-0">
                 <input type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden" onChange={onHeaderIcon} />
-                <ServerAvatar server={server} size={64} showDot={false} />
+                <ServerAvatar server={server} size={48} showDot={false} />
                 <label
                   htmlFor="header-icon-input"
-                  className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
-                  style={{ background: 'var(--accent)', color: 'var(--accent-ink)', boxShadow: '0 0 0 3px var(--bg-2)' }}
+                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
+                  style={{ background: 'var(--fg)', color: '#000', boxShadow: '0 0 0 3px var(--bg-2)' }}
                   title={t('server.settings.icon')}
                 >
-                  <Pencil size={11} strokeWidth={2.5} />
+                  <Pencil size={9} strokeWidth={2.5} />
                 </label>
               </div>
 
@@ -703,8 +701,8 @@ export default function ServerDetailPage() {
                   {editingName ? (
                     <input
                       autoFocus
-                      className="font-display text-2xl font-semibold text-fg bg-transparent border-b-2 outline-none min-w-[12rem]"
-                      style={{ borderColor: 'var(--accent)' }}
+                      className="text-lg font-semibold text-fg bg-transparent border-b outline-none min-w-[12rem]"
+                      style={{ borderColor: 'var(--fg-3)' }}
                       value={headerName}
                       onChange={e => setHeaderName(e.target.value)}
                       onBlur={saveHeaderName}
@@ -712,7 +710,7 @@ export default function ServerDetailPage() {
                     />
                   ) : (
                     <h1
-                      className="group font-display text-2xl font-semibold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
+                      className="group text-lg font-semibold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
                       onClick={() => { setHeaderName(server.name); setEditingName(true); }}
                       title={t('server.settings.serverName')}
                     >
@@ -720,7 +718,7 @@ export default function ServerDetailPage() {
                       <Pencil size={13} strokeWidth={2} className="text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h1>
                   )}
-                  <StatusBadge status={server.status} size="lg" />
+                  <StatusBadge status={server.status} />
                   {server.needs_recreate && (
                     <span
                       className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md font-medium"
@@ -731,13 +729,13 @@ export default function ServerDetailPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <button
                     onClick={copyAddress}
                     className="group inline-flex items-center gap-1.5 h-7 pl-2 pr-2.5 rounded-lg font-mono text-xs text-fg bg-surface-2 border border-line hover:border-line-strong transition-colors"
                     title={t('server.copyAddress')}
                   >
-                    <Wifi size={12} strokeWidth={2} className="text-accent" />
+                    <Wifi size={12} strokeWidth={1.75} className="text-fg-2" />
                     {address}
                     <Copy size={11} strokeWidth={2} className="text-fg-3 group-hover:text-fg-2" />
                   </button>
@@ -752,7 +750,7 @@ export default function ServerDetailPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 flex-wrap card-in" style={{ animationDelay: '60ms' }}>
+            <div className="flex items-center gap-2 flex-wrap">
               {server.status === 'error' && !server.container_id ? (
                 <button className="btn-primary" onClick={() => reinstallMut.mutate()} disabled={reinstallMut.isPending}>
                   <RotateCcw size={14} strokeWidth={2} /> {t('server.actions.reinstall')}
@@ -765,7 +763,7 @@ export default function ServerDetailPage() {
               {canStop && (
                 <div className="inline-flex rounded-[10px] border border-line bg-surface-2 p-0.5">
                   <button className="btn px-3 py-1.5 text-fg hover:bg-surface-3" onClick={() => stopMut.mutate()} disabled={isBusy}>
-                    <Square size={13} strokeWidth={2} fill="currentColor" className="text-danger" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
+                    <Square size={12} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
                   </button>
                   <button className="btn px-3 py-1.5 text-fg hover:bg-surface-3" onClick={() => restartMut.mutate()} disabled={isBusy}>
                     <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
@@ -790,7 +788,7 @@ export default function ServerDetailPage() {
           </div>
 
           {/* Onglets */}
-          <nav className="flex gap-1 mt-6 -mb-px overflow-x-auto" role="tablist">
+          <nav className="flex gap-0.5 mt-4 -mb-px overflow-x-auto" role="tablist">
             {TABS.map(({ id: tabId, Icon, labelKey }) => {
               const active = tab === tabId;
               return (
@@ -800,16 +798,15 @@ export default function ServerDetailPage() {
                   aria-selected={active}
                   onClick={() => setTab(tabId)}
                   className={clsx(
-                    'relative flex items-center gap-2 px-3.5 h-11 text-[13px] font-medium whitespace-nowrap transition-colors',
+                    'relative flex items-center gap-2 px-4 h-10 text-xs font-medium whitespace-nowrap transition-colors uppercase tracking-[0.06em]',
                     active ? 'text-fg' : 'text-fg-2 hover:text-fg',
                   )}
                 >
-                  <Icon size={15} strokeWidth={1.75} className={clsx(active && 'text-accent')} />
+                  <Icon size={14} strokeWidth={1.5} />
                   {t(labelKey)}
                   {active && (
                     <span
-                      className="absolute left-2 right-2 bottom-0 h-[2px] rounded-t"
-                      style={{ background: 'var(--accent)', boxShadow: '0 0 12px rgba(var(--accent-rgb),0.9)' }}
+                      className="absolute left-0 right-0 bottom-0 h-[2px] bg-fg"
                     />
                   )}
                 </button>
@@ -826,7 +823,7 @@ export default function ServerDetailPage() {
         </div>
         {tab !== 'console' && (
           <ErrorBoundary resetKey={tab}>
-            <div key={tab} className={clsx('fade-in', tab === 'files' ? 'h-full' : 'p-8 max-w-screen-xl')}>
+            <div key={tab} className={clsx('fade-in', tab === 'files' ? 'h-full' : 'p-6 max-w-screen-xl')}>
               {tab === 'metrics' && <MetricsPanel server={server} />}
               {tab === 'backups' && <BackupList server={server} />}
               {tab === 'files' && <FileExplorer server={server} />}

@@ -18,10 +18,10 @@ function formatSize(bytes) {
 
 // Chaque type de backup a sa couleur et son icône
 const TRIGGERS = {
-  scheduled:    { icon: Clock,         color: 'var(--info)',   rgb: 'var(--info-rgb)',   key: 'backups.triggerScheduled' },
-  manual:       { icon: Hand,          color: 'var(--accent)', rgb: 'var(--accent-rgb)', key: 'backups.triggerManual' },
-  'pre-update': { icon: ArrowUpCircle, color: 'var(--purple)', rgb: 'var(--purple-rgb)', key: 'backups.triggerPreUpdate' },
-  'pre-import': { icon: FolderInput,   color: 'var(--warn)',   rgb: 'var(--warn-rgb)',   key: 'backups.triggerPreImport' },
+  scheduled:    { icon: Clock,         color: 'var(--fg-2)', rgb: 'var(--fg-2-rgb)', key: 'backups.triggerScheduled' },
+  manual:       { icon: Hand,          color: 'var(--fg-2)', rgb: 'var(--fg-2-rgb)', key: 'backups.triggerManual' },
+  'pre-update': { icon: ArrowUpCircle, color: 'var(--fg-2)', rgb: 'var(--fg-2-rgb)', key: 'backups.triggerPreUpdate' },
+  'pre-import': { icon: FolderInput,   color: 'var(--fg-2)', rgb: 'var(--fg-2-rgb)', key: 'backups.triggerPreImport' },
 };
 
 export default function BackupList({ server }) {
@@ -66,9 +66,9 @@ export default function BackupList({ server }) {
     <div className="space-y-5 max-w-3xl">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h3 className="font-display text-lg font-semibold text-fg">{t('backups.title')}</h3>
+          <h3 className="text-sm font-semibold text-fg">{t('backups.title')}</h3>
           <p className="text-xs text-fg-2 mt-1">
-            <span className="font-pixel text-fg">{backups.length}</span> {t('backups.available')}
+            <span className="text-fg font-medium">{backups.length}</span> {t('backups.available')}
             {backups.length > 0 && <span className="text-fg-3"> · {formatSize(totalSize)}</span>}
           </p>
         </div>

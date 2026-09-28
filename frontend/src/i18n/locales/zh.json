@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "服务器已停止",
     "noServerPack": "没有可用的服务器包",
     "noServerPackDesc": "此整合包未提供服务器包。仍要使用客户端包安装吗（通过清单下载模组）？",
-    "useClientPack": "使用客户端包安装"
+    "useClientPack": "使用客户端包安装",
+    "filter": {
+      "all": "全部",
+      "warn": "警告",
+      "error": "错误",
+      "players": "玩家",
+      "commands": "命令"
+    },
+    "search": "搜索日志…",
+    "noMatch": "没有匹配的行",
+    "timestamps": "时间戳",
+    "wrap": "自动换行",
+    "smaller": "缩小文字",
+    "bigger": "放大文字",
+    "copy": "复制可见行",
+    "copied": "已复制 {count} 行",
+    "download": "下载日志",
+    "pause": "暂停滚动",
+    "resume": "实时跟随",
+    "stackTrace": "{count} 行堆栈跟踪",
+    "useStopButton": "请使用“停止”按钮停止服务器：它会正确保存世界。",
+    "live": "实时",
+    "players": "玩家",
+    "onlinePlayers": "在线玩家",
+    "noPlayersOnline": "无人在线",
+    "insertPlayer": "插入到命令",
+    "quickActions": "快捷操作",
+    "quick": {
+      "save": "保存",
+      "day": "设为白天",
+      "weather": "晴天",
+      "list": "列出",
+      "announce": "发布公告…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

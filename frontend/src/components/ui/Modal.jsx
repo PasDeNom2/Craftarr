@@ -18,7 +18,7 @@ export default function Modal({ open, onClose, title, icon: Icon, children, size
   if (!open) return null;
 
   const sizeClass = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size];
-  const toneColor = tone === 'danger' ? 'var(--danger)' : 'var(--accent)';
+  const toneColor = tone === 'danger' ? 'var(--danger)' : 'var(--fg-2)';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -27,10 +27,8 @@ export default function Modal({ open, onClose, title, icon: Icon, children, size
         className={clsx('relative w-full rounded-2xl overflow-hidden pop-in', sizeClass)}
         style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-pop)' }}
       >
-        {/* liseré de couleur en haut */}
-        <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${toneColor}, transparent)`, opacity: 0.6 }} />
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
-          <h2 className="font-display font-semibold text-fg text-[15px] flex items-center gap-2.5">
+          <h2 className="font-semibold text-fg text-sm flex items-center gap-2.5">
             {Icon && <Icon size={16} strokeWidth={1.75} style={{ color: toneColor }} />}
             {title}
           </h2>

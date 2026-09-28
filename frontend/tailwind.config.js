@@ -18,10 +18,9 @@ module.exports = {
         orange: 'var(--orange)',
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Bricolage Grotesque"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'Consolas', 'monospace'],
-        pixel: ['Silkscreen', '"JetBrains Mono"', 'monospace'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Fira Code', 'Consolas', 'monospace'],
       },
       borderRadius: {
         '2xl': '16px',
@@ -32,9 +31,14 @@ module.exports = {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'pulse-dot': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.4' },
+        },
       },
       animation: {
-        'fade-in-up': 'fade-in-up 0.35s cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in-up': 'fade-in-up 0.25s cubic-bezier(0.16,1,0.3,1) forwards',
+        'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
       },
     },
   },

@@ -47,7 +47,7 @@ export default function ConfirmDialog({
             disabled={!matches || busy}
             style={tone === 'danger'
               ? { background: 'var(--danger)', color: '#1A0303', boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.2)' }
-              : { background: 'var(--accent)', color: 'var(--accent-ink)' }}
+              : { background: 'var(--fg)', color: '#000' }}
           >
             {busy ? '…' : (confirmLabel || t('common.confirm'))}
           </button>

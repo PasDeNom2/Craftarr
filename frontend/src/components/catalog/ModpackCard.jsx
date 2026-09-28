@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Download, Gamepad2, ShieldCheck, Rocket, Package } from 'lucide-react';
+import React from 'react';
 import SourceBadge from '../ui/SourceBadge';
 import { useI18n } from '../../i18n';
+import { Download, Gamepad2, CheckCircle, Rocket, Package } from 'lucide-react';
 
 function formatCount(n) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -11,85 +11,104 @@ function formatCount(n) {
 
 export default function ModpackCard({ modpack, onDeploy, onDetail }) {
   const { t } = useI18n();
-  const [imgFailed, setImgFailed] = useState(!modpack.thumbnailUrl);
-
   return (
-    <article
-      className="group card card-interactive !p-0 h-[248px] flex flex-col overflow-hidden cursor-pointer"
+    <div
+      className="flex flex-col p-4 rounded-xl cursor-pointer group"
+      style={{
+        height: '220px',
+        background: 'var(--surface)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        transition: 'border-color 0.2s, background 0.2s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = 'var(--surface-2)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'var(--surface)'; }}
       onClick={() => onDetail(modpack)}
     >
-      {/* Bandeau : vignette floutée en fond pour donner la couleur du pack */}
-      <div className="relative h-[76px] shrink-0 overflow-hidden">
-        {!imgFailed && (
-          <img
-            src={modpack.thumbnailUrl}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover scale-150 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"
-          />
-        )}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 20%, var(--surface) 100%)' }} />
-        <div className="absolute left-4 top-4 flex items-start gap-3 right-4">
-          {!imgFailed ? (
+      {/* Header: thumbnail + name + source + description */}
+      <div className="flex gap-3 mb-3">
+        {/* Thumbnail */}
+        <div className="shrink-0 relative w-12 h-12">
+          {modpack.thumbnailUrl ? (
             <img
               src={modpack.thumbnailUrl}
               alt={modpack.name}
-              onError={() => setImgFailed(true)}
-              className="w-14 h-14 rounded-xl object-cover shrink-0 transition-transform duration-300 group-hover:scale-105"
-              style={{ boxShadow: '0 8px 20px -6px rgba(0,0,0,0.7), 0 0 0 1px var(--line)' }}
+              className="w-12 h-12 rounded-lg object-cover"
+              style={{ background: 'var(--surface-2)' }}
+              onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
             />
-          ) : (
-            <div className="w-14 h-14 rounded-xl shrink-0 flex items-center justify-center font-display text-xl font-bold text-fg-3 bg-surface-2 border border-line">
-              {modpack.name?.[0]?.toUpperCase() || <Package size={20} strokeWidth={1.5} />}
-            </div>
-          )}
-          <div className="min-w-0 pt-0.5 flex-1">
-            <h3 className="font-display font-semibold text-fg text-[15px] leading-snug truncate" title={modpack.name}>{modpack.name}</h3>
-            <div className="mt-1"><SourceBadge source={modpack.source} sourceName={modpack._sourceName} /></div>
+          ) : null}
+          <div
+            className="w-12 h-12 rounded-lg items-center justify-center text-base font-bold text-fg-3"
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              display: modpack.thumbnailUrl ? 'none' : 'flex',
+            }}
+          >
+            {modpack.name?.[0]?.toUpperCase() || <Package size={18} strokeWidth={1.5} />}
           </div>
+        </div>
+
+        {/* Name + badge + description */}
+        <div className="min-w-0 flex flex-col">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-semibold text-fg text-sm leading-tight truncate">
+              {modpack.name}
+            </h3>
+            <SourceBadge source={modpack.source} sourceName={modpack._sourceName} />
+          </div>
+          <p className="text-fg-2 text-xs line-clamp-2 leading-relaxed">{modpack.summary}</p>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col px-4 pt-3 pb-4 min-h-0">
-        <p className="text-fg-2 text-[13px] line-clamp-2 leading-relaxed">{modpack.summary}</p>
-
-        <div className="flex items-center gap-3 text-[11px] text-fg-3 mt-3 font-mono">
+      {/* Meta + categories — fixed zone, clipped */}
+      <div className="flex-1 overflow-hidden flex flex-col gap-2">
+        {/* Downloads + MC versions + serverpack */}
+        <div className="flex items-center gap-3 text-[11px] text-fg-3">
           {modpack.downloadCount > 0 && (
-            <span className="flex items-center gap-1" title={String(modpack.downloadCount)}>
-              <Download size={11} strokeWidth={1.75} /> {formatCount(modpack.downloadCount)}
+            <span className="flex items-center gap-1">
+              <Download size={10} strokeWidth={1.5} />
+              {formatCount(modpack.downloadCount)}
             </span>
           )}
           {modpack.mcVersions?.length > 0 && (
-            <span className="flex items-center gap-1 truncate">
-              <Gamepad2 size={11} strokeWidth={1.75} /> {modpack.mcVersions.slice(0, 2).join(', ')}
+            <span className="flex items-center gap-1">
+              <Gamepad2 size={10} strokeWidth={1.5} />
+              {modpack.mcVersions.slice(0, 2).join(', ')}
             </span>
           )}
           {modpack.hasServerPack && (
-            <span className="flex items-center gap-1 text-accent" title="Server pack">
-              <ShieldCheck size={11} strokeWidth={1.75} /> Server
+            <span className="flex items-center gap-1 text-accent">
+              <CheckCircle size={10} strokeWidth={1.5} />
+              Serverpack
             </span>
           )}
         </div>
 
+        {/* Categories */}
         {modpack.categories?.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2.5 overflow-hidden max-h-[22px]">
+          <div className="flex flex-wrap gap-1 overflow-hidden" style={{ maxHeight: '38px' }}>
             {modpack.categories.slice(0, 4).map(cat => (
-              <span key={cat} className="text-[10px] px-1.5 py-0.5 rounded-md text-fg-2 bg-surface-2 border border-line whitespace-nowrap">
+              <span
+                key={cat}
+                className="text-[10px] px-1.5 py-0.5 rounded-md text-fg-2 whitespace-nowrap"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
                 {cat}
               </span>
             ))}
           </div>
         )}
-
-        <button
-          className="btn mt-auto w-full justify-center text-[13px] py-2 font-semibold bg-surface-2 border border-line text-fg
-                     group-hover:bg-accent group-hover:text-accent-ink group-hover:border-transparent"
-          onClick={e => { e.stopPropagation(); onDeploy(modpack); }}
-        >
-          <Rocket size={14} strokeWidth={2} />
-          {t('modpack.deploy')}
-        </button>
       </div>
-    </article>
+
+      {/* Deploy button — always at bottom */}
+      <button
+        className="btn-primary mt-3 w-full justify-center text-xs py-2 gap-2 shrink-0"
+        onClick={e => { e.stopPropagation(); onDeploy(modpack); }}
+      >
+        <Rocket size={12} strokeWidth={1.5} />
+        {t('modpack.deploy')}
+      </button>
+    </div>
   );
 }

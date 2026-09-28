@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Server gestoppt",
     "noServerPack": "Kein Server-Pack verfügbar",
     "noServerPackDesc": "Dieses Modpack bietet kein Server-Pack. Trotzdem mit dem Client-Pack installieren (Mods werden über das Manifest heruntergeladen)?",
-    "useClientPack": "Mit Client-Pack installieren"
+    "useClientPack": "Mit Client-Pack installieren",
+    "filter": {
+      "all": "Alle",
+      "warn": "Warnungen",
+      "error": "Fehler",
+      "players": "Spieler",
+      "commands": "Befehle"
+    },
+    "search": "Logs durchsuchen…",
+    "noMatch": "Keine passende Zeile",
+    "timestamps": "Zeitstempel",
+    "wrap": "Zeilen umbrechen",
+    "smaller": "Kleinere Schrift",
+    "bigger": "Größere Schrift",
+    "copy": "Sichtbare Zeilen kopieren",
+    "copied": "{count} Zeile(n) kopiert",
+    "download": "Logs herunterladen",
+    "pause": "Scrollen pausieren",
+    "resume": "Live folgen",
+    "stackTrace": "{count} Stacktrace-Zeilen",
+    "useStopButton": "Nutze zum Stoppen die Schaltfläche „Stoppen\": Sie speichert die Welt sauber.",
+    "live": "Live",
+    "players": "Spieler",
+    "onlinePlayers": "Spieler online",
+    "noPlayersOnline": "Niemand online",
+    "insertPlayer": "In den Befehl einfügen",
+    "quickActions": "Schnellaktionen",
+    "quick": {
+      "save": "Speichern",
+      "day": "Tag setzen",
+      "weather": "Klares Wetter",
+      "list": "Auflisten",
+      "announce": "Nachricht senden…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

@@ -20,7 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <QueryClientProvider client={queryClient}>
         <App />
         <Toaster
-          position="bottom-right"
+          position="top-right"
           gutter={10}
           toastOptions={{
             style: {

@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Serwer zatrzymany",
     "noServerPack": "Brak server packa",
     "noServerPackDesc": "Ten modpack nie udostępnia server packa. Zainstalować mimo to z pakietu klienta (mody pobierane z manifestu)?",
-    "useClientPack": "Zainstaluj z pakietu klienta"
+    "useClientPack": "Zainstaluj z pakietu klienta",
+    "filter": {
+      "all": "Wszystko",
+      "warn": "Ostrzeżenia",
+      "error": "Błędy",
+      "players": "Gracze",
+      "commands": "Komendy"
+    },
+    "search": "Szukaj w logach…",
+    "noMatch": "Brak pasujących linii",
+    "timestamps": "Znaczniki czasu",
+    "wrap": "Zawijanie linii",
+    "smaller": "Mniejszy tekst",
+    "bigger": "Większy tekst",
+    "copy": "Kopiuj widoczne linie",
+    "copied": "Skopiowano linie: {count}",
+    "download": "Pobierz logi",
+    "pause": "Wstrzymaj przewijanie",
+    "resume": "Śledź na żywo",
+    "stackTrace": "Linie stacktrace: {count}",
+    "useStopButton": "Aby zatrzymać serwer, użyj przycisku „Zatrzymaj\": poprawnie zapisuje świat.",
+    "live": "Na żywo",
+    "players": "Gracze",
+    "onlinePlayers": "Gracze online",
+    "noPlayersOnline": "Nikogo nie ma",
+    "insertPlayer": "Wstaw do komendy",
+    "quickActions": "Szybkie akcje",
+    "quick": {
+      "save": "Zapisz",
+      "day": "Ustaw dzień",
+      "weather": "Pogoda",
+      "list": "Lista",
+      "announce": "Ogłoś wiadomość…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { login } from '../services/api';
 import { useAuthStore } from '../store';
 import { useI18n } from '../i18n';
-import AuthShell from '../components/layout/AuthShell';
-import { ArrowRight } from 'lucide-react';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
+import { Layers } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -32,23 +32,56 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell>
-      <form onSubmit={handleSubmit} className="card !p-6 space-y-4" style={{ boxShadow: 'var(--shadow-pop)' }}>
-        <div>
-          <label className="label" htmlFor="login-username">{t('login.username')}</label>
-          <input id="login-username" type="text" className="input h-11" value={username}
-            onChange={e => setUsername(e.target.value)} placeholder="admin" autoFocus autoComplete="username" />
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
+      {/* Language switcher top-right */}
+      <div className="fixed top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-fg rounded-xl mb-4">
+            <Layers size={20} strokeWidth={2} className="text-black" />
+          </div>
+          <h1 className="text-xl font-semibold text-fg tracking-tight">Craftarr</h1>
+          <p className="text-fg-2 text-sm mt-1">{t('app.tagline')}</p>
         </div>
-        <div>
-          <label className="label" htmlFor="login-password">{t('login.password')}</label>
-          <input id="login-password" type="password" className="input h-11" value={password}
-            onChange={e => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
-        </div>
-        <button type="submit" className="btn-primary w-full justify-center h-11 mt-2" disabled={loading || !username || !password}>
-          {loading ? t('login.loading') : t('login.submit')}
-          {!loading && <ArrowRight size={15} strokeWidth={2.25} />}
-        </button>
-      </form>
-    </AuthShell>
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 p-6 rounded-xl"
+          style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <div>
+            <label className="label">{t('login.username')}</label>
+            <input
+              type="text"
+              className="input"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="admin"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="label">{t('login.password')}</label>
+            <input
+              type="password"
+              className="input"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn-primary w-full justify-center py-2.5 mt-2"
+            disabled={loading}
+          >
+            {loading ? t('login.loading') : t('login.submit')}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

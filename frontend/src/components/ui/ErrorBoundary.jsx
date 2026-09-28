@@ -23,7 +23,7 @@ function CreeperFace({ size = 88, shaking }) {
     <svg
       width={size} height={size} viewBox={`0 0 ${size} ${size}`}
       className={clsx(shaking && 'creeper-shake')}
-      style={{ filter: 'drop-shadow(0 0 22px rgba(var(--accent-rgb),0.35))', imageRendering: 'pixelated' }}
+      style={{ imageRendering: 'pixelated' }}
       aria-hidden="true"
     >
       {CREEPER.flatMap((row, y) => [...row].map((c, x) => (
@@ -71,7 +71,7 @@ function CrashScreen({ error, info, onRetry, scope }) {
       <div className="max-w-md w-full text-center pop-in">
         <div className="flex justify-center mb-6"><CreeperFace size={full ? 104 : 80} shaking /></div>
         <p className="eyebrow mb-2">{t('crash.eyebrow')}</p>
-        <h2 className="font-display text-2xl font-semibold text-fg tracking-tight">{t('crash.title')}</h2>
+        <h2 className="text-xl font-semibold text-fg tracking-tight">{t('crash.title')}</h2>
         <p className="text-sm text-fg-2 mt-2 leading-relaxed">{full ? t('crash.bodyApp') : t('crash.bodyPanel')}</p>
 
         <div className="flex flex-wrap justify-center gap-2 mt-6">

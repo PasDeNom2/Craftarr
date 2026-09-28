@@ -3,6 +3,11 @@ const dockerService = require('../services/docker');
 const metrics = require('../services/metrics');
 const { createDiagnoser } = require('../services/logDiagnostics');
 
+// Lignes produites par le relevé RCON de Craftarr (joueurs/TPS toutes les 15 s). Sur un serveur
+// calme, elles remplissaient à elles seules les 200 dernières lignes : la console restait vide.
+const RCON_NOISE = /Thread RCON (Client|Listener)|\[minecraft\/RconClient\]|RCON Client \/[\d.:]+ (started|shutting down)/;
+const RECENT_LINES = 300;
+
 // ─── Player log parsing ───────────────────────────────────────────────────────
 // Cache UUID: serverId -> { playerName -> uuid }
 const uuidCache = {};
@@ -106,8 +111,10 @@ function setupLogsSocket(io) {
         const db = getDb();
         const srv = db.prepare('SELECT container_id FROM servers WHERE id = ?').get(serverId);
         if (srv?.container_id) {
-          dockerService.getRecentLogs(srv.container_id, 200).then(lines => {
-            lines.forEach(line => socket.emit('log', { serverId, line, timestamp: Date.now() }));
+          // On remonte loin puis on retire le bruit RCON pour envoyer les vraies dernières lignes
+          dockerService.getRecentLogs(srv.container_id, 5000).then(lines => {
+            lines.filter(l => !RCON_NOISE.test(l)).slice(-RECENT_LINES)
+              .forEach(line => socket.emit('log', { serverId, line, timestamp: Date.now() }));
           }).catch(() => {});
         }
       }
@@ -173,6 +180,7 @@ function startLogStream(io, serverId, attempt = 0) {
   const stopStream = dockerService.streamContainerLogs(
     server.container_id,
     line => {
+      if (RCON_NOISE.test(line)) return;
       io.to(`server:${serverId}`).emit('log', { serverId, line, timestamp: Date.now() });
       const hint = diagnose(line);
       if (hint) {

@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Sunucu durduruldu",
     "noServerPack": "Sunucu paketi yok",
     "noServerPackDesc": "Bu modpack bir sunucu paketi sunmuyor. Yine de istemci paketiyle kurulsun mu (modlar manifestten indirilir)?",
-    "useClientPack": "İstemci paketiyle kur"
+    "useClientPack": "İstemci paketiyle kur",
+    "filter": {
+      "all": "Tümü",
+      "warn": "Uyarılar",
+      "error": "Hatalar",
+      "players": "Oyuncular",
+      "commands": "Komutlar"
+    },
+    "search": "Günlüklerde ara…",
+    "noMatch": "Eşleşen satır yok",
+    "timestamps": "Zaman damgaları",
+    "wrap": "Satır kaydır",
+    "smaller": "Daha küçük yazı",
+    "bigger": "Daha büyük yazı",
+    "copy": "Görünen satırları kopyala",
+    "copied": "{count} satır kopyalandı",
+    "download": "Günlükleri indir",
+    "pause": "Kaydırmayı duraklat",
+    "resume": "Canlı takip et",
+    "stackTrace": "{count} stacktrace satırı",
+    "useStopButton": "Sunucuyu durdurmak için “Durdur” düğmesini kullan: dünyayı düzgün kaydeder.",
+    "live": "Canlı",
+    "players": "Oyuncular",
+    "onlinePlayers": "Çevrimiçi oyuncular",
+    "noPlayersOnline": "Kimse çevrimiçi değil",
+    "insertPlayer": "Komuta ekle",
+    "quickActions": "Hızlı işlemler",
+    "quick": {
+      "save": "Kaydet",
+      "day": "Gündüz yap",
+      "weather": "Açık hava",
+      "list": "Listele",
+      "announce": "Mesaj duyur…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

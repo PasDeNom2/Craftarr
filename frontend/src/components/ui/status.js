@@ -3,7 +3,7 @@ export const STATUS_COLOR = {
   running:    'var(--accent)',
   starting:   'var(--warn)',
   installing: 'var(--warn)',
-  updating:   'var(--info)',
+  updating:   'var(--warn)',
   stopped:    'var(--fg-3)',
   error:      'var(--danger)',
 };
@@ -12,7 +12,7 @@ export const STATUS_RGB = {
   running:    'var(--accent-rgb)',
   starting:   'var(--warn-rgb)',
   installing: 'var(--warn-rgb)',
-  updating:   'var(--info-rgb)',
+  updating:   'var(--warn-rgb)',
   stopped:    'var(--fg-2-rgb)',
   error:      'var(--danger-rgb)',
 };

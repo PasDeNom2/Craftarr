@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Server gestopt",
     "noServerPack": "Geen serverpack beschikbaar",
     "noServerPackDesc": "Dit modpack biedt geen serverpack. Toch installeren met het clientpack (mods worden via het manifest gedownload)?",
-    "useClientPack": "Installeren met clientpack"
+    "useClientPack": "Installeren met clientpack",
+    "filter": {
+      "all": "Alles",
+      "warn": "Waarschuwingen",
+      "error": "Fouten",
+      "players": "Spelers",
+      "commands": "Commando's"
+    },
+    "search": "Zoeken in logs…",
+    "noMatch": "Geen overeenkomende regel",
+    "timestamps": "Tijdstempels",
+    "wrap": "Regels afbreken",
+    "smaller": "Kleinere tekst",
+    "bigger": "Grotere tekst",
+    "copy": "Zichtbare regels kopiëren",
+    "copied": "{count} regel(s) gekopieerd",
+    "download": "Logs downloaden",
+    "pause": "Scrollen pauzeren",
+    "resume": "Live volgen",
+    "stackTrace": "{count} stacktrace-regels",
+    "useStopButton": "Gebruik de knop \"Stoppen\" om de server te stoppen: die slaat de wereld correct op.",
+    "live": "Live",
+    "players": "Spelers",
+    "onlinePlayers": "Spelers online",
+    "noPlayersOnline": "Niemand online",
+    "insertPlayer": "In commando invoegen",
+    "quickActions": "Snelle acties",
+    "quick": {
+      "save": "Opslaan",
+      "day": "Dag instellen",
+      "weather": "Helder weer",
+      "list": "Lijst",
+      "announce": "Bericht omroepen…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

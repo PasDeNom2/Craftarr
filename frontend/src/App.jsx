@@ -9,7 +9,6 @@ import CatalogPage from './pages/CatalogPage';
 import ServerDetailPage from './pages/ServerDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
-import { LogoMark } from './components/ui/Logo';
 
 function PrivateRoute({ children }) {
   const token = useAuthStore(s => s.token);
@@ -32,7 +31,7 @@ function AuthGate({ children }) {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center atmosphere">
-        <LogoMark size={40} glow className="animate-pulse" />
+        <div className="w-5 h-5 border border-fg-3 border-t-transparent rounded-full animate-spin" style={{ borderTopColor: 'transparent' }} />
       </div>
     );
   }

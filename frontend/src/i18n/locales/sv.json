@@ -245,7 +245,40 @@
     "stoppedPlaceholder": "Server stoppad",
     "noServerPack": "Inget serverpaket tillgängligt",
     "noServerPackDesc": "Detta modpack har inget serverpaket. Installera ändå med klientpaketet (moddar laddas ner via manifestet)?",
-    "useClientPack": "Installera med klientpaketet"
+    "useClientPack": "Installera med klientpaketet",
+    "filter": {
+      "all": "Alla",
+      "warn": "Varningar",
+      "error": "Fel",
+      "players": "Spelare",
+      "commands": "Kommandon"
+    },
+    "search": "Sök i loggarna…",
+    "noMatch": "Inga matchande rader",
+    "timestamps": "Tidsstämplar",
+    "wrap": "Radbrytning",
+    "smaller": "Mindre text",
+    "bigger": "Större text",
+    "copy": "Kopiera synliga rader",
+    "copied": "{count} rad(er) kopierade",
+    "download": "Ladda ner loggar",
+    "pause": "Pausa rullning",
+    "resume": "Följ live",
+    "stackTrace": "{count} stacktrace-rader",
+    "useStopButton": "Använd knappen ”Stoppa” för att stoppa servern: den sparar världen korrekt.",
+    "live": "Live",
+    "players": "Spelare",
+    "onlinePlayers": "Spelare online",
+    "noPlayersOnline": "Ingen online",
+    "insertPlayer": "Infoga i kommandot",
+    "quickActions": "Snabbåtgärder",
+    "quick": {
+      "save": "Spara",
+      "day": "Gör dag",
+      "weather": "Klart väder",
+      "list": "Lista",
+      "announce": "Sänd ett meddelande…"
+    }
   },
   "metrics": {
     "cpu": "CPU",

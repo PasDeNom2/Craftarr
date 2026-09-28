@@ -16,12 +16,12 @@ function Toggle({ checked, onChange, label }) {
       aria-label={label}
       onClick={onChange}
       className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-      style={{ background: checked ? 'var(--accent)' : 'var(--surface-3)', boxShadow: 'inset 0 0 0 1px var(--line)' }}
+      style={{ background: checked ? 'var(--accent)' : 'rgba(255,255,255,0.1)' }}
     >
       <span
         className="inline-block h-3.5 w-3.5 rounded-[4px] transition-transform"
         style={{
-          background: checked ? 'var(--accent-ink)' : 'var(--fg-2)',
+          background: '#fff',
           transform: checked ? 'translateX(19px)' : 'translateX(3px)',
           transitionTimingFunction: 'cubic-bezier(.16,1,.3,1)',
         }}
@@ -88,7 +88,7 @@ export default function ApiSourceList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-xs text-fg-2"><span className="font-pixel text-fg">{sources.length}</span> {t('sources.title').toLowerCase()}</p>
+        <p className="text-xs text-fg-2"><span className="text-fg font-medium">{sources.length}</span> {t('sources.title').toLowerCase()}</p>
         <div className="flex gap-2">
           <button className="btn-ghost text-xs px-3 py-1.5" onClick={handleExport}>
             <Upload size={13} strokeWidth={1.75} /> {t('sources.export')}
