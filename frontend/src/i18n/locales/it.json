@@ -370,7 +370,16 @@
     "discard": "Esci senza salvare",
     "cursor": "Riga {line}, Col {col}",
     "lines": "{count} righe",
-    "shortcutsHint": "Ctrl+A seleziona tutto · Canc elimina · F2 rinomina · ⌫ su"
+    "shortcutsHint": "Ctrl+A seleziona tutto · Canc elimina · F2 rinomina · ⌫ su",
+    "find": "Cerca",
+    "replaceWith": "Sostituisci con",
+    "matchCase": "Maiuscole/minuscole",
+    "prevMatch": "Precedente (Maiusc+Invio)",
+    "nextMatch": "Successivo (Invio)",
+    "replaceOne": "Sostituisci",
+    "replaceAll": "Sostituisci tutto",
+    "toggleReplace": "Mostra sostituzione",
+    "closeTab": "Chiudi"
   },
   "serverSettings": {
     "title": "Impostazioni server",
@@ -567,5 +576,29 @@
     "title": "Chunk non trovato",
     "body": "Questa pagina non è mai stata generata.",
     "back": "Torna al catalogo"
+  },
+  "pregen": {
+    "status": {
+      "pending": "In attesa dell'avvio del server",
+      "running": "Generazione in corso",
+      "paused": "In pausa — giocatori connessi",
+      "done": "Mondo pregenerato",
+      "needs_restart": "Riavvia il server per attivare Chunky",
+      "error": "Errore",
+      "unsupported": "Non disponibile"
+    },
+    "title": "Pregenerazione del mondo",
+    "enable": "Pregenera il mondo",
+    "enableHint": "Genera il terreno in anticipo con Chunky: molto meno lag durante l'esplorazione.",
+    "radius": "Raggio attorno allo spawn",
+    "radiusHint": "Area di {size} × {size} blocchi",
+    "pausePlayers": "Pausa con giocatori connessi",
+    "pausePlayersHint": "Nessun impatto sulle prestazioni in gioco",
+    "eta": "Circa {eta} rimanenti",
+    "restart": "Ricomincia",
+    "vanillaNote": "Chunky richiede un loader: il server userà Fabric. I giocatori entrano comunque con Minecraft normale.",
+    "vanillaUnsupported": "Non disponibile su un server vanilla già creato",
+    "footer": "Chunky viene installato automaticamente nella versione giusta e riprende da solo dopo un riavvio.",
+    "enableFailed": "Pregenerazione non disponibile: {error}"
   }
 }

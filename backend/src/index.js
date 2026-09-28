@@ -104,6 +104,8 @@ io.use((socket, next) => {
 
 // Injection io dans les services
 metrics.setIo(io);
+const pregen = require('./services/pregen');
+pregen.setIo(io);
 installer.setIo(io);
 updater.setIo(io);
 
@@ -148,6 +150,7 @@ server.listen(PORT, async () => {
   initSetupToken();
   await reconcileServerStates();
   metrics.startPolling();
+  pregen.start();
   updater.scheduleUpdater();
   require('./services/backup').scheduleBackups();
 });
@@ -156,6 +159,7 @@ server.listen(PORT, async () => {
 process.on('SIGTERM', () => {
   console.log('[Craftarr] SIGTERM reçu, arrêt propre...');
   metrics.stopPolling();
+  pregen.stop();
   server.close(() => {
     console.log('[Craftarr] Serveur arrêté.');
     process.exit(0);

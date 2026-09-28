@@ -370,7 +370,16 @@
     "discard": "Wyjdź bez zapisywania",
     "cursor": "Wrs {line}, Kol {col}",
     "lines": "Wiersze: {count}",
-    "shortcutsHint": "Ctrl+A zaznacz wszystko · Del usuń · F2 zmień nazwę · ⌫ w górę"
+    "shortcutsHint": "Ctrl+A zaznacz wszystko · Del usuń · F2 zmień nazwę · ⌫ w górę",
+    "find": "Znajdź",
+    "replaceWith": "Zamień na",
+    "matchCase": "Uwzględnij wielkość liter",
+    "prevMatch": "Poprzedni (Shift+Enter)",
+    "nextMatch": "Następny (Enter)",
+    "replaceOne": "Zamień",
+    "replaceAll": "Zamień wszystko",
+    "toggleReplace": "Pokaż zamianę",
+    "closeTab": "Zamknij"
   },
   "serverSettings": {
     "title": "Ustawienia serwera",
@@ -567,5 +576,29 @@
     "title": "Nie znaleziono chunka",
     "body": "Ta strona nigdy nie została wygenerowana.",
     "back": "Wróć do katalogu"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Oczekiwanie na start serwera",
+      "running": "Generowanie",
+      "paused": "Wstrzymano — gracze online",
+      "done": "Świat wygenerowany",
+      "needs_restart": "Uruchom ponownie serwer, aby włączyć Chunky",
+      "error": "Błąd",
+      "unsupported": "Niedostępne"
+    },
+    "title": "Wstępne generowanie świata",
+    "enable": "Wygeneruj świat z wyprzedzeniem",
+    "enableHint": "Generuje teren z wyprzedzeniem za pomocą Chunky: znacznie mniej lagów podczas eksploracji.",
+    "radius": "Promień wokół spawnu",
+    "radiusHint": "Obszar {size} × {size} bloków",
+    "pausePlayers": "Wstrzymaj, gdy gracze są online",
+    "pausePlayersHint": "Bez wpływu na wydajność w grze",
+    "eta": "Pozostało ok. {eta}",
+    "restart": "Zacznij od nowa",
+    "vanillaNote": "Chunky wymaga loadera: serwer użyje Fabric. Gracze nadal łączą się zwykłym Minecraftem.",
+    "vanillaUnsupported": "Niedostępne na istniejącym serwerze vanilla",
+    "footer": "Chunky instaluje się automatycznie w odpowiedniej wersji i sam wznawia pracę po restarcie.",
+    "enableFailed": "Wstępne generowanie niedostępne: {error}"
   }
 }

@@ -8,6 +8,7 @@ import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import { Rocket, Globe } from 'lucide-react';
 import IconPicker from '../ui/IconPicker';
+import PregenOption from './PregenOption';
 import { nextFreePort, portTakenBy } from '../../utils/ports';
 
 const VERSION_TYPES = [
@@ -24,6 +25,8 @@ export default function VanillaModal({ open, onClose }) {
 
   const [versionType, setVersionType] = useState('release');
   const [form, setForm] = useState({
+    pregen_enabled: false,
+    pregen_radius: 3000,
     name: 'Vanilla Server',
     mc_version: '',
     port: nextFreePort(allServers),
@@ -65,6 +68,8 @@ export default function VanillaModal({ open, onClose }) {
       const server = await createServer({
         name: form.name,
         loader_type: 'vanilla',
+        pregen_enabled: form.pregen_enabled,
+        pregen_radius: form.pregen_radius,
         mc_version: effectiveMcVersion,
         port: form.port,
         ram_mb: form.ram_mb,
@@ -287,6 +292,7 @@ export default function VanillaModal({ open, onClose }) {
               <span className="text-sm text-fg-2">{t('deploy.onlineMode')}</span>
             </label>
           </div>
+          <PregenOption form={form} set={set} vanilla />
 
           <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying || !!portConflict}>
             <Rocket size={14} strokeWidth={1.5} />

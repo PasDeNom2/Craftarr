@@ -370,7 +370,16 @@
     "discard": "不保存离开",
     "cursor": "行 {line}，列 {col}",
     "lines": "{count} 行",
-    "shortcutsHint": "Ctrl+A 全选 · Del 删除 · F2 重命名 · ⌫ 返回上级"
+    "shortcutsHint": "Ctrl+A 全选 · Del 删除 · F2 重命名 · ⌫ 返回上级",
+    "find": "查找",
+    "replaceWith": "替换为",
+    "matchCase": "区分大小写",
+    "prevMatch": "上一个 (Shift+Enter)",
+    "nextMatch": "下一个 (Enter)",
+    "replaceOne": "替换",
+    "replaceAll": "全部替换",
+    "toggleReplace": "显示替换",
+    "closeTab": "关闭"
   },
   "serverSettings": {
     "title": "服务器设置",
@@ -567,5 +576,29 @@
     "title": "找不到区块",
     "body": "此页面从未生成。",
     "back": "返回目录"
+  },
+  "pregen": {
+    "status": {
+      "pending": "等待服务器启动",
+      "running": "生成中",
+      "paused": "已暂停 — 有玩家在线",
+      "done": "世界已预生成",
+      "needs_restart": "重启服务器以启用 Chunky",
+      "error": "错误",
+      "unsupported": "不可用"
+    },
+    "title": "世界预生成",
+    "enable": "预生成世界",
+    "enableHint": "使用 Chunky 提前生成地形：探索时卡顿大幅减少。",
+    "radius": "出生点周围半径",
+    "radiusHint": "{size} × {size} 方块区域",
+    "pausePlayers": "有玩家在线时暂停",
+    "pausePlayersHint": "不影响游戏内性能",
+    "eta": "剩余约 {eta}",
+    "restart": "重新开始",
+    "vanillaNote": "Chunky 需要加载器：服务器将使用 Fabric。玩家仍可用原版 Minecraft 连接。",
+    "vanillaUnsupported": "已创建的原版服务器不可用",
+    "footer": "Chunky 会自动安装适合此服务器的版本，重启后自动继续。",
+    "enableFailed": "无法预生成：{error}"
   }
 }

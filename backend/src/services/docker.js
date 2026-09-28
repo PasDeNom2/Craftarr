@@ -297,6 +297,8 @@ function buildEnvVars(server) {
   }
 
   if (server.seed) env.push(`SEED=${server.seed}`);
+  // Pré-génération : un serveur vide (1.21.2+) se met en pause et Chunky n'avancerait plus
+  if (server.pregen_enabled) env.push('PAUSE_WHEN_EMPTY_SECONDS=0');
   if (server.whitelist_enabled) env.push('WHITELIST=true');
   env.push(`DIFFICULTY=${server.difficulty || 'normal'}`);
   env.push(`VIEW_DISTANCE=${server.view_distance || 10}`);

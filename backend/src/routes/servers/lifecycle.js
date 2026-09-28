@@ -12,6 +12,10 @@ const updater = require('../../services/updater');
 const { startLogStream } = require('../../websocket/logs');
 const { isMcVersion } = require('../../services/mcVersion');
 const { DATA_PATH, formatServer, findFreePort, mapDockerStatus, portOwner } = require('./common');
+const pregen = require('../../services/pregen');
+
+/** Rayon de pré-génération borné (blocs) */
+const clampRadius = r => Math.max(500, Math.min(20000, Math.round(+r || 3000)));
 
 const router = express.Router();
 
@@ -67,9 +71,16 @@ router.post('/', authMiddleware, async (req, res, next) => {
       name, modpack_id, modpack_name, modpack_source, modpack_version, modpack_version_id,
       port, ram_mb = 4096, max_players = 20, seed, whitelist_enabled = false,
       mc_version, loader_type = 'forge', auto_update = false, online_mode = true,
+      pregen_enabled = false, pregen_radius = 3000,
     } = req.body;
 
-    const isVanilla = loader_type === 'vanilla';
+    let isVanilla = loader_type === 'vanilla';
+    // Vanilla + pré-génération : Chunky a besoin d'un loader. On passe sur Fabric (compatible avec
+    // les clients vanilla, aucun mod à installer côté joueurs) si Chunky existe pour cette version.
+    let effectiveLoader = loader_type;
+    if (isVanilla && pregen_enabled && isMcVersion(mc_version) && await pregen.isAvailable('fabric', mc_version)) {
+      effectiveLoader = 'fabric';
+    }
     if (!name || (!isVanilla && (!modpack_id || !modpack_source))) {
       return res.status(400).json({ error: 'name (et modpack_id/modpack_source pour les modpacks) sont requis' });
     }
@@ -88,13 +99,14 @@ router.post('/', authMiddleware, async (req, res, next) => {
     db.prepare(`
       INSERT INTO servers (id, name, modpack_id, modpack_name, modpack_source, modpack_version,
         modpack_version_id, port, rcon_port, rcon_password, ram_mb, max_players, seed,
-        whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?)
+        whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update, pregen_enabled, pregen_radius)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?, ?, ?)
     `).run(id, name, effectiveModpackId, modpack_name || effectiveModpackId, effectiveModpackSource, modpack_version || null,
       modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
       seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
       (isMcVersion(mc_version) ? mc_version : null),
-      loader_type, auto_update ? 1 : 0);
+      effectiveLoader, auto_update ? 1 : 0,
+      pregen_enabled && effectiveLoader !== 'vanilla' ? 1 : 0, clampRadius(pregen_radius));
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
     res.status(201).json(formatServer(server));
@@ -404,8 +416,9 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-    const allowed = ['name', 'port', 'ram_mb', 'max_players', 'whitelist_enabled', 'auto_update', 'update_interval_hours', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection'];
-    const booleans = new Set(['whitelist_enabled', 'auto_update']);
+    const allowed = ['name', 'port', 'ram_mb', 'max_players', 'whitelist_enabled', 'auto_update', 'update_interval_hours', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection',
+      'pregen_enabled', 'pregen_radius', 'pregen_pause_players'];
+    const booleans = new Set(['whitelist_enabled', 'auto_update', 'pregen_enabled', 'pregen_pause_players']);
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
@@ -413,6 +426,27 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
       }
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
+    if (updates.pregen_radius !== undefined) updates.pregen_radius = clampRadius(updates.pregen_radius);
+
+    // Pré-génération : activation (installation de Chunky), désactivation, changement de rayon
+    let pregenError = null;
+    const pregenOn = updates.pregen_enabled !== undefined ? !!updates.pregen_enabled : !!server.pregen_enabled;
+    if (updates.pregen_enabled === 1 && !server.pregen_enabled) {
+      try {
+        const { installed } = await pregen.ensureChunky({ ...server, ...updates });
+        updates.pregen_status = installed && ['running', 'starting'].includes(server.status) ? 'needs_restart' : 'pending';
+        updates.pregen_message = null;
+      } catch (err) {
+        pregenError = err.message;
+        updates.pregen_enabled = 0;
+      }
+    } else if (updates.pregen_enabled === 0 && server.pregen_enabled) {
+      await pregen.cancelTask(server);
+      Object.assign(updates, { pregen_status: null, pregen_progress: 0, pregen_eta: null, pregen_message: null });
+    } else if (pregenOn && updates.pregen_radius !== undefined && updates.pregen_radius !== server.pregen_radius && server.pregen_status) {
+      await pregen.cancelTask(server);
+      Object.assign(updates, { pregen_status: server.pregen_status === 'needs_restart' ? 'needs_restart' : 'pending', pregen_progress: 0, pregen_eta: null });
+    }
     if (updates.port !== undefined && updates.port !== server.port) {
       const clash = portOwner(db, updates.port, server.id);
       if (clash) return res.status(409).json({ error: `Le port ${updates.port} est déjà utilisé par « ${clash.name} »` });
@@ -426,7 +460,23 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
     db.prepare(`UPDATE servers SET ${setClauses} WHERE id = ?`).run(...Object.values(updates), server.id);
 
     const updated = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
-    res.json(formatServer(updated));
+    res.json({ ...formatServer(updated), ...(pregenError ? { pregenError } : {}) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/servers/:id/pregen/restart — Recommence la pré-génération depuis zéro
+router.post('/:id/pregen/restart', authMiddleware, async (req, res, next) => {
+  try {
+    const db = getDb();
+    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+    if (!server.pregen_enabled) return res.status(400).json({ error: 'Pré-génération désactivée' });
+    await pregen.cancelTask(server);
+    db.prepare("UPDATE servers SET pregen_status = 'pending', pregen_progress = 0, pregen_eta = NULL, pregen_message = NULL WHERE id = ?").run(server.id);
+    res.json(formatServer(db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id)));
+    pregen.tick().catch(() => {});
   } catch (err) {
     next(err);
   }

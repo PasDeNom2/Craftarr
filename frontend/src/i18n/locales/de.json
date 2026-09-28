@@ -370,7 +370,16 @@
     "discard": "Ohne Speichern verlassen",
     "cursor": "Z. {line}, Sp. {col}",
     "lines": "{count} Zeilen",
-    "shortcutsHint": "Strg+A alles auswählen · Entf löschen · F2 umbenennen · ⌫ nach oben"
+    "shortcutsHint": "Strg+A alles auswählen · Entf löschen · F2 umbenennen · ⌫ nach oben",
+    "find": "Suchen",
+    "replaceWith": "Ersetzen durch",
+    "matchCase": "Groß-/Kleinschreibung",
+    "prevMatch": "Vorheriger (Umschalt+Enter)",
+    "nextMatch": "Nächster (Enter)",
+    "replaceOne": "Ersetzen",
+    "replaceAll": "Alle ersetzen",
+    "toggleReplace": "Ersetzen anzeigen",
+    "closeTab": "Schließen"
   },
   "serverSettings": {
     "title": "Servereinstellungen",
@@ -567,5 +576,29 @@
     "title": "Chunk nicht gefunden",
     "body": "Diese Seite wurde nie generiert.",
     "back": "Zurück zum Katalog"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Warte auf den Serverstart",
+      "running": "Wird generiert",
+      "paused": "Pausiert — Spieler online",
+      "done": "Welt vorgeneriert",
+      "needs_restart": "Server neu starten, um Chunky zu aktivieren",
+      "error": "Fehler",
+      "unsupported": "Nicht verfügbar"
+    },
+    "title": "Welt-Vorgenerierung",
+    "enable": "Welt vorgenerieren",
+    "enableHint": "Erzeugt das Gelände vorab mit Chunky: viel weniger Lag beim Erkunden.",
+    "radius": "Radius um den Spawn",
+    "radiusHint": "Bereich von {size} × {size} Blöcken",
+    "pausePlayers": "Pausieren, wenn Spieler online sind",
+    "pausePlayersHint": "Kein Einfluss auf die Leistung im Spiel",
+    "eta": "Noch etwa {eta}",
+    "restart": "Neu starten",
+    "vanillaNote": "Chunky braucht einen Mod-Loader: Der Server nutzt Fabric. Spieler verbinden sich weiterhin mit normalem Minecraft.",
+    "vanillaUnsupported": "Bei einem bestehenden Vanilla-Server nicht verfügbar",
+    "footer": "Chunky wird automatisch in der passenden Version installiert und setzt nach einem Neustart selbst fort.",
+    "enableFailed": "Vorgenerierung nicht möglich: {error}"
   }
 }

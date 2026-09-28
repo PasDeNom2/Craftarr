@@ -370,7 +370,16 @@
     "discard": "Leave without saving",
     "cursor": "Ln {line}, Col {col}",
     "lines": "{count} lines",
-    "shortcutsHint": "Ctrl+A select all · Del delete · F2 rename · ⌫ go up"
+    "shortcutsHint": "Ctrl+A select all · Del delete · F2 rename · ⌫ go up",
+    "find": "Find",
+    "replaceWith": "Replace with",
+    "matchCase": "Match case",
+    "prevMatch": "Previous (Shift+Enter)",
+    "nextMatch": "Next (Enter)",
+    "replaceOne": "Replace",
+    "replaceAll": "Replace all",
+    "toggleReplace": "Toggle replace",
+    "closeTab": "Close"
   },
   "serverSettings": {
     "title": "Server settings",
@@ -567,5 +576,29 @@
     "title": "Chunk not found",
     "body": "This page was never generated.",
     "back": "Back to catalogue"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Waiting for the server to start",
+      "running": "Generating",
+      "paused": "Paused — players online",
+      "done": "World pre-generated",
+      "needs_restart": "Restart the server to enable Chunky",
+      "error": "Error",
+      "unsupported": "Unavailable"
+    },
+    "title": "World pre-generation",
+    "enable": "Pre-generate the world",
+    "enableHint": "Generates terrain ahead of time with Chunky: much less lag while exploring.",
+    "radius": "Radius around spawn",
+    "radiusHint": "{size} × {size} block area",
+    "pausePlayers": "Pause while players are online",
+    "pausePlayersHint": "No impact on in-game performance",
+    "eta": "About {eta} left",
+    "restart": "Start over",
+    "vanillaNote": "Chunky needs a mod loader: the server will use Fabric. Players still join with regular Minecraft.",
+    "vanillaUnsupported": "Not available on an existing vanilla server",
+    "footer": "Chunky is installed automatically in the right version for this server and resumes on its own after a restart.",
+    "enableFailed": "Pre-generation unavailable: {error}"
   }
 }

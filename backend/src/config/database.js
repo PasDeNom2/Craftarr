@@ -58,6 +58,14 @@ function initDb() {
     "ALTER TABLE players ADD COLUMN ban_reason TEXT",
     "ALTER TABLE players ADD COLUMN is_online INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE players ADD COLUMN is_op INTEGER NOT NULL DEFAULT 0",
+    // Pré-génération du monde (Chunky)
+    "ALTER TABLE servers ADD COLUMN pregen_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE servers ADD COLUMN pregen_radius INTEGER NOT NULL DEFAULT 3000",
+    "ALTER TABLE servers ADD COLUMN pregen_pause_players INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE servers ADD COLUMN pregen_status TEXT",
+    "ALTER TABLE servers ADD COLUMN pregen_progress REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE servers ADD COLUMN pregen_eta TEXT",
+    "ALTER TABLE servers ADD COLUMN pregen_message TEXT",
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* colonne déjà présente */ }

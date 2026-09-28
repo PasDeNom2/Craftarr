@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { Save, Sun, CloudSun, Users, Megaphone, Send } from 'lucide-react';
 import { useMetricsStore } from '../../../store';
 import { useI18n } from '../../../i18n';
+import PregenStatus from '../PregenStatus';
 
 function PlayerHead({ name, size = 22 }) {
   const [failed, setFailed] = useState(false);
@@ -84,6 +85,12 @@ export default function LivePanel({ server, onlinePlayers, onRun, onPickPlayer }
           />
         </div>
       </Section>
+
+      {server.pregen_enabled && server.pregen_status !== 'done' && (
+        <Section title={t('pregen.title')}>
+          <PregenStatus server={server} compact />
+        </Section>
+      )}
 
       <Section title={t('console.onlinePlayers')} right={<span className="text-[11px] font-mono text-fg-3">{onlinePlayers.length}</span>}>
         {onlinePlayers.length === 0 ? (

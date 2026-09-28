@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Rocket, Globe } from 'lucide-react';
 import IconPicker from '../ui/IconPicker';
+import PregenOption from './PregenOption';
 import { nextFreePort, portTakenBy } from '../../utils/ports';
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
@@ -28,6 +29,8 @@ export default function DeployModal({ modpack, onClose }) {
     whitelist_enabled: false,
     online_mode: true,
     version_id: '',
+    pregen_enabled: false,
+    pregen_radius: 3000,
   });
   const [worldFile, setWorldFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
@@ -49,7 +52,7 @@ export default function DeployModal({ modpack, onClose }) {
 
   const selectedVersion = versions.find(v => String(v.id) === form.version_id);
   const detectedLoaders = selectedVersion?.loaders || [];
-  const detectedMcVersions = (selectedVersion?.mcVersions || selectedVersion?.game_versions || []).filter(v => /^1\.\d+/.test(v));
+  const detectedMcVersions = (selectedVersion?.mcVersions || selectedVersion?.game_versions || []).filter(v => /^(1\.\d+|2\d\.\d+)(\.\d+)?$/.test(v));
 
   async function handleDeploy(e) {
     e.preventDefault();
@@ -69,6 +72,8 @@ export default function DeployModal({ modpack, onClose }) {
         modpack_version_id: form.version_id || undefined,
         mc_version: detectedMcVersions[0] || modpack.mcVersions?.[0] || null,
         loader_type: detectedLoaders[0] || 'forge',
+        pregen_enabled: form.pregen_enabled,
+        pregen_radius: form.pregen_radius,
       });
       addServer(server);
       if (iconFile) {
@@ -231,6 +236,8 @@ export default function DeployModal({ modpack, onClose }) {
               <span className="text-sm text-fg-2">{t('deploy.onlineMode')}</span>
             </label>
           </div>
+
+          <PregenOption form={form} set={set} />
 
           <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying || !!portConflict}>
             <Rocket size={14} strokeWidth={1.5} />

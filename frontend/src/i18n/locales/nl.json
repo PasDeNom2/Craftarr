@@ -370,7 +370,16 @@
     "discard": "Verlaten zonder opslaan",
     "cursor": "Rg {line}, Kol {col}",
     "lines": "{count} regels",
-    "shortcutsHint": "Ctrl+A alles selecteren · Del verwijderen · F2 hernoemen · ⌫ omhoog"
+    "shortcutsHint": "Ctrl+A alles selecteren · Del verwijderen · F2 hernoemen · ⌫ omhoog",
+    "find": "Zoeken",
+    "replaceWith": "Vervangen door",
+    "matchCase": "Hoofdlettergevoelig",
+    "prevMatch": "Vorige (Shift+Enter)",
+    "nextMatch": "Volgende (Enter)",
+    "replaceOne": "Vervangen",
+    "replaceAll": "Alles vervangen",
+    "toggleReplace": "Vervangen tonen",
+    "closeTab": "Sluiten"
   },
   "serverSettings": {
     "title": "Serverinstellingen",
@@ -567,5 +576,29 @@
     "title": "Chunk niet gevonden",
     "body": "Deze pagina is nooit gegenereerd.",
     "back": "Terug naar de catalogus"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Wachten tot de server start",
+      "running": "Bezig met genereren",
+      "paused": "Gepauzeerd — spelers online",
+      "done": "Wereld vooraf gegenereerd",
+      "needs_restart": "Herstart de server om Chunky te activeren",
+      "error": "Fout",
+      "unsupported": "Niet beschikbaar"
+    },
+    "title": "Wereld vooraf genereren",
+    "enable": "Wereld vooraf genereren",
+    "enableHint": "Genereert het terrein vooraf met Chunky: veel minder lag tijdens het verkennen.",
+    "radius": "Straal rond de spawn",
+    "radiusHint": "Gebied van {size} × {size} blokken",
+    "pausePlayers": "Pauzeren als er spelers online zijn",
+    "pausePlayersHint": "Geen invloed op de prestaties in het spel",
+    "eta": "Nog ongeveer {eta}",
+    "restart": "Opnieuw beginnen",
+    "vanillaNote": "Chunky heeft een loader nodig: de server gebruikt Fabric. Spelers verbinden nog steeds met gewone Minecraft.",
+    "vanillaUnsupported": "Niet beschikbaar op een bestaande vanilla-server",
+    "footer": "Chunky wordt automatisch in de juiste versie geïnstalleerd en gaat na een herstart vanzelf verder.",
+    "enableFailed": "Vooraf genereren niet mogelijk: {error}"
   }
 }

@@ -370,7 +370,16 @@
     "discard": "Quitter sans enregistrer",
     "cursor": "Ln {line}, Col {col}",
     "lines": "{count} lignes",
-    "shortcutsHint": "Ctrl+A tout sélectionner · Suppr supprimer · F2 renommer · ⌫ remonter"
+    "shortcutsHint": "Ctrl+A tout sélectionner · Suppr supprimer · F2 renommer · ⌫ remonter",
+    "find": "Rechercher",
+    "replaceWith": "Remplacer par",
+    "matchCase": "Respecter la casse",
+    "prevMatch": "Précédent (Maj+Entrée)",
+    "nextMatch": "Suivant (Entrée)",
+    "replaceOne": "Remplacer",
+    "replaceAll": "Tout remplacer",
+    "toggleReplace": "Afficher le remplacement",
+    "closeTab": "Fermer"
   },
   "serverSettings": {
     "title": "Paramètres du serveur",
@@ -567,5 +576,29 @@
     "title": "Chunk introuvable",
     "body": "Cette page n'a jamais été générée.",
     "back": "Retour au catalogue"
+  },
+  "pregen": {
+    "status": {
+      "pending": "En attente du démarrage du serveur",
+      "running": "Génération en cours",
+      "paused": "En pause — joueurs connectés",
+      "done": "Monde pré-généré",
+      "needs_restart": "Redémarrez le serveur pour activer Chunky",
+      "error": "Erreur",
+      "unsupported": "Non disponible"
+    },
+    "title": "Pré-génération du monde",
+    "enable": "Pré-générer le monde",
+    "enableHint": "Génère le terrain à l'avance avec Chunky : beaucoup moins de lag quand on explore.",
+    "radius": "Rayon autour du spawn",
+    "radiusHint": "Zone de {size} × {size} blocs",
+    "pausePlayers": "Pause quand des joueurs sont connectés",
+    "pausePlayersHint": "Aucun impact sur les performances en jeu",
+    "eta": "Reste environ {eta}",
+    "restart": "Recommencer",
+    "vanillaNote": "Chunky a besoin d'un loader : le serveur utilisera Fabric. Les joueurs se connectent toujours avec un Minecraft normal.",
+    "vanillaUnsupported": "Non disponible sur un serveur vanilla déjà créé",
+    "footer": "Chunky est installé automatiquement dans la version adaptée à ce serveur et reprend tout seul après un redémarrage.",
+    "enableFailed": "Pré-génération impossible : {error}"
   }
 }

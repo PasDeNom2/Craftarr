@@ -370,7 +370,16 @@
     "discard": "المغادرة دون حفظ",
     "cursor": "سطر {line}، عمود {col}",
     "lines": "{count} سطر",
-    "shortcutsHint": "Ctrl+A تحديد الكل · Del حذف · F2 إعادة تسمية · ⌫ للأعلى"
+    "shortcutsHint": "Ctrl+A تحديد الكل · Del حذف · F2 إعادة تسمية · ⌫ للأعلى",
+    "find": "بحث",
+    "replaceWith": "استبدال بـ",
+    "matchCase": "مطابقة حالة الأحرف",
+    "prevMatch": "السابق (Shift+Enter)",
+    "nextMatch": "التالي (Enter)",
+    "replaceOne": "استبدال",
+    "replaceAll": "استبدال الكل",
+    "toggleReplace": "إظهار الاستبدال",
+    "closeTab": "إغلاق"
   },
   "serverSettings": {
     "title": "إعدادات الخادم",
@@ -567,5 +576,29 @@
     "title": "القطعة غير موجودة",
     "body": "لم يتم إنشاء هذه الصفحة قط.",
     "back": "العودة إلى الكتالوج"
+  },
+  "pregen": {
+    "status": {
+      "pending": "بانتظار تشغيل الخادم",
+      "running": "جارٍ التوليد",
+      "paused": "متوقف مؤقتًا — لاعبون متصلون",
+      "done": "تم توليد العالم مسبقًا",
+      "needs_restart": "أعد تشغيل الخادم لتفعيل Chunky",
+      "error": "خطأ",
+      "unsupported": "غير متاح"
+    },
+    "title": "التوليد المسبق للعالم",
+    "enable": "توليد العالم مسبقًا",
+    "enableHint": "يولّد التضاريس مسبقًا باستخدام Chunky: تأخير أقل بكثير أثناء الاستكشاف.",
+    "radius": "نصف القطر حول نقطة الظهور",
+    "radiusHint": "مساحة {size} × {size} كتلة",
+    "pausePlayers": "إيقاف مؤقت عند وجود لاعبين",
+    "pausePlayersHint": "لا تأثير على الأداء داخل اللعبة",
+    "eta": "يتبقى نحو {eta}",
+    "restart": "البدء من جديد",
+    "vanillaNote": "يحتاج Chunky إلى محمّل: سيستخدم الخادم Fabric. يتصل اللاعبون دائمًا بـ Minecraft العادي.",
+    "vanillaUnsupported": "غير متاح لخادم vanilla موجود",
+    "footer": "يُثبَّت Chunky تلقائيًا بالإصدار المناسب ويستأنف وحده بعد إعادة التشغيل.",
+    "enableFailed": "التوليد المسبق غير متاح: {error}"
   }
 }

@@ -48,6 +48,11 @@ export default function Layout() {
     const onInstallError   = ({ serverId }) => applyStatus(serverId, 'error');
     const onUpdateDone     = ({ serverId, version }) => applyStatus(serverId, 'running', { modpack_version: version });
     const onServerStatus   = ({ serverId, status }) => applyStatus(serverId, status);
+    const onPregen = ({ serverId, status, progress, eta, message }) => {
+      const patch = { pregen_status: status, pregen_progress: progress, pregen_eta: eta, pregen_message: message };
+      updateServer(serverId, patch);
+      qc.setQueryData(['server', serverId], old => old ? { ...old, ...patch } : old);
+    };
     const onServerCreated  = (server) => {
       // Ajout immédiat si pas déjà dans le store (ex: créé depuis un autre client)
       const { servers } = useServerStore.getState();
@@ -59,6 +64,7 @@ export default function Layout() {
     socket.on('server:update-done', onUpdateDone);
     socket.on('server:status',      onServerStatus);
     socket.on('server:created',     onServerCreated);
+    socket.on('pregen:update',      onPregen);
 
     return () => {
       socket.off('connect',           onConnect);
@@ -67,6 +73,7 @@ export default function Layout() {
       socket.off('server:update-done', onUpdateDone);
       socket.off('server:status',     onServerStatus);
       socket.off('server:created',    onServerCreated);
+      socket.off('pregen:update',     onPregen);
       socket.off('server:update-available');
     };
   }, []);

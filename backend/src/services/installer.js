@@ -197,6 +197,18 @@ async function installServer(server) {
       emit(server.id, 'log', { line: `[Craftarr] ${advice}`, timestamp: Date.now() }); // reste visible dans la console
     }
 
+    // Pré-génération demandée : Chunky adapté au loader et à la version, installé avant le 1er démarrage
+    if (updatedServer.pregen_enabled) {
+      progress(server.id, 'pregen', 'Installation de Chunky (pré-génération du monde)', 81);
+      try {
+        await require('./pregen').ensureChunky(updatedServer);
+        db.prepare("UPDATE servers SET pregen_status = 'pending' WHERE id = ?").run(server.id);
+      } catch (err) {
+        db.prepare("UPDATE servers SET pregen_status = 'error', pregen_message = ? WHERE id = ?").run(err.message, server.id);
+        emit(server.id, 'log', { line: `[Craftarr] ⚠ Pré-génération indisponible : ${err.message}`, timestamp: Date.now() });
+      }
+    }
+
     progress(server.id, 'container', 'Téléchargement de l\'image Java (première fois uniquement)...', 82);
     const { containerId, containerName } = await dockerService.createServerContainer(updatedServer,
       pullProgress(server.id, 'container', 'Image Java', 82));

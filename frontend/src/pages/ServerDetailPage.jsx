@@ -5,7 +5,7 @@ import { getSocket } from '../hooks/useSocket';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getServer, startServer, stopServer, restartServer, deleteServer,
-  updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods,
+  updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods, restartPregen,
   reinstallServer, uploadServerIcon, getServerIconUrl, downloadWorld,
 } from '../services/api';
 import { useServerStore, useIconStore } from '../store';
@@ -17,6 +17,7 @@ import FileExplorer from '../components/servers/FileExplorer';
 import Modal from '../components/ui/Modal';
 import Segmented from '../components/ui/Segmented';
 import Switch from '../components/ui/Switch';
+import PregenStatus from '../components/servers/PregenStatus';
 import ServerAvatar from '../components/ui/ServerAvatar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -236,7 +237,11 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
     difficulty: server.difficulty || 'normal',
     view_distance: server.view_distance || 10,
     spawn_protection: server.spawn_protection ?? 16,
+    pregen_enabled: !!server.pregen_enabled,
+    pregen_radius: server.pregen_radius || 3000,
+    pregen_pause_players: server.pregen_pause_players !== false,
   });
+  const [restartingPregen, setRestartingPregen] = useState(false);
   const [base, setBase] = useState(form);
   const dirty = JSON.stringify(form) !== JSON.stringify(base);
   const [iconPreview, setIconPreview] = useState(null);
@@ -256,7 +261,14 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
   const saveMut = useMutation({
     mutationFn: () => patchServer(server.id, form),
     onSuccess: async (updated) => {
-      setBase(form);
+      if (updated.pregenError) {
+        toast.error(t('pregen.enableFailed', { error: updated.pregenError }));
+        const fixed = { ...form, pregen_enabled: false };
+        setForm(fixed);
+        setBase(fixed);
+      } else {
+        setBase(form);
+      }
       patchStore(server.id, updated);
       qc.invalidateQueries({ queryKey: ['server', server.id] });
       const envChanged = Object.keys(form).some(
@@ -430,6 +442,51 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
             </div>
           </div>
         </Row>
+      </Group>
+
+      <Group title={t('pregen.title')} footer={t('pregen.footer')}>
+        <Row label={t('pregen.enable')} hint={server.loader_type === 'vanilla' ? t('pregen.vanillaUnsupported') : t('pregen.enableHint')}>
+          <Switch
+            checked={form.pregen_enabled}
+            onChange={v => set('pregen_enabled', v)}
+            label={t('pregen.enable')}
+            disabled={server.loader_type === 'vanilla'}
+          />
+        </Row>
+        {form.pregen_enabled && (
+          <div className="fade-in divide-y divide-white/[0.06]">
+            <Row label={t('pregen.radius')} hint={t('pregen.radiusHint', { size: (form.pregen_radius * 2).toLocaleString() })} stacked>
+              <Segmented
+                className="w-full [&>button]:flex-1"
+                value={form.pregen_radius}
+                onChange={v => set('pregen_radius', v)}
+                items={[1000, 2000, 3000, 5000, 10000].map(r => ({ id: r, label: `${r / 1000}k` }))}
+              />
+            </Row>
+            <Row label={t('pregen.pausePlayers')} hint={t('pregen.pausePlayersHint')}>
+              <Switch checked={form.pregen_pause_players} onChange={v => set('pregen_pause_players', v)} label={t('pregen.pausePlayers')} />
+            </Row>
+            {server.pregen_enabled && (
+              <div className="px-4 py-3.5 space-y-3">
+                <PregenStatus server={server} />
+                {['done', 'error', 'running', 'paused'].includes(server.pregen_status) && (
+                  <button
+                    className="btn-ghost !h-8 !px-3 -ml-1"
+                    disabled={restartingPregen}
+                    onClick={async () => {
+                      setRestartingPregen(true);
+                      try { await restartPregen(server.id); qc.invalidateQueries({ queryKey: ['server', server.id] }); }
+                      catch (err) { toast.error(err.response?.data?.error || t('common.error')); }
+                      finally { setRestartingPregen(false); }
+                    }}
+                  >
+                    <RotateCcw size={13} /> {t('pregen.restart')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </Group>
 
       <Group title={t('server.settings.autoUpdates')}>

@@ -370,7 +370,16 @@
     "discard": "Odejít bez uložení",
     "cursor": "Ř {line}, Sl {col}",
     "lines": "Řádků: {count}",
-    "shortcutsHint": "Ctrl+A vybrat vše · Del smazat · F2 přejmenovat · ⌫ nahoru"
+    "shortcutsHint": "Ctrl+A vybrat vše · Del smazat · F2 přejmenovat · ⌫ nahoru",
+    "find": "Hledat",
+    "replaceWith": "Nahradit za",
+    "matchCase": "Rozlišovat velikost",
+    "prevMatch": "Předchozí (Shift+Enter)",
+    "nextMatch": "Další (Enter)",
+    "replaceOne": "Nahradit",
+    "replaceAll": "Nahradit vše",
+    "toggleReplace": "Zobrazit nahrazení",
+    "closeTab": "Zavřít"
   },
   "serverSettings": {
     "title": "Nastavení serveru",
@@ -567,5 +576,29 @@
     "title": "Chunk nenalezen",
     "body": "Tato stránka nebyla nikdy vygenerována.",
     "back": "Zpět do katalogu"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Čeká se na spuštění serveru",
+      "running": "Generuje se",
+      "paused": "Pozastaveno — hráči online",
+      "done": "Svět předgenerován",
+      "needs_restart": "Restartujte server pro aktivaci Chunky",
+      "error": "Chyba",
+      "unsupported": "Nedostupné"
+    },
+    "title": "Předgenerování světa",
+    "enable": "Předgenerovat svět",
+    "enableHint": "Vygeneruje terén předem pomocí Chunky: mnohem méně lagů při průzkumu.",
+    "radius": "Poloměr kolem spawnu",
+    "radiusHint": "Oblast {size} × {size} bloků",
+    "pausePlayers": "Pozastavit, když jsou hráči online",
+    "pausePlayersHint": "Žádný dopad na výkon ve hře",
+    "eta": "Zbývá asi {eta}",
+    "restart": "Začít znovu",
+    "vanillaNote": "Chunky potřebuje loader: server použije Fabric. Hráči se stále připojují běžným Minecraftem.",
+    "vanillaUnsupported": "Nedostupné na již vytvořeném vanilla serveru",
+    "footer": "Chunky se nainstaluje automaticky ve správné verzi a po restartu sám pokračuje.",
+    "enableFailed": "Předgenerování nedostupné: {error}"
   }
 }

@@ -370,7 +370,16 @@
     "discard": "Sair sem salvar",
     "cursor": "Ln {line}, Col {col}",
     "lines": "{count} linhas",
-    "shortcutsHint": "Ctrl+A selecionar tudo · Del excluir · F2 renomear · ⌫ subir"
+    "shortcutsHint": "Ctrl+A selecionar tudo · Del excluir · F2 renomear · ⌫ subir",
+    "find": "Localizar",
+    "replaceWith": "Substituir por",
+    "matchCase": "Diferenciar maiúsculas",
+    "prevMatch": "Anterior (Shift+Enter)",
+    "nextMatch": "Próximo (Enter)",
+    "replaceOne": "Substituir",
+    "replaceAll": "Substituir tudo",
+    "toggleReplace": "Mostrar substituição",
+    "closeTab": "Fechar"
   },
   "serverSettings": {
     "title": "Configurações do servidor",
@@ -567,5 +576,29 @@
     "title": "Chunk não encontrado",
     "body": "Esta página nunca foi gerada.",
     "back": "Voltar ao catálogo"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Aguardando o servidor iniciar",
+      "running": "Gerando",
+      "paused": "Pausado — jogadores online",
+      "done": "Mundo pré-gerado",
+      "needs_restart": "Reinicie o servidor para ativar o Chunky",
+      "error": "Erro",
+      "unsupported": "Indisponível"
+    },
+    "title": "Pré-geração do mundo",
+    "enable": "Pré-gerar o mundo",
+    "enableHint": "Gera o terreno antecipadamente com o Chunky: muito menos lag ao explorar.",
+    "radius": "Raio ao redor do spawn",
+    "radiusHint": "Área de {size} × {size} blocos",
+    "pausePlayers": "Pausar com jogadores online",
+    "pausePlayersHint": "Sem impacto no desempenho do jogo",
+    "eta": "Faltam cerca de {eta}",
+    "restart": "Recomeçar",
+    "vanillaNote": "O Chunky precisa de um loader: o servidor usará Fabric. Os jogadores continuam entrando com o Minecraft normal.",
+    "vanillaUnsupported": "Indisponível em um servidor vanilla já criado",
+    "footer": "O Chunky é instalado automaticamente na versão certa e retoma sozinho após reiniciar.",
+    "enableFailed": "Pré-geração indisponível: {error}"
   }
 }

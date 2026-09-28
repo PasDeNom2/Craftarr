@@ -370,7 +370,16 @@
     "discard": "保存せずに閉じる",
     "cursor": "行 {line}、列 {col}",
     "lines": "{count} 行",
-    "shortcutsHint": "Ctrl+A すべて選択 · Del 削除 · F2 名前変更 · ⌫ 上へ"
+    "shortcutsHint": "Ctrl+A すべて選択 · Del 削除 · F2 名前変更 · ⌫ 上へ",
+    "find": "検索",
+    "replaceWith": "置換後の文字列",
+    "matchCase": "大文字と小文字を区別",
+    "prevMatch": "前へ (Shift+Enter)",
+    "nextMatch": "次へ (Enter)",
+    "replaceOne": "置換",
+    "replaceAll": "すべて置換",
+    "toggleReplace": "置換を表示",
+    "closeTab": "閉じる"
   },
   "serverSettings": {
     "title": "サーバー設定",
@@ -567,5 +576,29 @@
     "title": "チャンクが見つかりません",
     "body": "このページは生成されませんでした。",
     "back": "カタログに戻る"
+  },
+  "pregen": {
+    "status": {
+      "pending": "サーバーの起動待ち",
+      "running": "生成中",
+      "paused": "一時停止中 — プレイヤー接続中",
+      "done": "事前生成完了",
+      "needs_restart": "Chunky を有効にするにはサーバーを再起動してください",
+      "error": "エラー",
+      "unsupported": "利用不可"
+    },
+    "title": "ワールドの事前生成",
+    "enable": "ワールドを事前生成",
+    "enableHint": "Chunky で地形を事前に生成：探索時のラグが大幅に減ります。",
+    "radius": "スポーン周辺の半径",
+    "radiusHint": "{size} × {size} ブロックの範囲",
+    "pausePlayers": "プレイヤーがいる間は一時停止",
+    "pausePlayersHint": "ゲーム内のパフォーマンスに影響なし",
+    "eta": "残り約 {eta}",
+    "restart": "最初からやり直す",
+    "vanillaNote": "Chunky にはローダーが必要です：サーバーは Fabric を使用します。プレイヤーは通常の Minecraft で接続できます。",
+    "vanillaUnsupported": "作成済みのバニラサーバーでは利用できません",
+    "footer": "Chunky はこのサーバーに合ったバージョンで自動インストールされ、再起動後も自動で再開します。",
+    "enableFailed": "事前生成できません: {error}"
   }
 }

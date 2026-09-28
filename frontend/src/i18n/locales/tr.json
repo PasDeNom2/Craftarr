@@ -370,7 +370,16 @@
     "discard": "Kaydetmeden çık",
     "cursor": "Sa {line}, Sü {col}",
     "lines": "{count} satır",
-    "shortcutsHint": "Ctrl+A tümünü seç · Del sil · F2 yeniden adlandır · ⌫ yukarı"
+    "shortcutsHint": "Ctrl+A tümünü seç · Del sil · F2 yeniden adlandır · ⌫ yukarı",
+    "find": "Bul",
+    "replaceWith": "Şununla değiştir",
+    "matchCase": "Büyük/küçük harf",
+    "prevMatch": "Önceki (Shift+Enter)",
+    "nextMatch": "Sonraki (Enter)",
+    "replaceOne": "Değiştir",
+    "replaceAll": "Tümünü değiştir",
+    "toggleReplace": "Değiştirmeyi göster",
+    "closeTab": "Kapat"
   },
   "serverSettings": {
     "title": "Sunucu ayarları",
@@ -567,5 +576,29 @@
     "title": "Chunk bulunamadı",
     "body": "Bu sayfa hiç oluşturulmadı.",
     "back": "Kataloğa dön"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Sunucunun başlaması bekleniyor",
+      "running": "Oluşturuluyor",
+      "paused": "Duraklatıldı — oyuncular çevrimiçi",
+      "done": "Dünya önceden oluşturuldu",
+      "needs_restart": "Chunky'yi etkinleştirmek için sunucuyu yeniden başlatın",
+      "error": "Hata",
+      "unsupported": "Kullanılamaz"
+    },
+    "title": "Dünya ön oluşturma",
+    "enable": "Dünyayı önceden oluştur",
+    "enableHint": "Chunky ile araziyi önceden oluşturur: keşfederken çok daha az lag.",
+    "radius": "Spawn çevresindeki yarıçap",
+    "radiusHint": "{size} × {size} blokluk alan",
+    "pausePlayers": "Oyuncular çevrimiçiyken duraklat",
+    "pausePlayersHint": "Oyun içi performansa etkisi yok",
+    "eta": "Yaklaşık {eta} kaldı",
+    "restart": "Baştan başla",
+    "vanillaNote": "Chunky bir yükleyici gerektirir: sunucu Fabric kullanacak. Oyuncular yine normal Minecraft ile bağlanır.",
+    "vanillaUnsupported": "Mevcut vanilla sunucuda kullanılamaz",
+    "footer": "Chunky bu sunucuya uygun sürümde otomatik kurulur ve yeniden başlatmadan sonra kendiliğinden devam eder.",
+    "enableFailed": "Ön oluşturma kullanılamıyor: {error}"
   }
 }

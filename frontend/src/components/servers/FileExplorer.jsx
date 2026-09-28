@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import {
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Search, X, FolderPlus, FilePlus2, Upload, RotateCw,
-  Download, Pencil, Trash2, Check, Minus, FolderOpen, UploadCloud, Save, Lock, AlertTriangle, FileQuestion,
+  Download, Pencil, Trash2, Check, Minus, FolderOpen, UploadCloud, Save, Lock, AlertTriangle, FileQuestion, Search as SearchIcon, PanelLeft,
 } from 'lucide-react';
 import {
   getFiles, getFileContent, putFileContent, makeDir, renameFile, deleteFiles, uploadFiles, downloadFiles, getFileBlob,
@@ -48,7 +48,7 @@ function NameDialog({ open, title, icon, initial = '', onClose, onSubmit }) {
 }
 
 // ─── Visionneuse / éditeur ────────────────────────────────────────────────────
-function FileViewer({ server, file, onClose, onDownload }) {
+function FileViewer({ server, file, onDownload, onDirty, active }) {
   const { t } = useI18n();
   const kind = kindOf(file.name);
   const language = languageOf(file.name);
@@ -60,8 +60,11 @@ function FileViewer({ server, file, onClose, onDownload }) {
   const [saving, setSaving] = useState(false);
   const [cursor, setCursor] = useState({ line: 1, col: 1, selected: 0 });
   const [conflict, setConflict] = useState(false);
-  const [confirmLeave, setConfirmLeave] = useState(false);
+  const editorRef = useRef(null);
   const dirty = content !== saved;
+  useEffect(() => { onDirty?.(file.path, dirty); }, [dirty, file.path]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Onglet affiché → le curseur va dans l'éditeur
+  useEffect(() => { if (active && state.status === 'text') requestAnimationFrame(() => editorRef.current?.focus()); }, [active, state.status]);
   const running = server.status === 'running' || server.status === 'starting';
 
   const load = useCallback(async () => {
@@ -115,18 +118,19 @@ function FileViewer({ server, file, onClose, onDownload }) {
     }
   }
 
-  function leave() { if (dirty) setConfirmLeave(true); else onClose(); }
+  function onRootKey(e) {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
+    else if (mod && e.key.toLowerCase() === 'f' && editorRef.current) { e.preventDefault(); editorRef.current.openSearch(); }
+  }
 
   const { Icon, color } = iconOf({ name: file.name, isDir: false });
   const lines = useMemo(() => (state.status === 'text' ? content.split('\n').length : 0), [content, state.status]);
 
   return (
-    <div className="flex flex-col h-full tab-in">
+    <div className="flex flex-col h-full min-h-0 fade-in" onKeyDown={onRootKey}>
       {/* En-tête */}
       <div className="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-white/[0.06]">
-        <button className="icon-btn !h-9 !min-w-9" onClick={leave} title={t('files.back')} aria-label={t('files.back')}>
-          <ChevronLeft size={18} />
-        </button>
         <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.06] shrink-0" style={{ color }}>
           <Icon size={17} strokeWidth={1.75} />
         </span>
@@ -151,6 +155,9 @@ function FileViewer({ server, file, onClose, onDownload }) {
           {(readOnly || state.status === 'error') && (
             <button className="icon-btn" onClick={load} title={t('files.reload')} aria-label={t('files.reload')}><RotateCw size={14} /></button>
           )}
+          {state.status === 'text' && (
+            <button className="icon-btn" onClick={() => editorRef.current?.openSearch()} title={`${t('files.find')} (Ctrl+F)`} aria-label={t('files.find')}><SearchIcon size={14} /></button>
+          )}
           <button className="icon-btn" onClick={() => onDownload([file.path])} title={t('files.download')} aria-label={t('files.download')}><Download size={14} /></button>
           {state.status === 'text' && !readOnly && (
             <button className="btn-primary !h-8 ml-1" onClick={() => save()} disabled={!dirty || saving}>
@@ -169,7 +176,7 @@ function FileViewer({ server, file, onClose, onDownload }) {
           </div>
         )}
         {state.status === 'text' && (
-          <CodeEditor value={content} onChange={setContent} language={language} onSave={() => save()} onCursor={setCursor} readOnly={readOnly} />
+          <CodeEditor ref={editorRef} value={content} onChange={setContent} language={language} onSave={() => save()} onCursor={setCursor} readOnly={readOnly} />
         )}
         {state.status === 'image' && (
           <div className="flex-1 flex items-center justify-center p-8 checker">
@@ -215,14 +222,6 @@ function FileViewer({ server, file, onClose, onDownload }) {
         message={t('files.conflictBody')}
         confirmLabel={t('files.overwrite')}
       />
-      <ConfirmDialog
-        open={confirmLeave}
-        onClose={() => setConfirmLeave(false)}
-        onConfirm={() => { setConfirmLeave(false); onClose(); }}
-        title={t('files.unsavedTitle')}
-        message={t('files.unsavedBody')}
-        confirmLabel={t('files.discard')}
-      />
     </div>
   );
 }
@@ -235,7 +234,11 @@ export default function FileExplorer({ server }) {
   const [dir, setDirState] = useState(() => {
     try { return sessionStorage.getItem(pathKey(server.id)) || ''; } catch { return ''; }
   });
-  const [openFile, setOpenFile] = useState(null);
+  const [tabs, setTabs] = useState([]);        // fichiers ouverts [{ path, name, size }]
+  const [active, setActive] = useState(null);   // chemin de l'onglet affiché
+  const [dirtyTabs, setDirtyTabs] = useState({}); // { path: true }
+  const [confirmClose, setConfirmClose] = useState(null);
+  const [listNarrow, setListNarrow] = useState(false); // petit écran : liste affichée par-dessus l'éditeur
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState({ key: 'name', dir: 1 });
   const [selected, setSelected] = useState(() => new Set());
@@ -294,8 +297,30 @@ export default function FileExplorer({ server }) {
 
   function open(entry) {
     if (entry.isDir) setDir(joinPath(dir, entry.name));
-    else setOpenFile({ name: entry.name, path: joinPath(dir, entry.name), size: entry.size });
+    else openTab({ name: entry.name, path: joinPath(dir, entry.name), size: entry.size });
   }
+
+  function openTab(file) {
+    setTabs(ts => (ts.some(x => x.path === file.path) ? ts : [...ts, file]));
+    setActive(file.path);
+    setListNarrow(false);
+  }
+
+  function closeTab(path, force = false) {
+    if (!force && dirtyTabs[path]) { setConfirmClose(path); return; }
+    setTabs(ts => {
+      const idx = ts.findIndex(x => x.path === path);
+      const next = ts.filter(x => x.path !== path);
+      if (active === path) setActive(next[Math.min(idx, next.length - 1)]?.path || null);
+      return next;
+    });
+    setDirtyTabs(d => { const n = { ...d }; delete n[path]; return n; });
+    refresh();
+  }
+
+  const onDirty = useCallback((path, isDirty) => {
+    setDirtyTabs(d => (!!d[path] === isDirty ? d : { ...d, [path]: isDirty }));
+  }, []);
 
   function onRowClick(e, entry, idx) {
     if (e.shiftKey && anchor != null) {
@@ -347,7 +372,7 @@ export default function FileExplorer({ server }) {
       else await putFileContent(server.id, p, '');
       toast.success(t('files.created'));
       refresh();
-      if (dialog === 'file') setOpenFile({ name, path: p, size: 0 });
+      if (dialog === 'file') openTab({ name, path: p, size: 0 });
     } catch (err) { toast.error(errMsg(err, t('common.error'))); throw err; }
   }
 
@@ -376,7 +401,10 @@ export default function FileExplorer({ server }) {
     else if (e.key === 'F2' && selected.size === 1) { e.preventDefault(); setRenaming(selPaths[0]); }
   }
 
-  useEffect(() => { if (!openFile) listRef.current?.focus({ preventScroll: true }); }, [openFile, dir]);
+  const hasTabs = tabs.length > 0;
+  const compact = hasTabs;
+  const cols = compact ? 'grid-cols-[36px_1fr_72px]' : 'grid-cols-[36px_1fr_88px] md:grid-cols-[36px_1fr_150px_88px_92px]';
+  useEffect(() => { if (!hasTabs) listRef.current?.focus({ preventScroll: true }); }, [hasTabs, dir]);
 
   // Glisser-déposer
   const dnd = {
@@ -398,16 +426,12 @@ export default function FileExplorer({ server }) {
   );
 
   return (
-    <div className="glass relative h-full rounded-[26px] overflow-hidden flex flex-col card-in" {...(openFile ? {} : dnd)}>
-      {openFile ? (
-        <FileViewer
-          key={openFile.path}
-          server={server}
-          file={openFile}
-          onClose={() => { setOpenFile(null); refresh(); }}
-          onDownload={doDownload}
-        />
-      ) : (
+    <div className="glass relative h-full rounded-[26px] overflow-hidden flex card-in" {...dnd}>
+      {/* ── Liste (colonne de gauche quand des fichiers sont ouverts) ── */}
+      <div className={clsx('relative flex-col min-w-0 min-h-0',
+        hasTabs
+          ? clsx('lg:w-[340px] xl:w-[380px] lg:shrink-0 lg:border-r border-white/[0.06] lg:flex', listNarrow ? 'flex flex-1 lg:flex-none' : 'hidden')
+          : 'flex flex-1')}>
         <>
           {/* ── Barre d'outils ── */}
           <div className="flex items-center gap-2 px-3 pt-3 pb-2 shrink-0 flex-wrap">
@@ -435,7 +459,7 @@ export default function FileExplorer({ server }) {
               ))}
             </nav>
 
-            <div className="relative w-44 shrink-0">
+            <div className={clsx('relative shrink-0', compact ? 'order-last w-full' : 'w-44')}>
               <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
               <input
                 className="w-full h-8 pl-8 pr-7 rounded-full bg-[rgba(118,118,128,0.2)] border border-transparent text-xs text-fg placeholder:text-fg-3 outline-none focus:border-white/20 transition-colors"
@@ -476,7 +500,7 @@ export default function FileExplorer({ server }) {
 
           {/* ── Liste ── */}
           <div className="well relative flex-1 min-h-0 mx-2 mb-2 rounded-[18px] flex flex-col overflow-hidden">
-            <div className="grid grid-cols-[36px_1fr_88px] md:grid-cols-[36px_1fr_150px_88px_92px] items-center h-9 px-2 text-[11px] font-medium text-fg-3 border-b border-white/[0.06] shrink-0">
+            <div className={clsx('grid items-center h-9 px-2 text-[11px] font-medium text-fg-3 border-b border-white/[0.06] shrink-0', cols)}>
               <button
                 className={clsx('w-[18px] h-[18px] mx-auto rounded-md border flex items-center justify-center transition-colors',
                   allSelected || selected.size ? 'bg-fg border-fg text-black' : 'border-white/20 hover:border-white/40')}
@@ -486,9 +510,9 @@ export default function FileExplorer({ server }) {
                 {allSelected ? <Check size={12} strokeWidth={3} /> : selected.size ? <Minus size={12} strokeWidth={3} /> : null}
               </button>
               <SortHead k="name">{t('files.name')}</SortHead>
-              <SortHead k="mtime" className="hidden md:flex">{t('files.modifiedAt')}</SortHead>
+              {!compact && <SortHead k="mtime" className="hidden md:flex">{t('files.modifiedAt')}</SortHead>}
               <SortHead k="size" className="justify-end">{t('files.size')}</SortHead>
-              <span className="hidden md:block" />
+              {!compact && <span className="hidden md:block" />}
             </div>
 
             <div ref={listRef} tabIndex={0} onKeyDown={onKeyDown} className="flex-1 overflow-y-auto outline-none py-1">
@@ -518,8 +542,9 @@ export default function FileExplorer({ server }) {
                         key={entry.name}
                         onClick={e => onRowClick(e, entry, idx)}
                         onDoubleClick={() => selected.size && open(entry)}
-                        className={clsx('group grid grid-cols-[36px_1fr_88px] md:grid-cols-[36px_1fr_150px_88px_92px] items-center h-10 px-2 mx-1 rounded-xl cursor-pointer select-none transition-colors',
-                          isSel ? 'bg-[rgba(10,132,255,0.18)]' : 'hover:bg-white/[0.05]')}
+                        className={clsx('group grid items-center h-10 px-2 mx-1 rounded-xl cursor-pointer select-none transition-colors', cols,
+                          isSel ? 'bg-[rgba(10,132,255,0.18)]'
+                            : active === joinPath(dir, entry.name) ? 'bg-white/[0.09]' : 'hover:bg-white/[0.05]')}
                       >
                         <button
                           onClick={e => { e.stopPropagation(); toggle(entry.name); setAnchor(idx); }}
@@ -545,15 +570,17 @@ export default function FileExplorer({ server }) {
                             <span className={clsx('truncate text-[13px]', entry.isDir ? 'text-fg font-medium' : 'text-fg font-mono text-[12.5px]')}>{entry.name}</span>
                           )}
                         </div>
-                        <span className="hidden md:block text-[12px] text-fg-3 truncate" title={date?.toLocaleString()}>
-                          {date ? formatDistanceToNow(date, { addSuffix: true, locale }) : ''}
-                        </span>
+                        {!compact && (
+                          <span className="hidden md:block text-[12px] text-fg-3 truncate" title={date?.toLocaleString()}>
+                            {date ? formatDistanceToNow(date, { addSuffix: true, locale }) : ''}
+                          </span>
+                        )}
                         <span className="text-[12px] text-fg-3 font-mono text-right tabular-nums">{entry.isDir ? '' : formatSize(entry.size)}</span>
-                        <div className="hidden md:flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                        {!compact && <div className="hidden md:flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                           <button className="icon-btn" onClick={() => doDownload([joinPath(dir, entry.name)])} title={t('files.download')} aria-label={t('files.download')}><Download size={13} /></button>
                           <button className="icon-btn" onClick={() => setRenaming(entry.name)} title={t('files.rename')} aria-label={t('files.rename')}><Pencil size={13} /></button>
                           <button className="icon-btn hover:!text-danger" onClick={() => setConfirmDelete([joinPath(dir, entry.name)])} title={t('files.delete')} aria-label={t('files.delete')}><Trash2 size={13} /></button>
-                        </div>
+                        </div>}
                       </li>
                     );
                   })}
@@ -565,7 +592,7 @@ export default function FileExplorer({ server }) {
             {data && !selected.size && (
               <div className="h-8 px-4 flex items-center text-[11px] text-fg-3 border-t border-white/[0.06] shrink-0">
                 {t('files.items', { count: data.entries.length })}
-                <span className="ml-auto hidden md:inline">{t('files.shortcutsHint')}</span>
+                {!compact && <span className="ml-auto hidden md:inline">{t('files.shortcutsHint')}</span>}
               </div>
             )}
 
@@ -583,6 +610,57 @@ export default function FileExplorer({ server }) {
             )}
           </div>
 
+        </>
+      </div>
+
+      {/* ── Fichiers ouverts ── */}
+      {hasTabs && (
+        <div className={clsx('flex-1 min-w-0 min-h-0 flex-col', listNarrow ? 'hidden lg:flex' : 'flex')}>
+          <div className="flex items-center gap-1 px-2 pt-2 shrink-0 overflow-x-auto" role="tablist">
+            <button className="icon-btn !h-8 !min-w-8 lg:hidden shrink-0" onClick={() => setListNarrow(true)} title={t('files.title')} aria-label={t('files.title')}>
+              <PanelLeft size={15} />
+            </button>
+            {tabs.map(tab => {
+              const { Icon, color } = iconOf({ name: tab.name, isDir: false });
+              const isActive = tab.path === active;
+              return (
+                <div
+                  key={tab.path}
+                  role="tab"
+                  aria-selected={isActive}
+                  title={'/' + tab.path}
+                  onClick={() => setActive(tab.path)}
+                  onAuxClick={e => { if (e.button === 1) closeTab(tab.path); }}
+                  className={clsx('group shrink-0 flex items-center gap-2 h-8 pl-3 pr-1.5 rounded-full cursor-pointer select-none transition-colors max-w-[15rem] pop-in',
+                    isActive ? 'bg-white/[0.14] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]' : 'text-fg-2 hover:bg-white/[0.07] hover:text-fg')}
+                >
+                  <Icon size={13} style={{ color }} className="shrink-0" />
+                  <span className="truncate text-[12.5px] font-medium">{tab.name}</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); closeTab(tab.path); }}
+                    className="relative w-5 h-5 shrink-0 rounded-full flex items-center justify-center hover:bg-white/15"
+                    aria-label={t('files.closeTab')}
+                    title={t('files.closeTab')}
+                  >
+                    {dirtyTabs[tab.path]
+                      ? <><span className="w-2 h-2 rounded-full bg-warn group-hover:hidden" /><X size={12} className="hidden group-hover:block" /></>
+                      : <X size={12} className={clsx(!isActive && 'opacity-0 group-hover:opacity-100')} />}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <div className="relative flex-1 min-h-0">
+            {tabs.map(tab => (
+              <div key={tab.path} className={clsx('absolute inset-0', tab.path === active ? 'block' : 'hidden')}>
+                <FileViewer server={server} file={tab} onDownload={doDownload} onDirty={onDirty} active={tab.path === active} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <>
           {/* Glisser-déposer */}
           {dragging && (
             <div className="absolute inset-2 z-20 rounded-[22px] border-2 border-dashed border-[rgba(10,132,255,0.7)] bg-[rgba(10,132,255,0.10)] backdrop-blur-sm flex flex-col items-center justify-center gap-3 pointer-events-none fade-in">
@@ -590,8 +668,7 @@ export default function FileExplorer({ server }) {
               <p className="text-[15px] font-semibold text-fg">{t('files.drop', { dir: `/${dir}` })}</p>
             </div>
           )}
-        </>
-      )}
+      </>
 
       {/* Envoi en cours */}
       {upload && (
@@ -621,6 +698,14 @@ export default function FileExplorer({ server }) {
         title={t('files.deleteTitle', { count: confirmDelete?.length || 0 })}
         message={t('files.deleteBody', { names: (confirmDelete || []).slice(0, 5).map(p => p.split('/').pop()).join(', ') + ((confirmDelete?.length || 0) > 5 ? '…' : '') })}
         confirmLabel={t('files.delete')}
+      />
+      <ConfirmDialog
+        open={!!confirmClose}
+        onClose={() => setConfirmClose(null)}
+        onConfirm={() => { closeTab(confirmClose, true); setConfirmClose(null); }}
+        title={t('files.unsavedTitle')}
+        message={t('files.unsavedBody')}
+        confirmLabel={t('files.discard')}
       />
     </div>
   );

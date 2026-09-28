@@ -370,7 +370,16 @@
     "discard": "Lämna utan att spara",
     "cursor": "Rad {line}, Kol {col}",
     "lines": "{count} rader",
-    "shortcutsHint": "Ctrl+A markera allt · Del ta bort · F2 byt namn · ⌫ upp"
+    "shortcutsHint": "Ctrl+A markera allt · Del ta bort · F2 byt namn · ⌫ upp",
+    "find": "Sök",
+    "replaceWith": "Ersätt med",
+    "matchCase": "Matcha versaler",
+    "prevMatch": "Föregående (Skift+Enter)",
+    "nextMatch": "Nästa (Enter)",
+    "replaceOne": "Ersätt",
+    "replaceAll": "Ersätt alla",
+    "toggleReplace": "Visa ersätt",
+    "closeTab": "Stäng"
   },
   "serverSettings": {
     "title": "Serverinställningar",
@@ -567,5 +576,29 @@
     "title": "Chunken hittades inte",
     "body": "Den här sidan genererades aldrig.",
     "back": "Tillbaka till katalogen"
+  },
+  "pregen": {
+    "status": {
+      "pending": "Väntar på att servern startar",
+      "running": "Genererar",
+      "paused": "Pausad — spelare online",
+      "done": "Världen förgenererad",
+      "needs_restart": "Starta om servern för att aktivera Chunky",
+      "error": "Fel",
+      "unsupported": "Inte tillgängligt"
+    },
+    "title": "Förgenerering av världen",
+    "enable": "Förgenerera världen",
+    "enableHint": "Genererar terrängen i förväg med Chunky: mycket mindre lagg vid utforskning.",
+    "radius": "Radie runt spawn",
+    "radiusHint": "Område på {size} × {size} block",
+    "pausePlayers": "Pausa när spelare är online",
+    "pausePlayersHint": "Ingen påverkan på prestandan i spelet",
+    "eta": "Cirka {eta} kvar",
+    "restart": "Börja om",
+    "vanillaNote": "Chunky behöver en loader: servern använder Fabric. Spelare ansluter fortfarande med vanlig Minecraft.",
+    "vanillaUnsupported": "Inte tillgängligt på en befintlig vanilla-server",
+    "footer": "Chunky installeras automatiskt i rätt version och fortsätter själv efter en omstart.",
+    "enableFailed": "Förgenerering ej tillgänglig: {error}"
   }
 }

@@ -28,6 +28,8 @@ function formatServer(row) {
     online_mode: row.online_mode !== 0,
     auto_update: !!row.auto_update,
     needs_recreate: !!row.needs_recreate,
+    pregen_enabled: !!row.pregen_enabled,
+    pregen_pause_players: row.pregen_pause_players !== 0,
   };
 }
 
