@@ -125,6 +125,8 @@ export const restoreBackup = (serverId, backupId) => api.post(`/servers/${server
 
 // Players
 export const getPlayers = (serverId) => api.get(`/servers/${serverId}/players`).then(r => r.data);
+export const getPlayersOverview = (serverId, days = 30) => api.get(`/servers/${serverId}/players/overview`, { params: { days } }).then(r => r.data);
+export const getPlayerProfile = (serverId, username) => api.get(`/servers/${serverId}/players/${encodeURIComponent(username)}/profile`).then(r => r.data);
 export const getPlayerEvents = (serverId, username, params) => api.get(`/servers/${serverId}/players/${encodeURIComponent(username)}/events`, { params }).then(r => r.data);
 export const kickPlayer = (serverId, username, reason) => api.post(`/servers/${serverId}/players/${encodeURIComponent(username)}/kick`, { reason }).then(r => r.data);
 export const warnPlayer = (serverId, username, reason) => api.post(`/servers/${serverId}/players/${encodeURIComponent(username)}/warn`, { reason }).then(r => r.data);

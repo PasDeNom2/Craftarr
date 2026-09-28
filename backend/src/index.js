@@ -129,6 +129,7 @@ async function reconcileServerStates() {
 
   for (const server of activeServers) {
     const state = await dockerService.getContainerStatus(server.container_id);
+    if (state !== 'running') require('./websocket/logs').closeAllSessions(server.id, 'server_stop');
     if (state === 'removed') {
       db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
       console.log(`[Craftarr] Serveur ${server.id.slice(0, 8)} — container disparu, statut mis en erreur`);
@@ -137,6 +138,7 @@ async function reconcileServerStates() {
       startLogStream(io, server.id);
       // Synchro des joueurs en ligne via RCON
       rcon.getPlayerList(server).then(({ names }) => {
+        require('./websocket/logs').closeAllSessions(server.id, 'unknown', new Set(names));
         for (const username of names) {
           db.prepare('UPDATE players SET is_online = 1 WHERE server_id = ? AND username = ?').run(server.id, username);
         }

@@ -58,6 +58,22 @@ function initDb() {
     "ALTER TABLE players ADD COLUMN ban_reason TEXT",
     "ALTER TABLE players ADD COLUMN is_online INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE players ADD COLUMN is_op INTEGER NOT NULL DEFAULT 0",
+    // Anciennes bases : la date des événements s'appelait created_at
+    "ALTER TABLE player_events RENAME COLUMN created_at TO timestamp",
+    // Joueurs : sessions (connexion → déconnexion) et dernière IP
+    `CREATE TABLE IF NOT EXISTS player_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      server_id TEXT NOT NULL,
+      username TEXT NOT NULL,
+      joined_at TEXT NOT NULL,
+      left_at TEXT,
+      reason TEXT,
+      FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_sessions_server ON player_sessions(server_id, joined_at)",
+    "CREATE INDEX IF NOT EXISTS idx_sessions_player ON player_sessions(server_id, username)",
+    "CREATE INDEX IF NOT EXISTS idx_events_player ON player_events(server_id, player_name, id)",
+    "ALTER TABLE players ADD COLUMN last_ip TEXT",
     // Pré-génération du monde (Chunky)
     "ALTER TABLE servers ADD COLUMN pregen_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE servers ADD COLUMN pregen_radius INTEGER NOT NULL DEFAULT 3000",
@@ -70,9 +86,36 @@ function initDb() {
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* colonne déjà présente */ }
   }
+  // Jamais bloquant : un historique non reconstitué ne doit pas empêcher Craftarr de démarrer
+  try { backfillSessions(db); } catch (err) { console.error('[DB] Reconstitution des sessions impossible :', err.message); }
 
   console.log(`[DB] SQLite initialized at ${DB_PATH}`);
   return db;
+}
+
+/**
+ * Reconstitue les sessions à partir des anciens événements join/leave (une seule fois, quand la
+ * table des sessions est vide). Une connexion sans déconnexion connue est ignorée (durée inconnue).
+ */
+function backfillSessions(db) {
+  if (db.prepare('SELECT COUNT(*) n FROM player_sessions').get().n > 0) return;
+  const events = db.prepare("SELECT server_id, player_name, type, detail, timestamp FROM player_events WHERE type IN ('join', 'leave') AND server_id IN (SELECT id FROM servers) ORDER BY id").all();
+  if (!events.length) return;
+  const open = new Map();
+  const insert = db.prepare('INSERT INTO player_sessions (server_id, username, joined_at, left_at, reason) VALUES (?, ?, ?, ?, ?)');
+  db.transaction(() => {
+    for (const e of events) {
+      const k = e.server_id + '|' + e.player_name;
+      if (e.type === 'join') {
+        // Connexion précédente sans déconnexion connue : durée inconnue, on l'ignore
+        open.set(k, e.timestamp);
+      } else if (open.has(k)) {
+        insert.run(e.server_id, e.player_name, open.get(k), e.timestamp, e.detail || null);
+        open.delete(k);
+      }
+    }
+  })();
+  console.log(`[DB] Sessions joueurs reconstituées depuis ${events.length} événements`);
 }
 
 module.exports = { getDb, initDb };

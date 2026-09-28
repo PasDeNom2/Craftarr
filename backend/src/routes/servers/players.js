@@ -5,6 +5,10 @@ const path = require('path');
 const { getDb } = require('../../config/database');
 const authMiddleware = require('../../middleware/auth');
 const { DATA_PATH } = require('./common');
+const playerData = require('../../services/playerData');
+
+// Durée d'une session en secondes (session ouverte = jusqu'à maintenant)
+const DURATION_SQL = "(strftime('%s', COALESCE(left_at, datetime('now'))) - strftime('%s', joined_at))";
 
 const router = express.Router();
 
@@ -36,24 +40,106 @@ router.get('/:id/players', authMiddleware, (req, res, next) => {
     const players = db.prepare(`
       SELECT p.*,
         (SELECT COUNT(*) FROM player_events WHERE server_id = p.server_id AND player_name = p.username) AS event_count,
-        (SELECT COUNT(*) FROM player_events WHERE server_id = p.server_id AND player_name = p.username AND type = 'join') AS join_count
-      FROM players p WHERE p.server_id = ? ORDER BY p.last_seen DESC
+        (SELECT COUNT(*) FROM player_events WHERE server_id = p.server_id AND player_name = p.username AND type = 'join') AS join_count,
+        (SELECT COUNT(*) FROM player_events WHERE server_id = p.server_id AND player_name = p.username AND type = 'death') AS death_count,
+        (SELECT COALESCE(SUM(${DURATION_SQL}), 0) FROM player_sessions WHERE server_id = p.server_id AND username = p.username) AS playtime_seconds,
+        (SELECT COUNT(*) FROM player_sessions WHERE server_id = p.server_id AND username = p.username) AS session_count,
+        (SELECT joined_at FROM player_sessions WHERE server_id = p.server_id AND username = p.username AND left_at IS NULL ORDER BY id DESC LIMIT 1) AS online_since
+      FROM players p WHERE p.server_id = ? ORDER BY p.is_online DESC, p.last_seen DESC
     `).all(req.params.id);
     res.json(players);
   } catch (err) { next(err); }
 });
 
-// GET /api/servers/:id/players/:username/events
+// GET /api/servers/:id/players/overview?days=30 — vue d'ensemble : totaux + sessions de la période
+// (les graphiques par jour / heure sont calculés côté navigateur, dans le fuseau de l'utilisateur)
+router.get('/:id/players/overview', authMiddleware, (req, res, next) => {
+  try {
+    const db = getDb();
+    const id = req.params.id;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 365);
+    const since = `-${days} days`;
+    const totals = db.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM players WHERE server_id = ?) AS players,
+        (SELECT COUNT(*) FROM players WHERE server_id = ? AND is_online = 1) AS online,
+        (SELECT COUNT(*) FROM players WHERE server_id = ? AND first_seen >= datetime('now', ?)) AS new_players,
+        (SELECT COALESCE(SUM(${DURATION_SQL}), 0) FROM player_sessions WHERE server_id = ?) AS playtime_all,
+        (SELECT COUNT(*) FROM player_sessions WHERE server_id = ?) AS sessions_all,
+        (SELECT COUNT(*) FROM player_events WHERE server_id = ? AND type = 'death' AND timestamp >= datetime('now', ?)) AS deaths,
+        (SELECT COUNT(*) FROM player_events WHERE server_id = ? AND type = 'chat' AND timestamp >= datetime('now', ?)) AS messages,
+        (SELECT COUNT(*) FROM player_events WHERE server_id = ? AND type = 'advancement' AND timestamp >= datetime('now', ?)) AS advancements
+    `).get(id, id, id, since, id, id, id, since, id, since, id, since);
+    const sessions = db.prepare(`
+      SELECT username, joined_at, left_at, reason FROM player_sessions
+      WHERE server_id = ? AND (left_at IS NULL OR left_at >= datetime('now', ?))
+      ORDER BY joined_at LIMIT 20000
+    `).all(id, since);
+    const newPlayers = db.prepare(`SELECT username, first_seen FROM players WHERE server_id = ? AND first_seen >= datetime('now', ?)`).all(id, since);
+
+    // Pic de joueurs simultanés (toutes périodes confondues)
+    const edges = [];
+    for (const r of db.prepare('SELECT joined_at, left_at FROM player_sessions WHERE server_id = ?').all(id)) {
+      edges.push([r.joined_at, 1], [r.left_at || '9999', -1]);
+    }
+    edges.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1]));
+    let cur = 0, peak = 0, peakAt = null;
+    for (const [t, d] of edges) { cur += d; if (cur > peak) { peak = cur; peakAt = t; } }
+
+    res.json({ days, totals: { ...totals, peak, peak_at: peakAt }, sessions, newPlayers });
+  } catch (err) { next(err); }
+});
+
+// GET /api/servers/:id/players/:username/profile — fiche complète d'un joueur
+router.get('/:id/players/:username/profile', authMiddleware, (req, res, next) => {
+  try {
+    const db = getDb();
+    const { id, username } = req.params;
+    const player = db.prepare('SELECT * FROM players WHERE server_id = ? AND username = ?').get(id, username);
+    if (!player) return res.status(404).json({ error: 'Joueur introuvable' });
+    syncOpsFromFile(id);
+    const summary = db.prepare(`
+      SELECT COUNT(*) AS count, COALESCE(SUM(${DURATION_SQL}), 0) AS total, COALESCE(MAX(${DURATION_SQL}), 0) AS longest,
+             MIN(joined_at) AS first, MAX(joined_at) AS last
+      FROM player_sessions WHERE server_id = ? AND username = ?
+    `).get(id, username);
+    const sessions = db.prepare(`
+      SELECT id, joined_at, left_at, reason, ${DURATION_SQL} AS duration FROM player_sessions
+      WHERE server_id = ? AND username = ? ORDER BY id DESC LIMIT 500
+    `).all(id, username);
+    const eventCounts = Object.fromEntries(db.prepare(`
+      SELECT type, COUNT(*) AS n FROM player_events WHERE server_id = ? AND player_name = ? GROUP BY type
+    `).all(id, username).map(r => [r.type, r.n]));
+    const world = playerData.readPlayerWorldData(id, username, player.uuid);
+    if (!player.uuid && world.uuid) db.prepare('UPDATE players SET uuid = ? WHERE id = ?').run(world.uuid, player.id);
+    res.json({
+      player: { ...player, is_op: db.prepare('SELECT is_op FROM players WHERE id = ?').get(player.id).is_op, uuid: player.uuid || world.uuid },
+      sessions: { ...summary, list: sessions },
+      eventCounts,
+      world,
+    });
+  } catch (err) { next(err); }
+});
+
+// GET /api/servers/:id/players/:username/events?type=chat&q=&before=<id>&limit=100
 router.get('/:id/players/:username/events', authMiddleware, (req, res, next) => {
   try {
     const db = getDb();
     const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+    const where = ['server_id = ?', 'player_name = ?'];
+    const args = [req.params.id, req.params.username];
+    if (req.query.type) {
+      const types = String(req.query.type).split(',').filter(Boolean).slice(0, 12);
+      where.push(`type IN (${types.map(() => '?').join(',')})`);
+      args.push(...types);
+    }
+    if (req.query.q) { where.push('detail LIKE ?'); args.push(`%${String(req.query.q).slice(0, 100)}%`); }
+    if (req.query.before) { where.push('id < ?'); args.push(parseInt(req.query.before) || 0); }
     const offset = parseInt(req.query.offset) || 0;
     const events = db.prepare(`
-      SELECT * FROM player_events
-      WHERE server_id = ? AND player_name = ?
+      SELECT * FROM player_events WHERE ${where.join(' AND ')}
       ORDER BY id DESC LIMIT ? OFFSET ?
-    `).all(req.params.id, req.params.username, limit, offset);
+    `).all(...args, limit, offset);
     res.json(events);
   } catch (err) { next(err); }
 });

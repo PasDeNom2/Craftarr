@@ -15,6 +15,31 @@ const uuidCache = {};
 let _io = null;
 function setIo(io) { _io = io; }
 
+// Raison de déconnexion (« lost connection: Timed out ») : la ligne arrive juste avant « left the game »
+const pendingReason = {};
+
+// ─── Sessions ─────────────────────────────────────────────────
+function openSession(db, serverId, username) {
+  // Une session restée ouverte (déconnexion manquée) est close maintenant
+  db.prepare("UPDATE player_sessions SET left_at = datetime('now'), reason = COALESCE(reason, 'unknown') WHERE server_id = ? AND username = ? AND left_at IS NULL")
+    .run(serverId, username);
+  db.prepare("INSERT INTO player_sessions (server_id, username, joined_at) VALUES (?, ?, datetime('now'))").run(serverId, username);
+}
+function closeSession(db, serverId, username, reason) {
+  db.prepare("UPDATE player_sessions SET left_at = datetime('now'), reason = ? WHERE server_id = ? AND username = ? AND left_at IS NULL")
+    .run(reason || null, serverId, username);
+}
+/** Ferme toutes les sessions ouvertes d'un serveur (arrêt, crash) ou seulement celles des joueurs absents. */
+function closeAllSessions(serverId, reason, keepOnline = null) {
+  const db = getDb();
+  const open = db.prepare('SELECT username FROM player_sessions WHERE server_id = ? AND left_at IS NULL').all(serverId);
+  for (const { username } of open) {
+    if (keepOnline && keepOnline.has(username)) continue;
+    closeSession(db, serverId, username, reason);
+    db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ? AND username = ?').run(serverId, username);
+  }
+}
+
 function parsePlayerEvent(serverId, line) {
   try {
     const db = getDb();
@@ -24,6 +49,29 @@ function parsePlayerEvent(serverId, line) {
     if (uuidMatch) {
       if (!uuidCache[serverId]) uuidCache[serverId] = {};
       uuidCache[serverId][uuidMatch[1]] = uuidMatch[2];
+      return;
+    }
+
+    // « Steve[/1.2.3.4:5678] logged in with entity id 123 at (x, y, z) »
+    const loginMatch = line.match(/\]: (\w{2,16})\[\/([^\]:]+(?::\d+)?)\] logged in with entity id/);
+    if (loginMatch) {
+      const ip = loginMatch[2].replace(/:\d+$/, '');
+      db.prepare('UPDATE players SET last_ip = ? WHERE server_id = ? AND username = ?').run(ip, serverId, loginMatch[1]);
+      (pendingReason[serverId] ||= {})['ip:' + loginMatch[1]] = ip;
+      return;
+    }
+
+    // « Steve lost connection: Timed out »
+    const lostMatch = line.match(/\]: (\w{2,16}) lost connection: (.+)$/);
+    if (lostMatch) {
+      (pendingReason[serverId] ||= {})[lostMatch[1]] = lostMatch[2].trim().slice(0, 200);
+      return;
+    }
+
+    // Succès : « Steve has made the advancement [Stone Age] »
+    const advMatch = line.match(/\]: (\w{2,16}) has (?:made the advancement|completed the challenge|reached the goal) \[(.+)\]/);
+    if (advMatch) {
+      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'advancement', ?)`).run(serverId, advMatch[1], advMatch[2]);
       return;
     }
 
@@ -37,7 +85,10 @@ function parsePlayerEvent(serverId, line) {
         VALUES (?, ?, ?, datetime('now'), datetime('now'), 1)
         ON CONFLICT(server_id, username) DO UPDATE SET last_seen = datetime('now'), is_online = 1, uuid = COALESCE(excluded.uuid, uuid)
       `).run(serverId, username, uuid);
+      const ip = pendingReason[serverId]?.['ip:' + username];
+      if (ip) { db.prepare('UPDATE players SET last_ip = ? WHERE server_id = ? AND username = ?').run(ip, serverId, username); delete pendingReason[serverId]['ip:' + username]; }
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'join', NULL)`).run(serverId, username);
+      openSession(db, serverId, username);
       _io?.emit('player:status', { serverId, username, is_online: 1 });
       return;
     }
@@ -46,14 +97,17 @@ function parsePlayerEvent(serverId, line) {
     const leaveMatch = line.match(/\]: (\S+) left the game/);
     if (leaveMatch) {
       const username = leaveMatch[1];
-      db.prepare(`UPDATE players SET is_online = 0 WHERE server_id = ? AND username = ?`).run(serverId, username);
-      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'leave', NULL)`).run(serverId, username);
+      const reason = pendingReason[serverId]?.[username] || null;
+      if (pendingReason[serverId]) delete pendingReason[serverId][username];
+      db.prepare(`UPDATE players SET is_online = 0, last_seen = datetime('now') WHERE server_id = ? AND username = ?`).run(serverId, username);
+      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'leave', ?)`).run(serverId, username, reason);
+      closeSession(db, serverId, username, reason);
       _io?.emit('player:status', { serverId, username, is_online: 0 });
       return;
     }
 
     // Chat message: [Server thread/INFO]: <PlayerName> message
-    const chatMatch = line.match(/\]: <(\S+)> (.+)/);
+    const chatMatch = line.match(/\]: (?:\[Not Secure\] )?<(\S+)> (.+)/);
     if (chatMatch) {
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'chat', ?)`).run(serverId, chatMatch[1], chatMatch[2]);
       return;
@@ -132,17 +186,16 @@ function setupLogsSocket(io) {
       socket.leave(`server:${serverId}`);
     });
 
-    socket.on('disconnect', async () => {
-      // Arrête les streams dont plus aucun client n'est abonné
-      for (const [serverId] of activeStreams) {
-        const room = `server:${serverId}`;
-        const sockets = await io.in(room).fetchSockets();
-        if (sockets.length === 0) {
-          stopLogStream(serverId);
-        }
-      }
-    });
   });
+
+  // Filet de sécurité : tout serveur en marche doit avoir son flux (événements joueurs, statut),
+  // même si le flux a été coupé (erreur Docker, redémarrage automatique du container…)
+  setInterval(() => {
+    try {
+      const running = getDb().prepare("SELECT id FROM servers WHERE status IN ('starting', 'running') AND container_id IS NOT NULL").all();
+      for (const { id } of running) if (!activeStreams.has(id)) startLogStream(io, id);
+    } catch {}
+  }, 60_000).unref();
 }
 
 /**
@@ -214,6 +267,7 @@ function startLogStream(io, serverId, attempt = 0) {
         io.emit('server:status', { serverId, status: 'stopped' });
       }
       // Tous les joueurs sont offline quand le serveur s'arrête
+      closeAllSessions(serverId, 'server_stop');
       db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ?').run(serverId);
       activeStreams.delete(serverId);
     },
@@ -231,4 +285,4 @@ function stopLogStream(serverId) {
   if (cleanup) cleanup();
 }
 
-module.exports = { setupLogsSocket, startLogStream, setIo };
+module.exports = { setupLogsSocket, startLogStream, setIo, closeAllSessions, parsePlayerEvent };
