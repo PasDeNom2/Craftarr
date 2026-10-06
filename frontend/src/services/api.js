@@ -153,3 +153,25 @@ export const exportSources = () => api.get('/sources/export').then(r => r.data);
 export const importSources = (data) => api.post('/sources/import', data).then(r => r.data);
 
 export default api;
+
+// Mods d'un serveur
+export const getMods = (serverId) => api.get(`/servers/${serverId}/mods`).then(r => r.data);
+export const setModEnabled = (serverId, file, enabled) => api.patch(`/servers/${serverId}/mods`, { file, enabled }).then(r => r.data);
+export const trashMods = (serverId, files) => api.post(`/servers/${serverId}/mods/trash`, { files }).then(r => r.data);
+export const searchMods = (serverId, q, source) => api.get(`/servers/${serverId}/mods/search`, { params: { q, source } }).then(r => r.data);
+export const installMod = (serverId, source, projectId) => api.post(`/servers/${serverId}/mods/install`, { source, projectId }, LONG).then(r => r.data);
+export const fixModDependencies = (serverId) => api.post(`/servers/${serverId}/mods/fix-dependencies`, null, LONG).then(r => r.data);
+export const uploadMods = (serverId, files, onProgress) => {
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f);
+  return api.post(`/servers/${serverId}/mods/upload`, fd, {
+    timeout: 0,
+    onUploadProgress: e => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : 0),
+  }).then(r => r.data);
+};
+
+// Compte et réglages globaux
+export const changePassword = (currentPassword, newPassword) => api.post('/auth/password', { currentPassword, newPassword }).then(r => r.data);
+export const getAppSettings = () => api.get('/settings').then(r => r.data);
+export const patchAppSettings = (data) => api.patch('/settings', data).then(r => r.data);
+export const testNotification = () => api.post('/settings/notify-test').then(r => r.data);

@@ -12,7 +12,7 @@ function StatCard({ icon: Icon, label, value, unit, sub, tone = 'var(--fg)', pro
   return (
     <div className="card !p-4 space-y-3 min-w-0">
       <div className="flex items-center gap-2">
-        <span className="w-7 h-7 rounded-[9px] flex items-center justify-center bg-white/[0.07]" style={{ color: tone }}>
+        <span className="w-7 h-7 rounded-[9px] flex items-center justify-center bg-tint/[0.07]" style={{ color: tone }}>
           <Icon size={14} strokeWidth={2} />
         </span>
         <p className="text-[12px] text-fg-2 font-medium truncate">{label}</p>
@@ -22,7 +22,7 @@ function StatCard({ icon: Icon, label, value, unit, sub, tone = 'var(--fg)', pro
         {unit && <span className="text-[13px] font-medium text-fg-3 ml-1.5">{unit}</span>}
       </p>
       {progress != null ? (
-        <div className="h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+        <div className="h-1.5 rounded-full bg-tint/[0.08] overflow-hidden">
           <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(100, progress)}%`, background: tone }} />
         </div>
       ) : (
@@ -63,7 +63,7 @@ function Chart({ data, dataKey, color, id, label, unit = '', domain, current }) 
           </defs>
           <XAxis dataKey="t" type="number" domain={['dataMin', 'dataMax']} hide />
           <YAxis tick={{ fontSize: 9, fill: 'rgba(235,235,245,0.3)' }} domain={domain} axisLine={false} tickLine={false} width={34} tickFormatter={v => (v >= 1000 ? `${+(v / 1000).toFixed(1)}k` : v)} />
-          <Tooltip content={<ChartTooltip unit={unit} label={label} />} cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeDasharray: '3 3' }} />
+          <Tooltip content={<ChartTooltip unit={unit} label={label} />} cursor={{ stroke: 'rgba(var(--tint-rgb),0.2)', strokeDasharray: '3 3' }} />
           <Area type="monotone" dataKey={dataKey} stroke={color} fill={`url(#${id})`} strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
         </AreaChart>
       </ResponsiveContainer>
@@ -77,7 +77,7 @@ export default function MetricsPanel({ server }) {
   const history = useMetricsStore(s => s.history[server.id]) || EMPTY;
 
   const tps = current?.tps?.tps1;
-  const tpsColor = tps == null ? 'var(--fg-2)' : tps >= 18 ? 'var(--accent)' : tps >= 12 ? 'var(--warn)' : 'var(--danger)';
+  const tpsColor = tps == null ? 'var(--fg-2)' : tps >= 18 ? 'var(--success)' : tps >= 12 ? 'var(--warn)' : 'var(--danger)';
   const cpuVal = current?.cpu ?? 0;
   const cpuColor = cpuVal > 80 ? 'var(--danger)' : cpuVal > 50 ? 'var(--warn)' : 'var(--info)';
   const memPct = current?.memPercent != null ? +current.memPercent : null;
@@ -90,7 +90,7 @@ export default function MetricsPanel({ server }) {
   if (!isRunning && !history.length) {
     return (
       <div className="card flex flex-col items-center justify-center text-center py-16 gap-3 max-w-4xl">
-        <span className="w-14 h-14 rounded-2xl bg-white/[0.06] flex items-center justify-center text-fg-3"><Activity size={24} strokeWidth={1.5} /></span>
+        <span className="w-14 h-14 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><Activity size={24} strokeWidth={1.5} /></span>
         <p className="text-fg-2 text-sm">{t('metrics.startServer')}</p>
       </div>
     );
@@ -114,14 +114,14 @@ export default function MetricsPanel({ server }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <Chart data={history} dataKey="memUsed" color="var(--purple)" id="g-ram" label={t('metrics.ramLabel')} unit=" Mo" domain={memDomain} current={current?.memUsed} />
             <Chart data={history} dataKey="cpu" color="var(--info)" id="g-cpu" label={t('metrics.cpuLabel')} unit=" %" domain={[0, dataMax => Math.max(100, Math.ceil(dataMax))]} current={current?.cpu?.toFixed(1)} />
-            <Chart data={history} dataKey="tps" color="var(--accent)" id="g-tps" label="TPS" domain={[0, 20]} current={tps?.toFixed(1)} />
+            <Chart data={history} dataKey="tps" color="var(--success)" id="g-tps" label="TPS" domain={[0, 20]} current={tps?.toFixed(1)} />
             <Chart data={history} dataKey="players" color="var(--orange)" id="g-players" label={t('metrics.players')} domain={[0, dataMax => Math.max(4, dataMax + 1)]} current={current?.players?.online} />
           </div>
           <p className="text-[11px] text-fg-3 px-1">{t('metrics.historySpan', { minutes: Math.max(1, span) })}</p>
         </>
       ) : (
         <div className="card flex items-center justify-center gap-2.5 py-10 text-fg-2 text-sm">
-          <span className="w-4 h-4 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
+          <span className="w-4 h-4 border-2 border-tint/20 border-t-tint/70 rounded-full animate-spin" />
           {t('metrics.waiting')}
         </div>
       )}

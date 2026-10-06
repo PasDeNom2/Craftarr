@@ -13,6 +13,8 @@ const { startLogStream } = require('../../websocket/logs');
 const { isMcVersion } = require('../../services/mcVersion');
 const { DATA_PATH, formatServer, findFreePort, mapDockerStatus, portOwner } = require('./common');
 const pregen = require('../../services/pregen');
+const serverLock = require('../../services/serverLock');
+const { requireIdle } = serverLock;
 
 /** Rayon de pré-génération borné (blocs) */
 const clampRadius = r => Math.max(500, Math.min(20000, Math.round(+r || 3000)));
@@ -71,7 +73,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
       name, modpack_id, modpack_name, modpack_source, modpack_version, modpack_version_id,
       port, ram_mb = 4096, max_players = 20, seed, whitelist_enabled = false,
       mc_version, loader_type = 'forge', auto_update = false, online_mode = true,
-      pregen_enabled = false, pregen_radius = 3000,
+      pregen_enabled = false, pregen_radius = 3000, pregen_worlds,
     } = req.body;
 
     let isVanilla = loader_type === 'vanilla';
@@ -99,14 +101,14 @@ router.post('/', authMiddleware, async (req, res, next) => {
     db.prepare(`
       INSERT INTO servers (id, name, modpack_id, modpack_name, modpack_source, modpack_version,
         modpack_version_id, port, rcon_port, rcon_password, ram_mb, max_players, seed,
-        whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update, pregen_enabled, pregen_radius)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?, ?, ?)
+        whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update, pregen_enabled, pregen_radius, pregen_worlds)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?, ?, ?, ?)
     `).run(id, name, effectiveModpackId, modpack_name || effectiveModpackId, effectiveModpackSource, modpack_version || null,
       modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
       seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
       (isMcVersion(mc_version) ? mc_version : null),
       effectiveLoader, auto_update ? 1 : 0,
-      pregen_enabled && effectiveLoader !== 'vanilla' ? 1 : 0, clampRadius(pregen_radius));
+      pregen_enabled && effectiveLoader !== 'vanilla' ? 1 : 0, clampRadius(pregen_radius), pregen.normalizeWorlds(pregen_worlds));
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
     res.status(201).json(formatServer(server));
@@ -134,7 +136,7 @@ router.post('/:id/install/cancel', authMiddleware, (req, res) => {
 });
 
 // POST /api/servers/:id/install-mods — Télécharge les mods manquants sans recréer le container
-router.post('/:id/install-mods', authMiddleware, async (req, res, next) => {
+router.post('/:id/install-mods', authMiddleware, requireIdle, async (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
@@ -169,13 +171,17 @@ router.post('/:id/install-mods', authMiddleware, async (req, res, next) => {
 });
 
 // POST /api/servers/:id/reinstall — Relance l'installation depuis zéro (pour les serveurs en erreur sans container)
-router.post('/:id/reinstall', authMiddleware, async (req, res, next) => {
+router.post('/:id/reinstall', authMiddleware, requireIdle, async (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
     if (server.status !== 'error') return res.status(400).json({ error: 'Le serveur doit être en erreur pour être réinstallé' });
 
+    // Repartir d'un dossier propre (monde et fichiers joueurs conservés) : les restes d'une
+    // tentative précédente (autres mods, autre loader) faisaient crasher la nouvelle installation
+    if (server.container_id) await dockerService.removeContainer(server.container_id).catch(() => {});
+    installer.cleanForReinstall(path.join(DATA_PATH, 'servers', server.id, 'server'));
     db.prepare("UPDATE servers SET status = 'installing', container_id = NULL WHERE id = ?").run(server.id);
     const updatedServer = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
     res.json({ ok: true });
@@ -190,35 +196,40 @@ router.post('/:id/reinstall', authMiddleware, async (req, res, next) => {
 });
 
 // POST /api/servers/:id/recreate — Recrée le container Docker (ex: après changement de RAM/port ou pour forcer le téléchargement des mods)
-router.post('/:id/recreate', authMiddleware, async (req, res, next) => {
+router.post('/:id/recreate', authMiddleware, requireIdle, async (req, res, next) => {
   try {
-    const db = getDb();
-    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
-    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
-
-    // Arrêt et suppression de l'ancien container
-    if (server.container_id) {
-      await dockerService.removeContainer(server.container_id).catch(() => {});
-    }
-
-    db.prepare('UPDATE servers SET container_id = NULL, container_name = NULL, status = ? WHERE id = ?').run('stopped', server.id);
-    const fresh = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
-
-    // Recréation avec les paramètres actuels (incluant CF_API_KEY, RAM, port)
-    const { containerId, containerName } = await dockerService.createServerContainer(fresh);
-    db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
-      .run(containerId, containerName, 'starting', server.id);
-
-    await dockerService.startContainer(containerId, fresh);
-    startLogStream(req.app.get('io'), server.id);
-    res.json({ ok: true, status: 'starting' });
+    await serverLock.withLock(req.params.id, 'recréation du container', () => recreate(req, res));
   } catch (err) {
     next(err);
   }
 });
 
+async function recreate(req, res) {
+  const db = getDb();
+  const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+  if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+
+  // Arrêt et suppression de l'ancien container
+  if (server.container_id) {
+    await dockerService.removeContainer(server.container_id).catch(() => {});
+  }
+
+  db.prepare('UPDATE servers SET container_id = NULL, container_name = NULL, status = ? WHERE id = ?').run('stopped', server.id);
+  const fresh = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
+
+  // Recréation avec les paramètres actuels (incluant CF_API_KEY, RAM, port)
+  const { containerId, containerName } = await dockerService.createServerContainer(fresh);
+  db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
+    .run(containerId, containerName, 'starting', server.id);
+
+  await dockerService.startContainer(containerId, fresh);
+  startLogStream(req.app.get('io'), server.id);
+  res.json({ ok: true, status: 'starting' });
+}
+
 // POST /api/servers/:id/start
-router.post('/:id/start', authMiddleware, async (req, res, next) => {
+router.post('/:id/start', authMiddleware, requireIdle, async (req, res, next) => {
+  const release = serverLock.acquire(req.params.id, 'démarrage');
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
@@ -240,11 +251,14 @@ router.post('/:id/start', authMiddleware, async (req, res, next) => {
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
+  } finally {
+    release();
   }
 });
 
 // POST /api/servers/:id/stop
-router.post('/:id/stop', authMiddleware, async (req, res, next) => {
+router.post('/:id/stop', authMiddleware, requireIdle, async (req, res, next) => {
+  const release = serverLock.acquire(req.params.id, 'arrêt');
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
@@ -257,11 +271,14 @@ router.post('/:id/stop', authMiddleware, async (req, res, next) => {
     res.json({ ok: true, status: 'stopped' });
   } catch (err) {
     next(err);
+  } finally {
+    release();
   }
 });
 
 // POST /api/servers/:id/restart
-router.post('/:id/restart', authMiddleware, async (req, res, next) => {
+router.post('/:id/restart', authMiddleware, requireIdle, async (req, res, next) => {
+  const release = serverLock.acquire(req.params.id, 'redémarrage');
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
@@ -278,16 +295,19 @@ router.post('/:id/restart', authMiddleware, async (req, res, next) => {
       startLogStream(req.app.get('io'), server.id);
     } else {
       await dockerService.restartContainer(server.container_id, server);
-      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('running', server.id);
+      // « starting » : le flux de logs repasse en « running » sur la ligne Done (avant : en ligne trop tôt)
+      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     }
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
+  } finally {
+    release();
   }
 });
 
 // POST /api/servers/:id/backup
-router.post('/:id/backup', authMiddleware, async (req, res, next) => {
+router.post('/:id/backup', authMiddleware, requireIdle, async (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
@@ -356,7 +376,7 @@ router.delete('/:id', authMiddleware, async (req, res, next) => {
 });
 
 // POST /api/servers/:id/update — Mise à jour manuelle vers une version choisie (ou latest)
-router.post('/:id/update', authMiddleware, async (req, res, next) => {
+router.post('/:id/update', authMiddleware, requireIdle, async (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
@@ -417,7 +437,7 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
     const allowed = ['name', 'port', 'ram_mb', 'max_players', 'whitelist_enabled', 'auto_update', 'update_interval_hours', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection',
-      'pregen_enabled', 'pregen_radius', 'pregen_pause_players'];
+      'pregen_enabled', 'pregen_radius', 'pregen_pause_players', 'pregen_worlds'];
     const booleans = new Set(['whitelist_enabled', 'auto_update', 'pregen_enabled', 'pregen_pause_players']);
     const updates = {};
     for (const key of allowed) {
@@ -427,6 +447,8 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
     if (updates.pregen_radius !== undefined) updates.pregen_radius = clampRadius(updates.pregen_radius);
+    if (updates.pregen_worlds !== undefined) updates.pregen_worlds = pregen.normalizeWorlds(updates.pregen_worlds);
+    const worldsChanged = updates.pregen_worlds !== undefined && updates.pregen_worlds !== pregen.worldsOf(server).join(',');
 
     // Pré-génération : activation (installation de Chunky), désactivation, changement de rayon
     let pregenError = null;
@@ -442,10 +464,11 @@ router.patch('/:id', authMiddleware, async (req, res, next) => {
       }
     } else if (updates.pregen_enabled === 0 && server.pregen_enabled) {
       await pregen.cancelTask(server);
-      Object.assign(updates, { pregen_status: null, pregen_progress: 0, pregen_eta: null, pregen_message: null });
-    } else if (pregenOn && updates.pregen_radius !== undefined && updates.pregen_radius !== server.pregen_radius && server.pregen_status) {
+      Object.assign(updates, { pregen_status: null, pregen_progress: 0, pregen_eta: null, pregen_message: null, pregen_world_index: 0 });
+    } else if (pregenOn && ((updates.pregen_radius !== undefined && updates.pregen_radius !== server.pregen_radius) || worldsChanged) && server.pregen_status) {
+      // Rayon ou dimensions modifiés : on repart de zéro (les chunks déjà générés restent, Chunky les saute vite)
       await pregen.cancelTask(server);
-      Object.assign(updates, { pregen_status: server.pregen_status === 'needs_restart' ? 'needs_restart' : 'pending', pregen_progress: 0, pregen_eta: null });
+      Object.assign(updates, { pregen_status: server.pregen_status === 'needs_restart' ? 'needs_restart' : 'pending', pregen_progress: 0, pregen_eta: null, pregen_world_index: 0 });
     }
     if (updates.port !== undefined && updates.port !== server.port) {
       const clash = portOwner(db, updates.port, server.id);
@@ -474,7 +497,7 @@ router.post('/:id/pregen/restart', authMiddleware, async (req, res, next) => {
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
     if (!server.pregen_enabled) return res.status(400).json({ error: 'Pré-génération désactivée' });
     await pregen.cancelTask(server);
-    db.prepare("UPDATE servers SET pregen_status = 'pending', pregen_progress = 0, pregen_eta = NULL, pregen_message = NULL WHERE id = ?").run(server.id);
+    db.prepare("UPDATE servers SET pregen_status = 'pending', pregen_progress = 0, pregen_eta = NULL, pregen_message = NULL, pregen_world_index = 0 WHERE id = ?").run(server.id);
     res.json(formatServer(db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id)));
     pregen.tick().catch(() => {});
   } catch (err) {

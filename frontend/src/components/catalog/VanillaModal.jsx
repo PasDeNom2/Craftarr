@@ -27,6 +27,7 @@ export default function VanillaModal({ open, onClose }) {
   const [form, setForm] = useState({
     pregen_enabled: false,
     pregen_radius: 3000,
+    pregen_worlds: ['minecraft:overworld'],
     name: 'Vanilla Server',
     mc_version: '',
     port: nextFreePort(allServers),
@@ -70,6 +71,7 @@ export default function VanillaModal({ open, onClose }) {
         loader_type: 'vanilla',
         pregen_enabled: form.pregen_enabled,
         pregen_radius: form.pregen_radius,
+        pregen_worlds: form.pregen_worlds,
         mc_version: effectiveMcVersion,
         port: form.port,
         ram_mb: form.ram_mb,
@@ -124,9 +126,9 @@ export default function VanillaModal({ open, onClose }) {
                   onClick={() => { setVersionType(vt.value); set('mc_version', ''); }}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={{
-                    background: versionType === vt.value ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                    background: versionType === vt.value ? 'var(--accent)' : 'rgba(var(--tint-rgb),0.05)',
                     color: versionType === vt.value ? 'var(--bg)' : 'var(--fg-2)',
-                    border: `1px solid ${versionType === vt.value ? 'var(--accent)' : 'rgba(255,255,255,0.08)'}`,
+                    border: `1px solid ${versionType === vt.value ? 'var(--accent)' : 'rgba(var(--tint-rgb),0.08)'}`,
                   }}
                 >
                   {vt.label}
@@ -252,7 +254,7 @@ export default function VanillaModal({ open, onClose }) {
             <div
               className="rounded-xl p-4 text-center cursor-pointer transition-all duration-200"
               style={{
-                border: `2px dashed ${worldFile ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.1)'}`,
+                border: `2px dashed ${worldFile ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(var(--tint-rgb),0.1)'}`,
                 background: worldFile ? 'rgba(var(--accent-rgb),0.04)' : 'transparent',
               }}
             >

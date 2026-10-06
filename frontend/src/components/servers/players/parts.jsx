@@ -6,7 +6,7 @@ export function PlayerAvatar({ username, size = 32, className = '', variant = 'a
   const [err, setErr] = useState(false);
   if (err) {
     return (
-      <div className={clsx('flex items-center justify-center font-bold text-fg bg-white/[0.08]', className)} style={{ width: size, height: variant === 'body' ? size * 2 : size, fontSize: size * 0.4 }}>
+      <div className={clsx('flex items-center justify-center font-bold text-fg bg-tint/[0.08]', className)} style={{ width: size, height: variant === 'body' ? size * 2 : size, fontSize: size * 0.4 }}>
         {username[0]?.toUpperCase()}
       </div>
     );
@@ -25,7 +25,7 @@ export function Kpi({ icon: Icon, label, value, sub, tone = 'var(--fg)', classNa
     <div className={clsx('card !p-4 min-w-0', className)}>
       <div className="flex items-center gap-2 mb-2.5">
         {Icon && (
-          <span className="w-7 h-7 rounded-[9px] flex items-center justify-center bg-white/[0.07] shrink-0" style={{ color: tone }}>
+          <span className="w-7 h-7 rounded-[9px] flex items-center justify-center bg-tint/[0.07] shrink-0" style={{ color: tone }}>
             <Icon size={14} strokeWidth={2} />
           </span>
         )}
@@ -52,7 +52,7 @@ export function Heatmap({ grid, locale }) {
                 key={h}
                 title={`${days[d]} ${h}h — ${formatDuration(v)}`}
                 className="flex-1 aspect-square rounded-[4px] transition-colors"
-                style={{ background: v ? `rgba(var(--accent-rgb), ${0.12 + 0.88 * (v / max)})` : 'rgba(255,255,255,0.04)' }}
+                style={{ background: v ? `rgba(var(--accent-rgb), ${0.12 + 0.88 * (v / max)})` : 'rgba(var(--tint-rgb),0.04)' }}
               />
             ))}
           </div>
@@ -76,7 +76,7 @@ export function BarList({ items, format = formatNumber, empty, color = 'var(--ac
       {items.map(it => {
         const { name, mod } = humanizeId(it.id);
         return (
-          <li key={it.id} className="relative h-8 rounded-[10px] overflow-hidden bg-white/[0.03]" title={it.id}>
+          <li key={it.id} className="relative h-8 rounded-[10px] overflow-hidden bg-tint/[0.03]" title={it.id}>
             <div className="absolute inset-y-0 left-0 rounded-[10px] transition-[width] duration-700"
               style={{ width: `${Math.max(2, (it.value / max) * 100)}%`, background: color, opacity: 0.22 }} />
             <div className="relative h-full flex items-center gap-2 px-3 text-[12.5px]">
@@ -94,8 +94,8 @@ export function BarList({ items, format = formatNumber, empty, color = 'var(--ac
 /** Petite capsule d'état */
 export function Pill({ children, tone = 'var(--fg-2)', bg, className }) {
   return (
-    <span className={clsx('inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap', className)}
-      style={{ color: tone, background: bg || 'rgba(255,255,255,0.08)' }}>
+    <span className={clsx('inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-md font-semibold whitespace-nowrap', className)}
+      style={{ color: tone, background: bg || 'rgba(var(--tint-rgb),0.08)' }}>
       {children}
     </span>
   );

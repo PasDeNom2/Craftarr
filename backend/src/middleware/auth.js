@@ -1,6 +1,4 @@
-const jwt = require('jsonwebtoken');
-
-const { getJwtSecret } = require('../config/secrets');
+const { verifyUserToken } = require('../config/secrets');
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -9,7 +7,7 @@ function authMiddleware(req, res, next) {
   }
   const token = authHeader.slice(7);
   try {
-    req.user = jwt.verify(token, getJwtSecret());
+    req.user = verifyUserToken(token);
     next();
   } catch {
     return res.status(401).json({ error: 'Token invalide ou expiré' });

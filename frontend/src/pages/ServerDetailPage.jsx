@@ -18,6 +18,7 @@ import Modal from '../components/ui/Modal';
 import Segmented from '../components/ui/Segmented';
 import Switch from '../components/ui/Switch';
 import PregenStatus from '../components/servers/PregenStatus';
+import { PregenWorlds } from '../components/catalog/PregenOption';
 import ServerAvatar from '../components/ui/ServerAvatar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -26,15 +27,18 @@ import clsx from 'clsx';
 import {
   Terminal, Activity, HardDrive, FolderOpen, Settings as SettingsIcon,
   Play, Square, RotateCcw, Upload, Trash2, ArrowUp, Package, Globe,
-  AlertTriangle, Save, Users, Pencil, Download, Copy, Wifi, Gamepad2, Layers3, MemoryStick, ChevronRight,
+  AlertTriangle, Save, Users, Pencil, Download, Copy, Gamepad2, Layers3, MemoryStick, ChevronRight,
 } from 'lucide-react';
 import PlayersPanel from '../components/servers/PlayersPanel';
+import ModsPanel from '../components/servers/ModsPanel';
+import { loaderLabel } from '../utils/loaders';
 import WhitelistPanel from '../components/servers/WhitelistPanel';
 import { Shield } from 'lucide-react';
 
 // Stable English IDs — never change, only labelKey is translated
 const TABS = [
   { id: 'console',   Icon: Terminal,     labelKey: 'server.tabs.console'   },
+  { id: 'mods',      Icon: Package,      labelKey: 'server.tabs.mods', modded: true },
   { id: 'metrics',   Icon: Activity,     labelKey: 'server.tabs.metrics'   },
   { id: 'backups',   Icon: HardDrive,    labelKey: 'server.tabs.backups'   },
   { id: 'files',     Icon: FolderOpen,   labelKey: 'server.tabs.files'     },
@@ -102,7 +106,7 @@ function UpdateModal({ server, onClose }) {
           )}
           <p className="text-xs text-fg-2 mt-1">{t('update.backupNote')}</p>
         </div>
-        <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid rgba(var(--tint-rgb),0.06)' }}>
           <button className="btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
           <button className="btn-primary ml-auto gap-2" onClick={() => doUpdate.mutate()} disabled={doUpdate.isPending}>
             <RotateCcw size={13} strokeWidth={1.5} />
@@ -143,7 +147,7 @@ function WorldImportModal({ server, onClose }) {
         <div
           className="rounded-xl p-6 text-center cursor-pointer transition-all duration-200"
           style={{
-            border: `2px dashed ${file ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.1)'}`,
+            border: `2px dashed ${file ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(var(--tint-rgb),0.1)'}`,
             background: file ? 'rgba(var(--accent-rgb),0.04)' : 'transparent',
           }}
         >
@@ -197,9 +201,9 @@ function resizeTo64(file) {
 function Group({ title, footer, children }) {
   return (
     <section className="space-y-2">
-      {title && <h3 className="eyebrow px-4">{title}</h3>}
-      <div className="card !p-0 overflow-hidden divide-y divide-white/[0.06]">{children}</div>
-      {footer && <p className="text-[11.5px] text-fg-3 px-4 leading-relaxed">{footer}</p>}
+      {title && <h3 className="text-[13px] font-semibold text-fg px-1">{title}</h3>}
+      <div className="card !p-0 overflow-hidden divide-y divide-line">{children}</div>
+      {footer && <p className="text-[12px] text-fg-3 px-1 leading-relaxed">{footer}</p>}
     </section>
   );
 }
@@ -208,15 +212,15 @@ function Row({ label, hint, children, stacked }) {
   return (
     <div className={clsx('px-4 py-3 min-h-[52px]', stacked ? 'space-y-2.5' : 'flex items-center justify-between gap-4')}>
       <div className="min-w-0">
-        <p className="text-[14px] text-fg">{label}</p>
-        {hint && <p className="text-[11.5px] text-fg-3 mt-0.5">{hint}</p>}
+        <p className="text-[13.5px] text-fg">{label}</p>
+        {hint && <p className="text-[12px] text-fg-3 mt-0.5">{hint}</p>}
       </div>
       {children}
     </div>
   );
 }
 
-const compactInput = 'h-9 w-28 px-3 rounded-xl bg-[rgba(118,118,128,0.18)] border border-transparent text-right text-[14px] text-fg outline-none focus:border-white/20 font-mono';
+const compactInput = 'h-8 w-28 px-2.5 rounded-md bg-bg border border-line-strong text-right text-[13px] text-fg outline-none focus:border-fg-2 font-mono transition-colors';
 
 function EditTab({ server, onInstallMods, onWorldImport }) {
   const qc = useQueryClient();
@@ -240,6 +244,7 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
     pregen_enabled: !!server.pregen_enabled,
     pregen_radius: server.pregen_radius || 3000,
     pregen_pause_players: server.pregen_pause_players !== false,
+    pregen_worlds: server.pregen_worlds || ['minecraft:overworld'],
   });
   const [restartingPregen, setRestartingPregen] = useState(false);
   const [base, setBase] = useState(form);
@@ -341,7 +346,7 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
         <div className="flex items-center gap-4 px-4 py-4">
           <div className="relative shrink-0">
             <input type="file" accept="image/png,image/jpeg" id="settings-icon-input" className="hidden" onChange={handleIconChange} />
-            <div className="w-16 h-16 rounded-[18px] overflow-hidden flex items-center justify-center bg-white/[0.06] border border-white/[0.08]">
+            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center bg-surface-2 border border-line">
               {iconPreview
                 ? <img src={iconPreview} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
                 : <img
@@ -359,8 +364,8 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
             </div>
             <label
               htmlFor="settings-icon-input"
-              className="cursor-pointer absolute -bottom-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full bg-fg text-black hover:scale-110 transition-transform"
-              style={{ boxShadow: '0 0 0 3px rgba(30,30,36,1)' }}
+              className="cursor-pointer absolute -bottom-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full bg-fg text-inverse"
+              style={{ boxShadow: '0 0 0 3px var(--surface)' }}
               title={t('server.settings.icon')}
             >
               <Pencil size={11} strokeWidth={2.5} />
@@ -454,7 +459,7 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
           />
         </Row>
         {form.pregen_enabled && (
-          <div className="fade-in divide-y divide-white/[0.06]">
+          <div className="fade-in divide-y divide-tint/[0.06]">
             <Row label={t('pregen.radius')} hint={t('pregen.radiusHint', { size: (form.pregen_radius * 2).toLocaleString() })} stacked>
               <Segmented
                 className="w-full [&>button]:flex-1"
@@ -462,6 +467,9 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
                 onChange={v => set('pregen_radius', v)}
                 items={[1000, 2000, 3000, 5000, 10000].map(r => ({ id: r, label: `${r / 1000}k` }))}
               />
+            </Row>
+            <Row label={t('pregen.worldsLabel')} hint={t('pregen.worldsHint')} stacked>
+              <PregenWorlds value={form.pregen_worlds} onChange={v => set('pregen_worlds', v)} />
             </Row>
             <Row label={t('pregen.pausePlayers')} hint={t('pregen.pausePlayersHint')}>
               <Switch checked={form.pregen_pause_players} onChange={v => set('pregen_pause_players', v)} label={t('pregen.pausePlayers')} />
@@ -525,10 +533,10 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
             key={label}
             onClick={onClick}
             disabled={disabled}
-            className="w-full flex items-center gap-3 px-4 min-h-[52px] text-left hover:bg-white/[0.04] active:bg-white/[0.08] disabled:opacity-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 min-h-[48px] text-left hover:bg-tint/[0.03] disabled:opacity-50 transition-colors"
           >
-            <span className="w-8 h-8 rounded-[10px] bg-white/[0.08] flex items-center justify-center text-fg shrink-0"><Icon size={15} strokeWidth={1.75} /></span>
-            <span className="text-[14px] text-fg flex-1">{label}</span>
+            <Icon size={15} strokeWidth={1.75} className="text-fg-2 shrink-0" />
+            <span className="text-[13.5px] text-fg flex-1">{label}</span>
             <ChevronRight size={15} className="text-fg-3" />
           </button>
         ))}
@@ -537,14 +545,14 @@ function EditTab({ server, onInstallMods, onWorldImport }) {
       {/* Barre d'enregistrement : n'apparaît que s'il y a des modifications */}
       {(dirty || isSaving) && (
         <div className="sticky bottom-4 z-10 flex justify-center pointer-events-none">
-          <div className="glass-strong pointer-events-auto flex items-center gap-2 h-14 pl-5 pr-2 rounded-full pop-in max-w-full">
+          <div className="glass-strong pointer-events-auto flex items-center gap-2 h-12 pl-4 pr-1.5 rounded-xl pop-in max-w-full">
             <span className="w-2 h-2 rounded-full bg-warn shrink-0" />
             <div className="min-w-0 mr-2">
               <p className="text-[13px] font-semibold text-fg whitespace-nowrap">{t('server.settings.unsavedChanges')}</p>
               {isStopped && <p className="text-[11px] text-fg-3 truncate max-w-[18rem]">{t('server.settings.containerRecreateNote')}</p>}
             </div>
-            <button className="btn-ghost !h-10" onClick={() => setForm(base)} disabled={isSaving}>{t('common.cancel')}</button>
-            <button className="btn-primary !h-10" onClick={() => saveMut.mutate()} disabled={isSaving}>
+            <button className="btn-ghost" onClick={() => setForm(base)} disabled={isSaving}>{t('common.cancel')}</button>
+            <button className="btn-primary" onClick={() => saveMut.mutate()} disabled={isSaving}>
               <Save size={13} strokeWidth={2} />
               {isSaving
                 ? recreating ? t('server.settings.applying') : t('server.settings.saving')
@@ -572,7 +580,6 @@ export default function ServerDetailPage() {
   const [confirmMods, setConfirmMods] = useState(false);
   const { updateServer: patchStore, removeServer } = useServerStore();
   const bumpIcon = useIconStore(s => s.bumpIcon);
-  const headerIconKey = useIconStore(s => s.versions[id] || 1);
 
   const transientStatuses = ['installing', 'starting', 'updating'];
 
@@ -706,38 +713,36 @@ export default function ServerDetailPage() {
   const meta = [
     { icon: Package, value: server.modpack_name },
     server.mc_version && { icon: Gamepad2, value: `MC ${server.mc_version}` },
-    server.loader_type && server.loader_type !== 'vanilla' && { icon: Layers3, value: server.loader_type, capitalize: true },
+    server.loader_type && server.loader_type !== 'vanilla' && { icon: Layers3, value: loaderLabel(server.loader_type) },
     { icon: MemoryStick, value: server.ram_mb >= 1024 ? `${server.ram_mb / 1024} Go` : `${server.ram_mb} Mo` },
   ].filter(Boolean);
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <div className="h-full flex flex-col">
       {/* ── En-tête ── */}
-      <header className="glass relative shrink-0 rounded-[26px] overflow-hidden card-in">
-        <div className="px-5 pt-5 pb-4">
+      <header className="shrink-0 border-b border-line bg-bg">
+        <div className="px-6 lg:px-8 pt-5">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             {/* Identité */}
             <div className="flex items-center gap-4 min-w-0">
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 group/icon">
                 <input type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden" onChange={onHeaderIcon} />
-                <ServerAvatar server={server} size={52} showDot={false} />
+                <ServerAvatar server={server} size={48} showDot={false} />
                 <label
                   htmlFor="header-icon-input"
-                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
-                  style={{ background: 'var(--fg)', color: '#000', boxShadow: '0 0 0 3px rgba(40,40,46,1)' }}
+                  className="absolute inset-0 rounded-[10px] flex items-center justify-center cursor-pointer bg-black/55 text-white opacity-0 group-hover/icon:opacity-100 transition-opacity"
                   title={t('server.settings.icon')}
                 >
-                  <Pencil size={9} strokeWidth={2.5} />
+                  <Pencil size={14} strokeWidth={2} />
                 </label>
               </div>
 
               <div className="min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   {editingName ? (
                     <input
                       autoFocus
-                      className="text-[22px] font-bold text-fg bg-transparent border-b outline-none min-w-[12rem] tracking-tight"
-                      style={{ borderColor: 'var(--fg-3)' }}
+                      className="text-[20px] font-semibold text-fg bg-transparent border-b border-fg-3 outline-none min-w-[12rem] tracking-tight"
                       value={headerName}
                       onChange={e => setHeaderName(e.target.value)}
                       onBlur={saveHeaderName}
@@ -745,39 +750,35 @@ export default function ServerDetailPage() {
                     />
                   ) : (
                     <h1
-                      className="group text-[22px] font-bold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
+                      className="group text-[20px] font-semibold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
                       onClick={() => { setHeaderName(server.name); setEditingName(true); }}
                       title={t('server.settings.serverName')}
                     >
                       <span className="truncate">{server.name}</span>
-                      <Pencil size={13} strokeWidth={2} className="text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Pencil size={12} strokeWidth={2} className="text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </h1>
                   )}
                   <StatusBadge status={server.status} />
                   {server.needs_recreate && (
-                    <span
-                      className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-semibold"
-                      style={{ background: 'rgba(var(--warn-rgb),0.1)', color: 'var(--warn)', border: '1px solid rgba(var(--warn-rgb),0.25)' }}
-                    >
-                      <AlertTriangle size={11} strokeWidth={2} /> {t('server.needsRecreate')}
+                    <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] font-medium text-warn border border-warn/30 bg-warn/[0.08]">
+                      <AlertTriangle size={12} strokeWidth={2} /> {t('server.needsRecreate')}
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <div className="flex items-center gap-x-4 gap-y-1 mt-1.5 flex-wrap text-[12.5px] text-fg-2">
                   <button
                     onClick={copyAddress}
-                    className="group inline-flex items-center gap-1.5 h-7 pl-2.5 pr-3 rounded-full font-mono text-xs text-fg bg-white/[0.08] hover:bg-white/[0.14] active:scale-95 transition-all"
+                    className="group inline-flex items-center gap-1.5 font-mono text-fg hover:text-fg-2 transition-colors"
                     title={t('server.copyAddress')}
                   >
-                    <Wifi size={12} strokeWidth={1.75} className="text-fg-2" />
                     {address}
-                    <Copy size={11} strokeWidth={2} className="text-fg-3 group-hover:text-fg-2" />
+                    <Copy size={11} strokeWidth={2} className="text-fg-3" />
                   </button>
                   {meta.map(({ icon: Icon, value, capitalize }) => (
-                    <span key={value} className={clsx('inline-flex items-center gap-1.5 h-7 px-2 rounded-full text-xs text-fg-2', capitalize && 'capitalize')}>
-                      <Icon size={12} strokeWidth={1.75} className="text-fg-3" />
-                      <span className="truncate max-w-[14rem]">{value}</span>
+                    <span key={value} className={clsx('inline-flex items-center gap-1.5 min-w-0', capitalize && 'capitalize')}>
+                      <Icon size={12} strokeWidth={1.75} className="text-fg-3 shrink-0" />
+                      <span className="truncate max-w-[16rem]">{value}</span>
                     </span>
                   ))}
                 </div>
@@ -792,18 +793,18 @@ export default function ServerDetailPage() {
                 </button>
               ) : canStart && (
                 <button className="btn-primary" onClick={() => startMut.mutate()} disabled={isBusy}>
-                  <Play size={14} strokeWidth={2} fill="currentColor" /> {startMut.isPending ? '…' : t('server.actions.start')}
+                  <Play size={13} strokeWidth={2} fill="currentColor" /> {startMut.isPending ? '…' : t('server.actions.start')}
                 </button>
               )}
               {canStop && (
-                <div className="inline-flex rounded-full bg-white/[0.08] border border-white/10 p-[3px] gap-0.5">
-                  <button className="btn h-[30px] px-3.5 text-fg hover:bg-white/10" onClick={() => stopMut.mutate()} disabled={isBusy}>
-                    <Square size={12} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
-                  </button>
-                  <button className="btn h-[30px] px-3.5 text-fg hover:bg-white/10" onClick={() => restartMut.mutate()} disabled={isBusy}>
+                <>
+                  <button className="btn-secondary" onClick={() => restartMut.mutate()} disabled={isBusy}>
                     <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
                   </button>
-                </div>
+                  <button className="btn-secondary" onClick={() => stopMut.mutate()} disabled={isBusy}>
+                    <Square size={11} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
+                  </button>
+                </>
               )}
               {canUpdate && (
                 <button className="btn-secondary" onClick={() => setShowUpdate(true)}>
@@ -811,7 +812,7 @@ export default function ServerDetailPage() {
                 </button>
               )}
               <button
-                className="btn-danger w-9 px-0"
+                className="btn-danger w-9 !px-0"
                 onClick={() => setConfirmDelete(true)}
                 disabled={deleteMut.isPending}
                 title={t('server.actions.delete')}
@@ -822,26 +823,34 @@ export default function ServerDetailPage() {
             </div>
           </div>
 
-          {/* Onglets : contrôle segmenté à pastille glissante */}
-          <div className="mt-4 -mx-1 px-1 overflow-x-auto">
-            <Segmented
-              value={tab}
-              onChange={setTab}
-              items={TABS.map(({ id: tabId, Icon, labelKey }) => ({ id: tabId, icon: Icon, label: t(labelKey) }))}
-            />
-          </div>
+          {/* Onglets */}
+          <nav className="tabs mt-4 -mb-px !border-b-0" role="tablist">
+            {TABS.filter(tb => !tb.modded || server.loader_type !== 'vanilla').map(({ id: tabId, Icon, labelKey }) => (
+              <button
+                key={tabId}
+                role="tab"
+                aria-selected={tab === tabId}
+                onClick={() => setTab(tabId)}
+                className="tab"
+              >
+                <Icon size={14} strokeWidth={1.75} />
+                {t(labelKey)}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
       {/* ── Contenu : chaque onglet est isolé (un onglet qui plante n'emporte pas la page) ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className={clsx('h-full', tab !== 'console' && 'hidden', tab === 'console' && 'card-in')}>
+      <div className={clsx('flex-1 min-h-0 overflow-y-auto', tab === 'console' || tab === 'files' ? 'p-4 lg:p-5' : 'px-6 lg:px-8 py-6')}>
+        <div className={clsx('h-full', tab !== 'console' && 'hidden')}>
           <ErrorBoundary resetKey="console"><Console server={server} /></ErrorBoundary>
         </div>
         {tab !== 'console' && (
           <ErrorBoundary resetKey={tab}>
-            <div key={tab} className={clsx('tab-in', tab === 'files' ? 'h-full' : 'px-1 py-3 max-w-screen-xl')}>
+            <div key={tab} className={clsx('tab-in', tab === 'files' ? 'h-full' : 'max-w-6xl')}>
               {tab === 'metrics' && <MetricsPanel server={server} />}
+              {tab === 'mods' && <ModsPanel server={server} />}
               {tab === 'backups' && <BackupList server={server} />}
               {tab === 'files' && <FileExplorer server={server} />}
               {tab === 'players' && <PlayersPanel server={server} />}

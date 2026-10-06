@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store';
 import { getMe, checkSetupNeeded } from './services/api';
 import Layout from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
 import SetupPage from './pages/SetupPage';
 import CatalogPage from './pages/CatalogPage';
+import DashboardPage from './pages/DashboardPage';
 import ServerDetailPage from './pages/ServerDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -31,7 +32,7 @@ function AuthGate({ children }) {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center atmosphere">
-        <div className="w-5 h-5 border border-fg-3 border-t-transparent rounded-full animate-spin" style={{ borderTopColor: 'transparent' }} />
+        <div className="w-5 h-5 border-2 border-line-strong border-t-fg rounded-full animate-spin" />
       </div>
     );
   }
@@ -68,7 +69,7 @@ export default function App() {
             <Layout />
           </PrivateRoute>
         }>
-          <Route index element={<CatalogPage />} />
+          <Route index element={<DashboardPage />} />
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="servers/:id" element={<ServerDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />

@@ -51,15 +51,37 @@ export const useMetricsStore = create((set) => ({
   }),
 }));
 
-export const useThemeStore = create((set) => {
-  const saved = localStorage.getItem('craftarr_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
+/** Thème : 'dark' | 'light' | 'system' (suit le réglage de l'OS). */
+const THEMES = new Set(['dark', 'light', 'system']);
+const systemTheme = () => (window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+function applyTheme(theme, cb) {
+  const el = document.documentElement;
+  el.setAttribute('data-theme', theme === 'system' ? systemTheme() : theme);
+  if (cb) el.setAttribute('data-cb', '1'); else el.removeAttribute('data-cb');
+}
+
+export const useThemeStore = create((set, get) => {
+  const stored = localStorage.getItem('craftarr_theme');
+  // Anciens thèmes Liquid Glass (blue, red, daltonien…) → sombre
+  const saved = THEMES.has(stored) ? stored : 'dark';
+  const colorblind = localStorage.getItem('craftarr_cb') === '1' || stored === 'daltonien';
+  applyTheme(saved, colorblind);
+  window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change', () => {
+    if (get().theme === 'system') applyTheme('system', get().colorblind);
+  });
   return {
     theme: saved,
+    colorblind,
     setTheme: (theme) => {
+      if (!THEMES.has(theme)) return;
       localStorage.setItem('craftarr_theme', theme);
-      document.documentElement.setAttribute('data-theme', theme);
+      applyTheme(theme, get().colorblind);
       set({ theme });
+    },
+    setColorblind: (on) => {
+      localStorage.setItem('craftarr_cb', on ? '1' : '0');
+      applyTheme(get().theme, on);
+      set({ colorblind: on });
     },
   };
 });

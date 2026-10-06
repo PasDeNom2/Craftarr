@@ -140,7 +140,7 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
     <form onSubmit={submit} className="relative shrink-0 p-2">
       {open && (
         <ul
-          className="glass-strong absolute left-3 right-3 bottom-full mb-1 rounded-2xl overflow-hidden p-1 z-20 pop-in"
+          className="glass-strong absolute left-3 right-3 bottom-full mb-1 rounded-xl overflow-hidden p-1 z-20 pop-in"
           role="listbox"
         >
           {suggestions.map((s, i) => {
@@ -154,7 +154,7 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
                 className={clsx(
                   'flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl font-mono text-xs transition-colors',
                   s.insert ? 'cursor-pointer' : 'cursor-default',
-                  active ? 'bg-white/[0.14] text-fg' : 'text-fg-2 hover:bg-white/[0.07]',
+                  active ? 'bg-tint/[0.14] text-fg' : 'text-fg-2 hover:bg-tint/[0.07]',
                 )}
               >
                 <span className="truncate">{s.label}</span>
@@ -164,7 +164,7 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
           })}
         </ul>
       )}
-      <div className="flex items-center gap-2 pl-4 pr-1.5 h-10 rounded-full bg-[rgba(118,118,128,0.18)] border border-white/[0.06] focus-within:border-white/20 focus-within:bg-[rgba(118,118,128,0.24)] transition-colors">
+      <div className="flex items-center gap-2 pl-3.5 pr-1.5 h-10 rounded-lg bg-surface-2 border border-line focus-within:border-fg-3 transition-colors">
         <span className={clsx('font-mono text-sm select-none', disabled ? 'text-fg-3' : 'text-fg')}>{'>'}</span>
         <input
           ref={ref}
@@ -184,7 +184,7 @@ export default function CommandInput({ serverId, disabled, onSend, players = [],
           <button
             type="submit"
             disabled={disabled || sending}
-            className="pop-in flex items-center gap-1.5 h-7 px-3 rounded-full bg-fg text-black text-[11px] font-semibold disabled:opacity-40 active:scale-95 transition-transform"
+            className="pop-in flex items-center gap-1.5 h-7 px-3 rounded-md bg-fg text-inverse text-[11px] font-semibold disabled:opacity-40 transition-transform"
           >
             {sending ? '…' : <><CornerDownLeft size={12} /> {t('console.send')}</>}
           </button>

@@ -118,7 +118,7 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
           )}
 
           {/* Tabs */}
-          <div className="flex gap-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex gap-0" style={{ borderBottom: '1px solid rgba(var(--tint-rgb),0.06)' }}>
             {TABS.map(tb => (
               <button
                 key={tb.key}
@@ -129,7 +129,7 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
                 {tb.label}
                 {tb.key === 'mods' && allMods.length > 0 && (
                   <span
-                    className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
+                    className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-md"
                     style={{ background: 'rgba(var(--accent-rgb),0.1)', color: 'var(--accent)' }}
                   >
                     {allMods.length}
@@ -169,7 +169,7 @@ export default function ModpackDetail({ modpack, onClose, onDeploy }) {
                           onClick={() => setImgIdx(i)}
                           className="w-14 h-14 rounded-lg object-cover cursor-pointer shrink-0 transition-opacity"
                           style={{
-                            border: `2px solid ${i === imgIdx ? 'rgba(255,255,255,0.4)' : 'transparent'}`,
+                            border: `2px solid ${i === imgIdx ? 'rgba(var(--tint-rgb),0.4)' : 'transparent'}`,
                             opacity: i === imgIdx ? 1 : 0.5,
                           }}
                         />
@@ -273,9 +273,9 @@ function ModRow({ mod }) {
   return (
     <div
       className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150"
-      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
-      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+      style={{ background: 'rgba(var(--tint-rgb),0.02)', border: '1px solid rgba(var(--tint-rgb),0.05)' }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--tint-rgb),0.04)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'rgba(var(--tint-rgb),0.02)'}
     >
       {/* Icon */}
       {mod.thumbnailUrl ? (
@@ -291,7 +291,7 @@ function ModRow({ mod }) {
         className="w-9 h-9 rounded-lg shrink-0 items-center justify-center text-xs font-bold text-fg-3"
         style={{
           background: 'var(--surface-2)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          border: '1px solid rgba(var(--tint-rgb),0.06)',
           display: mod.thumbnailUrl ? 'none' : 'flex',
         }}
       >

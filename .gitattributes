@@ -1,0 +1,14 @@
+# Fins de ligne normalisées (LF dans le dépôt et la copie de travail) : les fichiers mélangés
+# CRLF/LF faisaient échouer les outils d'édition et polluaient les diffs.
+* text=auto eol=lf
+
+# Scripts Windows : CRLF obligatoire pour cmd.exe
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaires
+*.png binary
+*.jpg binary
+*.ico binary
+*.jar binary
+*.zip binary

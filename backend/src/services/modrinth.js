@@ -41,10 +41,8 @@ async function getModpack(apiKey, projectId) {
   return normalizeModpackDetail(project.data, members.data);
 }
 
-async function getVersions(apiKey, projectId) {
-  const client = createClient(apiKey);
-  const res = await client.get(`/project/${projectId}/version`);
-  return res.data.map(v => ({
+function normalizeVersion(v) {
+  return {
     id: v.id,
     name: v.name,
     versionNumber: v.version_number,
@@ -59,117 +57,20 @@ async function getVersions(apiKey, projectId) {
       size: f.size,
     })),
     changelog: v.changelog || null,
-  }));
+  };
 }
 
-// Télécharge uniquement modrinth.index.json depuis un fichier mrpack (zip)
-// en utilisant des Range requests HTTP — évite de télécharger tout le fichier
-async function extractMrpackIndex(axios, url, totalSize) {
-  try {
-    const zlib = require('zlib');
+async function getVersions(apiKey, projectId) {
+  const client = createClient(apiKey);
+  const res = await client.get(`/project/${projectId}/version`);
+  return res.data.map(normalizeVersion);
+}
 
-    // Fallback : si taille inconnue ou serveur ne supporte pas Range, télécharge tout
-    // D'abord HEAD pour vérifier Accept-Ranges
-    const head = await axios.head(url, { timeout: 10000 }).catch(() => null);
-    const supportsRange = head?.headers?.['accept-ranges'] === 'bytes';
-    const fileSize = totalSize || parseInt(head?.headers?.['content-length'] || '0', 10);
-
-    if (!supportsRange || !fileSize) {
-      // Fallback : téléchargement complet
-      const AdmZip = require('adm-zip');
-      const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
-      const zip = new AdmZip(Buffer.from(res.data));
-      const entry = zip.getEntry('modrinth.index.json');
-      return entry ? JSON.parse(entry.getData().toString('utf8')) : null;
-    }
-
-    // Étape 1 : lire l'EOCD (End of Central Directory) = derniers 22 octets min
-    const eocdSize = Math.min(65557, fileSize); // max possible avec commentaire ZIP
-    const eocdRes = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 15000,
-      headers: { Range: `bytes=${fileSize - eocdSize}-${fileSize - 1}` },
-    });
-    const eocdBuf = Buffer.from(eocdRes.data);
-
-    // Cherche la signature EOCD (0x06054b50) en partant de la fin
-    let eocdOffset = -1;
-    for (let i = eocdBuf.length - 22; i >= 0; i--) {
-      if (eocdBuf.readUInt32LE(i) === 0x06054b50) { eocdOffset = i; break; }
-    }
-    if (eocdOffset < 0) throw new Error('EOCD non trouvé');
-
-    const cdOffset = eocdBuf.readUInt32LE(eocdOffset + 16);
-    const cdSize   = eocdBuf.readUInt32LE(eocdOffset + 12);
-
-    // Étape 2 : lire le Central Directory
-    const cdRes = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 15000,
-      headers: { Range: `bytes=${cdOffset}-${cdOffset + cdSize - 1}` },
-    });
-    const cdBuf = Buffer.from(cdRes.data);
-
-    // Étape 3 : parser le Central Directory pour trouver modrinth.index.json
-    let pos = 0;
-    let localHeaderOffset = -1;
-    let compressedSize = 0;
-    let compressionMethod = 0;
-
-    while (pos < cdBuf.length - 4) {
-      if (cdBuf.readUInt32LE(pos) !== 0x02014b50) break;
-      const method     = cdBuf.readUInt16LE(pos + 10);
-      const cSize      = cdBuf.readUInt32LE(pos + 20);
-      const fnLen      = cdBuf.readUInt16LE(pos + 28);
-      const extraLen   = cdBuf.readUInt16LE(pos + 30);
-      const commentLen = cdBuf.readUInt16LE(pos + 32);
-      const lhOffset   = cdBuf.readUInt32LE(pos + 42);
-      const filename   = cdBuf.slice(pos + 46, pos + 46 + fnLen).toString('utf8');
-
-      if (filename === 'modrinth.index.json') {
-        localHeaderOffset = lhOffset;
-        compressedSize = cSize;
-        compressionMethod = method;
-      }
-      pos += 46 + fnLen + extraLen + commentLen;
-    }
-
-    if (localHeaderOffset < 0) return null;
-
-    // Étape 4 : lire le Local File Header pour obtenir l'offset réel des données
-    const lhRes = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 15000,
-      headers: { Range: `bytes=${localHeaderOffset}-${localHeaderOffset + 29}` },
-    });
-    const lhBuf = Buffer.from(lhRes.data);
-    const lhFnLen    = lhBuf.readUInt16LE(26);
-    const lhExtraLen = lhBuf.readUInt16LE(28);
-    const dataOffset = localHeaderOffset + 30 + lhFnLen + lhExtraLen;
-
-    // Étape 5 : lire uniquement les données compressées de modrinth.index.json
-    const dataRes = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 15000,
-      headers: { Range: `bytes=${dataOffset}-${dataOffset + compressedSize - 1}` },
-    });
-    const compressedData = Buffer.from(dataRes.data);
-
-    const jsonBuf = compressionMethod === 8
-      ? zlib.inflateRawSync(compressedData)
-      : compressedData;
-
-    return JSON.parse(jsonBuf.toString('utf8'));
-  } catch (err) {
-    // Fallback total si quelque chose échoue
-    try {
-      const AdmZip = require('adm-zip');
-      const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
-      const zip = new AdmZip(Buffer.from(res.data));
-      const entry = zip.getEntry('modrinth.index.json');
-      return entry ? JSON.parse(entry.getData().toString('utf8')) : null;
-    } catch (_) { return null; }
-  }
+/** Une version précise (par id), sans dépendre de la liste complète du projet. */
+async function getVersion(apiKey, versionId) {
+  const client = createClient(apiKey);
+  const res = await client.get(`/version/${versionId}`);
+  return normalizeVersion(res.data);
 }
 
 async function getModList(apiKey, projectId) {
@@ -198,23 +99,24 @@ async function getModList(apiKey, projectId) {
 
   // 3. Télécharge uniquement modrinth.index.json via Range requests ZIP
   //    Évite de télécharger tout le mrpack (peut faire des centaines de Mo pour les gros packs)
-  const index = await extractMrpackIndex(axios, mrpackUrl, mrpackSize);
+  const index = await require('./remoteZip').readZipJson(mrpackUrl, 'modrinth.index.json', mrpackSize);
   if (!index) return [];
 
   // 4. Extrait les project IDs depuis les URLs cdn.modrinth.com
   const projectIds = [];
   const seen = new Set();
+  // Fichiers hébergés ailleurs (CurseForge, GitHub…) : absents de l'API Modrinth, listés par nom de fichier
+  const external = [];
   for (const file of (index.files || [])) {
-    for (const url of (file.downloads || [])) {
-      const match = url.match(/cdn\.modrinth\.com\/data\/([^/]+)\//);
-      if (match && !seen.has(match[1])) {
-        projectIds.push(match[1]);
-        seen.add(match[1]);
-        break;
-      }
+    const match = (file.downloads || []).map(url => url.match(/cdn\.modrinth\.com\/data\/([^/]+)\//)).find(Boolean);
+    if (match) {
+      if (!seen.has(match[1])) { projectIds.push(match[1]); seen.add(match[1]); }
+    } else if (/\.jar$/i.test(file.path || '')) {
+      const name = file.path.split('/').pop().replace(/\.jar$/i, '');
+      external.push({ id: `file:${file.path}`, name, summary: '', thumbnailUrl: null, downloadCount: 0, slug: null, websiteUrl: null, external: true });
     }
   }
-  if (!projectIds.length) return [];
+  if (!projectIds.length && !external.length) return [];
 
   // 5. Batch fetch en parallèle (lots de 50, toutes les requêtes en même temps)
   const batches = [];
@@ -239,7 +141,7 @@ async function getModList(apiKey, projectId) {
     }
   }
 
-  const sorted = mods.sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...mods, ...external].sort((a, b) => a.name.localeCompare(b.name));
   modListCache.set(cacheKey, sorted);
   return sorted;
 }
@@ -299,4 +201,4 @@ async function testConnection(apiKey) {
   }
 }
 
-module.exports = { searchModpacks, getModpack, getVersions, getModList, testConnection };
+module.exports = { searchModpacks, getModpack, getVersions, getVersion, getModList, testConnection };

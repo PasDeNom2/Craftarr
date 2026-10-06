@@ -5,7 +5,7 @@ import { login } from '../services/api';
 import { useAuthStore } from '../store';
 import { useI18n } from '../i18n';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
-import { Layers } from 'lucide-react';
+import { LogoMark } from '../components/ui/Logo';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -40,16 +40,14 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-fg rounded-xl mb-4">
-            <Layers size={20} strokeWidth={2} className="text-black" />
-          </div>
-          <h1 className="text-xl font-semibold text-fg tracking-tight">Craftarr</h1>
+          <LogoMark size={40} className="mx-auto mb-5" />
+          <h1 className="text-[20px] font-semibold text-fg tracking-tight">Craftarr</h1>
           <p className="text-fg-2 text-sm mt-1">{t('app.tagline')}</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="glass space-y-4 p-7 rounded-[28px]"
+          className="card space-y-4 !p-6"
         >
           <div>
             <label className="label">{t('login.username')}</label>
@@ -59,6 +57,7 @@ export default function LoginPage() {
               value={username}
               onChange={e => setUsername(e.target.value)}
               placeholder="admin"
+              autoComplete="username"
               autoFocus
             />
           </div>
@@ -70,11 +69,12 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
             />
           </div>
           <button
             type="submit"
-            className="btn-primary w-full justify-center py-2.5 mt-2"
+            className="btn-primary w-full mt-2"
             disabled={loading}
           >
             {loading ? t('login.loading') : t('login.submit')}

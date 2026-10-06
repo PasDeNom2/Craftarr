@@ -1,12 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { getDb } = require('../config/database');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
-const { getJwtSecret } = require('../config/secrets');
+const { signUserToken } = require('../config/secrets');
 
 // ─── Jeton de premier démarrage ───────────────────────────────
 // Tant qu'aucun compte n'existe, /setup exige ce jeton, affiché uniquement dans les logs du backend.
@@ -75,7 +74,7 @@ router.post('/setup', async (req, res, next) => {
     setupToken = null; // usage unique
     console.log(`[Auth] Compte admin créé via setup : ${username.trim()}`);
 
-    const token = jwt.sign({ id, username: username.trim() }, getJwtSecret(), { expiresIn: '7d' });
+    const token = signUserToken({ id, username: username.trim(), token_version: 0 });
     res.json({ token, username: username.trim() });
   } catch (err) {
     next(err);
@@ -98,12 +97,29 @@ router.post('/login', async (req, res, next) => {
     if (!valid) {
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
-    const token = jwt.sign(
-      { id: user.id, username: user.username },
-      getJwtSecret(),
-      { expiresIn: '7d' }
-    );
+    const token = signUserToken(user);
     res.json({ token, username: user.username });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── POST /api/auth/password ──────────────────────────────────
+// Change le mot de passe ; toutes les autres sessions sont déconnectées (token_version + 1).
+router.post('/password', authMiddleware, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Mot de passe actuel et nouveau requis' });
+    if (String(newPassword).length < 8) return res.status(400).json({ error: 'Mot de passe trop court (min 8 caractères)' });
+    const db = getDb();
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
+      return res.status(403).json({ error: 'Mot de passe actuel incorrect' });
+    }
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?')
+      .run(await bcrypt.hash(newPassword, 10), user.id);
+    const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+    res.json({ token: signUserToken(fresh), username: fresh.username });
   } catch (err) {
     next(err);
   }

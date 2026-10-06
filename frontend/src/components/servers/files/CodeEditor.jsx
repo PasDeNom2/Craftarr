@@ -253,11 +253,11 @@ const CodeEditor = forwardRef(function CodeEditor({ value, onChange, language = 
   }
 
   const common = 'font-mono text-[12.5px] leading-[1.6] py-3 pr-6 pl-3 whitespace-pre';
-  const miniInput = 'h-7 w-full pl-2.5 rounded-lg bg-[rgba(118,118,128,0.2)] border border-transparent text-[12px] font-mono text-fg placeholder:text-fg-3 outline-none focus:border-white/20';
+  const miniInput = 'h-7 w-full pl-2.5 rounded-lg bg-[var(--surface-2)] border border-transparent text-[12px] font-mono text-fg placeholder:text-fg-3 outline-none focus:border-tint/20';
 
   return (
     <div className="relative flex-1 min-h-0 flex overflow-hidden">
-      <div className="relative shrink-0 overflow-hidden select-none border-r border-white/[0.06]" aria-hidden>
+      <div className="relative shrink-0 overflow-hidden select-none border-r border-tint/[0.06]" aria-hidden>
         <pre ref={gutterRef} className="font-mono text-[12.5px] leading-[1.6] py-3 pl-4 pr-3 text-right" style={{ color: 'rgba(235,235,245,0.22)', minWidth: `${String(lineCount).length + 3}ch` }}>
           {gutter}
         </pre>

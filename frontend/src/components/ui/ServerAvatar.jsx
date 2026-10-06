@@ -1,67 +1,36 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
 import { useIconStore } from '../../store';
+import { statusColor, STATUS_LIVE } from './status';
 
-const STATUS_COLOR = {
-  running:    'var(--accent)',
-  stopped:    'var(--danger)',
-  error:      'var(--danger)',
-  starting:   'var(--warn)',
-  installing: 'var(--warn)',
-  updating:   'var(--warn)',
-};
-
-const STATUS_PULSE = {
-  running:    true,
-  starting:   true,
-  installing: true,
-  updating:   true,
-};
-
+/** Icône du serveur (server-icon.png) ou initiale, avec point d'état optionnel. */
 export default function ServerAvatar({ server, size = 32, showDot = true, className }) {
   const [imgFailed, setImgFailed] = useState(false);
   const iconV = useIconStore(s => s.versions[server.id] || 1);
   const initial = (server.name || '?')[0].toUpperCase();
-  const dotColor = STATUS_COLOR[server.status] || STATUS_COLOR.stopped;
-  const pulse = STATUS_PULSE[server.status];
-  const dotSize = size <= 24 ? 7 : size <= 36 ? 9 : 11;
-  const fontSize = Math.round(size * 0.4);
+  const dotSize = size <= 24 ? 7 : size <= 36 ? 8 : 10;
+  const radius = Math.max(5, Math.round(size / 4.5));
 
   return (
-    <div
-      className={clsx('relative shrink-0 inline-flex', className)}
-      style={{ width: size, height: size }}
-    >
+    <div className={clsx('relative shrink-0 inline-flex', className)} style={{ width: size, height: size }}>
       {!imgFailed ? (
         <img
           src={`/api/servers/${server.id}/icon?v=${iconV}`}
-          alt={server.name}
+          alt=""
           onError={() => setImgFailed(true)}
-          style={{ width: size, height: size, borderRadius: 8, objectFit: 'cover', display: 'block' }}
+          style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', display: 'block', imageRendering: 'pixelated' }}
         />
       ) : (
         <div
-          style={{
-            width: size,
-            height: size,
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize,
-            fontWeight: 700,
-            color: 'var(--fg-2)',
-            userSelect: 'none',
-          }}
+          className="flex items-center justify-center font-semibold select-none text-fg-2 bg-surface-2 border border-line-strong"
+          style={{ width: size, height: size, borderRadius: radius, fontSize: Math.round(size * 0.42) }}
         >
           {initial}
         </div>
       )}
       {showDot && (
         <span
-          className={pulse ? 'pulse-dot' : ''}
+          className={STATUS_LIVE.has(server.status) && server.status === 'running' ? 'pulse-dot' : ''}
           style={{
             position: 'absolute',
             bottom: -2,
@@ -69,9 +38,8 @@ export default function ServerAvatar({ server, size = 32, showDot = true, classN
             width: dotSize,
             height: dotSize,
             borderRadius: '50%',
-            background: dotColor,
-            border: '1.5px solid rgba(30,30,36,1)',
-            display: 'block',
+            background: statusColor(server.status),
+            boxShadow: '0 0 0 2px var(--bg-2)',
           }}
         />
       )}

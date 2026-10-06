@@ -1,6 +1,6 @@
 // Source unique des couleurs d'état (badge, avatar, sidebar, en-têtes).
 export const STATUS_COLOR = {
-  running:    'var(--accent)',
+  running:    'var(--success)',
   starting:   'var(--warn)',
   installing: 'var(--warn)',
   updating:   'var(--warn)',
@@ -9,7 +9,7 @@ export const STATUS_COLOR = {
 };
 
 export const STATUS_RGB = {
-  running:    'var(--accent-rgb)',
+  running:    'var(--success-rgb)',
   starting:   'var(--warn-rgb)',
   installing: 'var(--warn-rgb)',
   updating:   'var(--warn-rgb)',

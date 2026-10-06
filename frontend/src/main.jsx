@@ -5,7 +5,11 @@ import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { I18nProvider } from './i18n';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import { useThemeStore } from './store';
 import './index.css';
+
+// Applique le thème enregistré et suit le mode « système » dès le démarrage
+useThemeStore.getState();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,21 +24,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <QueryClientProvider client={queryClient}>
         <App />
         <Toaster
-          position="top-right"
+          position="bottom-right"
           gutter={10}
           toastOptions={{
             style: {
-              background: 'var(--glass-bg-strong)',
-              backdropFilter: 'blur(40px) saturate(190%)',
-              WebkitBackdropFilter: 'blur(40px) saturate(190%)',
+              background: 'var(--surface-3)',
               color: 'var(--fg)',
               boxShadow: 'var(--shadow-pop)',
-              borderRadius: '18px',
+              borderRadius: '10px',
               fontSize: '13px',
               padding: '10px 14px',
               maxWidth: '420px',
             },
-            success: { iconTheme: { primary: 'var(--accent)', secondary: 'var(--surface)' } },
+            success: { iconTheme: { primary: 'var(--success)', secondary: 'var(--surface)' } },
             error: { duration: 6000, iconTheme: { primary: 'var(--danger)', secondary: 'var(--surface)' } },
           }}
         />

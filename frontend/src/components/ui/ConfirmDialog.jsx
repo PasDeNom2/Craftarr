@@ -23,7 +23,7 @@ export default function ConfirmDialog({
 
   return (
     <Modal open={open} onClose={close} title={title} icon={AlertTriangle} size="sm" tone={tone}>
-      <form onSubmit={submit} className="p-6 space-y-4">
+      <form onSubmit={submit} className="p-5 space-y-4">
         <p className="text-sm text-fg-2 leading-relaxed">{message}</p>
         {requireText && (
           <div>
@@ -46,8 +46,8 @@ export default function ConfirmDialog({
             className="btn ml-auto font-semibold"
             disabled={!matches || busy}
             style={tone === 'danger'
-              ? { background: 'var(--danger)', color: '#1A0303', boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.2)' }
-              : { background: 'var(--fg)', color: '#000' }}
+              ? { background: 'var(--danger)', color: '#fff' }
+              : { background: 'var(--fg)', color: 'var(--inverse)' }}
           >
             {busy ? '…' : (confirmLabel || t('common.confirm'))}
           </button>

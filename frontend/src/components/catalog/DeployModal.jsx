@@ -6,14 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
-import clsx from 'clsx';
 import { Rocket, Globe } from 'lucide-react';
 import IconPicker from '../ui/IconPicker';
 import PregenOption from './PregenOption';
 import { nextFreePort, portTakenBy } from '../../utils/ports';
 
 const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
-const LOADER_LABELS = { forge: 'Forge', neoforge: 'NeoForge', fabric: 'Fabric', quilt: 'Quilt', vanilla: 'Vanilla' };
 
 export default function DeployModal({ modpack, onClose }) {
   const navigate = useNavigate();
@@ -31,6 +29,7 @@ export default function DeployModal({ modpack, onClose }) {
     version_id: '',
     pregen_enabled: false,
     pregen_radius: 3000,
+    pregen_worlds: ['minecraft:overworld'],
   });
   const [worldFile, setWorldFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
@@ -74,6 +73,7 @@ export default function DeployModal({ modpack, onClose }) {
         loader_type: detectedLoaders[0] || 'forge',
         pregen_enabled: form.pregen_enabled,
         pregen_radius: form.pregen_radius,
+        pregen_worlds: form.pregen_worlds,
       });
       addServer(server);
       if (iconFile) {
@@ -151,7 +151,7 @@ export default function DeployModal({ modpack, onClose }) {
                 {versions.map(v => {
                   const label = v.displayName || v.name || v.versionNumber || v.id;
                   const type = RELEASE_TYPE_LABEL[v.releaseType] || '';
-                  const mcVer = (v.mcVersions || v.game_versions || []).filter(x => /^1\.\d+/.test(x)).slice(0, 2).join(', ');
+                  const mcVer = (v.mcVersions || v.game_versions || []).filter(x => /^(1|2\d)\.\d+(\.\d+)?$/.test(x)).slice(0, 2).join(', ');
                   return (
                     <option key={v.id} value={String(v.id)}>
                       {label}{type ? ` [${type}]` : ''}{mcVer ? ` — MC ${mcVer}` : ''}
@@ -196,7 +196,7 @@ export default function DeployModal({ modpack, onClose }) {
             <div
               className="rounded-xl p-4 text-center cursor-pointer transition-all duration-200"
               style={{
-                border: `2px dashed ${worldFile ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.1)'}`,
+                border: `2px dashed ${worldFile ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(var(--tint-rgb),0.1)'}`,
                 background: worldFile ? 'rgba(var(--accent-rgb),0.04)' : 'transparent',
               }}
             >

@@ -18,7 +18,7 @@ import { formatDuration, formatNumber, formatDistance, humanizeId, sessionRanges
 import PlayerActions from './PlayerActions';
 
 const EVENT_META = {
-  join: { Icon: LogIn, color: 'var(--accent)' },
+  join: { Icon: LogIn, color: 'var(--success)' },
   leave: { Icon: LogOut, color: 'var(--fg-3)' },
   chat: { Icon: MessageSquare, color: 'var(--info)' },
   command: { Icon: Terminal, color: 'var(--purple)' },
@@ -27,7 +27,7 @@ const EVENT_META = {
   warn: { Icon: AlertTriangle, color: 'var(--orange)' },
   kick: { Icon: LogOut, color: 'var(--orange)' },
   ban: { Icon: Ban, color: 'var(--danger)' },
-  unban: { Icon: ShieldCheck, color: 'var(--accent)' },
+  unban: { Icon: ShieldCheck, color: 'var(--success)' },
 };
 const EVENT_FILTERS = {
   all: null, sessions: 'join,leave', chat: 'chat', command: 'command', death: 'death', advancement: 'advancement', moderation: 'warn,kick,ban,unban',
@@ -41,7 +41,7 @@ function copy(text, t) {
 
 // ─── Inventaire ───────────────────────────────────────────────
 function ItemSlot({ item, selected, t }) {
-  if (!item) return <div className={clsx('aspect-square rounded-[10px] bg-white/[0.035]', selected && 'ring-2 ring-white/40')} />;
+  if (!item) return <div className={clsx('aspect-square rounded-[10px] bg-tint/[0.035]', selected && 'ring-2 ring-tint/40')} />;
   const { name, mod } = humanizeId(item.id);
   const label = item.name || name;
   const tip = [label, item.name ? name : null, item.id, item.enchants?.length ? item.enchants.map(e => `${humanizeId(e.id).name} ${e.level}`).join(', ') : null,
@@ -49,10 +49,10 @@ function ItemSlot({ item, selected, t }) {
   return (
     <div title={tip}
       className={clsx('relative aspect-square rounded-[10px] p-1 flex flex-col justify-center items-center text-center overflow-hidden transition-transform hover:scale-[1.04]',
-        selected && 'ring-2 ring-white/50')}
+        selected && 'ring-2 ring-tint/50')}
       style={{
-        background: item.enchants?.length ? 'linear-gradient(135deg, rgba(191,90,242,0.22), rgba(255,255,255,0.05))' : 'rgba(255,255,255,0.07)',
-        boxShadow: item.name ? 'inset 0 0 0 1px rgba(255,214,10,0.35)' : 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+        background: item.enchants?.length ? 'linear-gradient(135deg, rgba(191,90,242,0.22), rgba(var(--tint-rgb),0.05))' : 'rgba(var(--tint-rgb),0.07)',
+        boxShadow: item.name ? 'inset 0 0 0 1px rgba(255,214,10,0.35)' : 'inset 0 0 0 1px rgba(var(--tint-rgb),0.06)',
       }}>
       <span className="text-[9px] leading-[1.15] text-fg line-clamp-3 break-words">{label}</span>
       {mod && <span className="text-[7.5px] text-fg-3 truncate max-w-full">{mod}</span>}
@@ -86,7 +86,7 @@ function Inventory({ player, t }) {
       <SectionCard title={t('players.inventory')}>
         <div className="max-w-[640px] space-y-3">
           <SlotGrid items={player.inventory} from={9} to={36} t={t} />
-          <div className="h-px bg-white/[0.06]" />
+          <div className="h-px bg-tint/[0.06]" />
           <SlotGrid items={player.inventory} from={0} to={9} selectedSlot={player.selectedSlot} t={t} />
         </div>
       </SectionCard>
@@ -113,13 +113,13 @@ function StatsTab({ stats, t }) {
       <SectionCard title={t('players.misc')}>
         <div className="grid grid-cols-2 gap-2">
           {misc.map(([k, v]) => (
-            <div key={k} className="rounded-xl bg-white/[0.04] px-3 py-2">
+            <div key={k} className="rounded-xl bg-tint/[0.04] px-3 py-2">
               <p className="text-[10.5px] text-fg-3">{t(`players.stat.${k}`)}</p>
               <p className="text-[15px] font-semibold text-fg tabular-nums">{formatNumber(v)}</p>
             </div>
           ))}
           {stats.timeSinceDeathSeconds > 0 && (
-            <div className="rounded-xl bg-white/[0.04] px-3 py-2">
+            <div className="rounded-xl bg-tint/[0.04] px-3 py-2">
               <p className="text-[10.5px] text-fg-3">{t('players.stat.timeSinceDeath')}</p>
               <p className="text-[15px] font-semibold text-fg">{formatDuration(stats.timeSinceDeathSeconds)}</p>
             </div>
@@ -135,7 +135,7 @@ function StatsTab({ stats, t }) {
       )}
       {modStats.length > 0 && (
         <SectionCard title={t('players.modStats')}>
-          <ul className="divide-y divide-white/[0.05]">
+          <ul className="divide-y divide-tint/[0.05]">
             {modStats.map(s => {
               const { name, mod } = humanizeId(s.id);
               return (
@@ -194,7 +194,7 @@ function Journal({ server, username, t, lang }) {
         <Segmented size="sm" value={filter} onChange={setFilter} items={Object.keys(EVENT_FILTERS).map(k => ({ id: k, label: t(`players.jf.${k}`) }))} />
         <div className="relative ml-auto">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
-          <input className="input !h-9 !rounded-full !pl-8 !pr-8 text-xs w-56" placeholder={t('players.searchEvents')} value={q} onChange={e => setQ(e.target.value)} />
+          <input className="input !h-9 !pl-8 !pr-8 text-xs w-56" placeholder={t('players.searchEvents')} value={q} onChange={e => setQ(e.target.value)} />
           {q && <button className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-3 hover:text-fg" onClick={() => setQ('')}><X size={12} /></button>}
         </div>
       </div>
@@ -205,13 +205,13 @@ function Journal({ server, username, t, lang }) {
           {groups.map(g => (
             <div key={g.key}>
               <p className="eyebrow px-1 mb-1.5 capitalize">{g.date ? g.date.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}</p>
-              <div className="card !p-0 overflow-hidden divide-y divide-white/[0.05]">
+              <div className="card !p-0 overflow-hidden divide-y divide-tint/[0.05]">
                 {g.items.map(ev => {
                   const meta = EVENT_META[ev.type] || { Icon: Activity, color: 'var(--fg-2)' };
                   const timeout = ev.type === 'leave' && /timed out|timeout/i.test(ev.detail || '');
                   return (
                     <div key={ev.id} className="flex items-start gap-3 px-4 py-2.5">
-                      <span className="w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 bg-white/[0.06]" style={{ color: meta.color }}>
+                      <span className="w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 bg-tint/[0.06]" style={{ color: meta.color }}>
                         <meta.Icon size={13} strokeWidth={2} />
                       </span>
                       <div className="flex-1 min-w-0 pt-0.5">
@@ -244,7 +244,7 @@ function SessionsTab({ list, t, lang }) {
   const max = Math.max(...list.map(s => s.duration || 0), 1);
   const reasonLabel = r => (!r ? null : r === 'server_stop' ? t('players.reasonServerStop') : r === 'unknown' ? t('players.reasonUnknown') : r);
   return (
-    <div className="card !p-0 overflow-hidden divide-y divide-white/[0.05]">
+    <div className="card !p-0 overflow-hidden divide-y divide-tint/[0.05]">
       {list.map(s => {
         const start = parseDbDate(s.joined_at);
         const end = parseDbDate(s.left_at);
@@ -255,12 +255,12 @@ function SessionsTab({ list, t, lang }) {
             <span className="w-28 shrink-0 font-mono text-fg-2 text-[11.5px]">
               {start?.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })} → {end ? end.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) : '…'}
             </span>
-            <div className="flex-1 h-2 rounded-full bg-white/[0.05] overflow-hidden min-w-[60px]">
+            <div className="flex-1 h-2 rounded-full bg-tint/[0.05] overflow-hidden min-w-[60px]">
               <div className="h-full rounded-full" style={{ width: `${Math.max(2, ((s.duration || 0) / max) * 100)}%`, background: end ? 'var(--purple)' : 'var(--accent)' }} />
             </div>
             <span className="w-16 text-right font-semibold text-fg tabular-nums">{formatDuration(s.duration)}</span>
             <span className="w-40 hidden md:block truncate text-right">
-              {!end ? <Pill tone="var(--accent)" bg="rgba(var(--accent-rgb),0.12)">{t('players.inProgress')}</Pill>
+              {!end ? <Pill tone="var(--success)" bg="rgba(var(--success-rgb),0.12)">{t('players.inProgress')}</Pill>
                 : reasonLabel(s.reason) && <Pill tone={bad ? 'var(--warn)' : 'var(--fg-3)'} bg={bad ? 'rgba(var(--warn-rgb),0.12)' : undefined}>{reasonLabel(s.reason)}</Pill>}
             </span>
           </div>
@@ -274,7 +274,7 @@ function SessionsTab({ list, t, lang }) {
 function AdvancementsTab({ adv, lang, t }) {
   if (!adv?.done?.length) return <div className="card text-center py-10 text-sm text-fg-2">{t('players.noAdvancements')}</div>;
   return (
-    <div className="card !p-0 overflow-hidden divide-y divide-white/[0.05]">
+    <div className="card !p-0 overflow-hidden divide-y divide-tint/[0.05]">
       {adv.done.map(a => {
         const { name, mod } = humanizeId(a.id);
         const d = a.doneAt ? new Date(a.doneAt) : null;
@@ -324,7 +324,7 @@ export default function PlayerProfile({ server, username, listEntry, actions, on
   return (
     <div className="space-y-4 max-w-6xl pb-8 tab-in">
       {/* En-tête */}
-      <div className="glass rounded-[26px] p-5 flex gap-5 items-start flex-wrap">
+      <div className="glass rounded-2xl p-5 flex gap-5 items-start flex-wrap">
         <button className="icon-btn !h-9 !min-w-9 -ml-1" onClick={onBack} aria-label={t('players.backToList')} title={t('players.backToList')}>
           <ChevronLeft size={18} />
         </button>
@@ -333,7 +333,7 @@ export default function PlayerProfile({ server, username, listEntry, actions, on
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-[24px] font-bold text-fg tracking-tight">{username}</h2>
             {p.is_online === 1
-              ? <Pill tone="var(--accent)" bg="rgba(var(--accent-rgb),0.14)"><span className="w-1.5 h-1.5 rounded-full bg-accent" /> {onlineSince ? t('players.onlineSince', { d: formatDuration((Date.now() - onlineSince) / 1000) }) : t('players.filterOnline')}</Pill>
+              ? <Pill tone="var(--success)" bg="rgba(var(--success-rgb),0.14)"><span className="w-1.5 h-1.5 rounded-full bg-success" /> {onlineSince ? t('players.onlineSince', { d: formatDuration((Date.now() - onlineSince) / 1000) }) : t('players.filterOnline')}</Pill>
               : last && <Pill>{t('players.lastSeen', { ago: formatDistanceToNow(last, { addSuffix: true, locale }) })}</Pill>}
             {p.is_op === 1 && <Pill tone="var(--warn)" bg="rgba(var(--warn-rgb),0.12)"><Crown size={9} /> OP</Pill>}
             {p.is_banned === 1 && <Pill tone="var(--danger)" bg="rgba(var(--danger-rgb),0.12)">{t('players.banned')}{p.ban_reason ? ` · ${p.ban_reason}` : ''}</Pill>}
@@ -367,23 +367,23 @@ export default function PlayerProfile({ server, username, listEntry, actions, on
               <div className="card !p-4">
                 <p className="text-[12px] text-fg-2 font-medium flex items-center gap-1.5 mb-2"><Heart size={13} className="text-danger" fill="currentColor" /> {t('players.health')}</p>
                 <p className="text-[20px] font-semibold text-fg tabular-nums">{Math.round(vitals.health * 10) / 10}<span className="text-[12px] text-fg-3"> / {vitals.maxHealth}</span></p>
-                <div className="h-1.5 mt-2 rounded-full bg-white/[0.08] overflow-hidden"><div className="h-full rounded-full bg-danger" style={{ width: `${Math.min(100, (vitals.health / vitals.maxHealth) * 100)}%` }} /></div>
+                <div className="h-1.5 mt-2 rounded-full bg-tint/[0.08] overflow-hidden"><div className="h-full rounded-full bg-danger" style={{ width: `${Math.min(100, (vitals.health / vitals.maxHealth) * 100)}%` }} /></div>
               </div>
               <div className="card !p-4">
                 <p className="text-[12px] text-fg-2 font-medium flex items-center gap-1.5 mb-2"><Drumstick size={13} className="text-orange" /> {t('players.food')}</p>
                 <p className="text-[20px] font-semibold text-fg tabular-nums">{vitals.food}<span className="text-[12px] text-fg-3"> / 20</span></p>
-                <div className="h-1.5 mt-2 rounded-full bg-white/[0.08] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${(vitals.food / 20) * 100}%`, background: 'var(--orange)' }} /></div>
+                <div className="h-1.5 mt-2 rounded-full bg-tint/[0.08] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${(vitals.food / 20) * 100}%`, background: 'var(--orange)' }} /></div>
               </div>
               <div className="card !p-4">
                 <p className="text-[12px] text-fg-2 font-medium flex items-center gap-1.5 mb-2"><Sparkles size={13} className="text-accent" /> {t('players.xp')}</p>
                 <p className="text-[20px] font-semibold text-fg tabular-nums">{vitals.xpLevel}</p>
-                <div className="h-1.5 mt-2 rounded-full bg-white/[0.08] overflow-hidden"><div className="h-full rounded-full bg-accent" style={{ width: `${(vitals.xpProgress || 0) * 100}%` }} /></div>
+                <div className="h-1.5 mt-2 rounded-full bg-tint/[0.08] overflow-hidden"><div className="h-full rounded-full bg-accent" style={{ width: `${(vitals.xpProgress || 0) * 100}%` }} /></div>
               </div>
               <div className="card !p-4">
                 <p className="text-[12px] text-fg-2 font-medium flex items-center gap-1.5 mb-2"><Gamepad2 size={13} /> {t('players.gamemode')}</p>
                 <p className="text-[16px] font-semibold text-fg">{t(`players.gm.${GAMEMODES[vitals.gameMode] || 'survival'}`)}</p>
               </div>
-              <button className="card !p-4 text-left hover:bg-white/[0.06] transition-colors col-span-2 md:col-span-1" onClick={() => tp && copy(tp, t)} title={tp ? t('players.copyTp') : undefined}>
+              <button className="card !p-4 text-left hover:bg-tint/[0.06] transition-colors col-span-2 md:col-span-1" onClick={() => tp && copy(tp, t)} title={tp ? t('players.copyTp') : undefined}>
                 <p className="text-[12px] text-fg-2 font-medium flex items-center gap-1.5 mb-2"><MapPin size={13} className="text-info" /> {t('players.position')} <Copy size={10} className="ml-auto text-fg-3" /></p>
                 <p className="text-[13px] font-mono font-semibold text-fg tabular-nums truncate">{vitals.pos ? vitals.pos.map(v => Math.round(v)).join('  ') : '—'}</p>
                 <p className="text-[11px] text-fg-3 mt-1 truncate">{dimName}</p>
@@ -426,7 +426,7 @@ export default function PlayerProfile({ server, username, listEntry, actions, on
                 <BarChart data={daily.map(d => ({ label: d.day.toLocaleDateString(lang, { day: 'numeric', month: 'short' }), h: +(d.seconds / 3600).toFixed(2) }))} margin={{ top: 4, right: 0, left: -22, bottom: 0 }}>
                   <XAxis dataKey="label" tick={{ fontSize: 9.5, fill: 'rgba(235,235,245,0.35)' }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={16} />
                   <YAxis tick={{ fontSize: 9.5, fill: 'rgba(235,235,245,0.35)' }} axisLine={false} tickLine={false} width={40} />
-                  <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} content={({ active, payload }) => active && payload?.length ? (
+                  <Tooltip cursor={{ fill: 'rgba(var(--tint-rgb),0.05)' }} content={({ active, payload }) => active && payload?.length ? (
                     <div className="glass-strong rounded-xl px-3 py-2 text-[11px]"><p className="text-fg font-semibold">{payload[0].payload.label}</p><p className="text-fg-2">{formatDuration(payload[0].payload.h * 3600)}</p></div>
                   ) : null} />
                   <Bar dataKey="h" fill="var(--purple)" radius={[5, 5, 2, 2]} maxBarSize={18} />

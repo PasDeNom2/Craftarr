@@ -7,27 +7,10 @@ import { useI18n } from '../../i18n';
 import SourceBadge from '../ui/SourceBadge';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import SourceForm from './SourceForm';
+import Switch from '../ui/Switch';
 
 function Toggle({ checked, onChange, label }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-      style={{ background: checked ? 'var(--accent)' : 'rgba(255,255,255,0.1)' }}
-    >
-      <span
-        className="inline-block h-3.5 w-3.5 rounded-[4px] transition-transform"
-        style={{
-          background: '#fff',
-          transform: checked ? 'translateX(19px)' : 'translateX(3px)',
-          transitionTimingFunction: 'cubic-bezier(.16,1,.3,1)',
-        }}
-      />
-    </button>
-  );
+  return <Switch checked={checked} onChange={() => onChange()} label={label} />;
 }
 
 export default function ApiSourceList() {
@@ -112,7 +95,7 @@ export default function ApiSourceList() {
           {sources.map(source => (
             <div
               key={source.id}
-              className="flex items-center gap-4 px-4 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.07] transition-opacity"
+              className="flex items-center gap-4 px-4 py-3 rounded-2xl bg-tint/[0.05] border border-tint/[0.07] transition-opacity"
               style={{ opacity: source.enabled ? 1 : 0.55 }}
             >
               <div className="flex-1 min-w-0 space-y-1">

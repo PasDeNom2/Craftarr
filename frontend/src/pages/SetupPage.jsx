@@ -5,7 +5,8 @@ import { setupAdmin } from '../services/api';
 import { useAuthStore } from '../store';
 import { useI18n } from '../i18n';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
-import { Layers, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { LogoMark } from '../components/ui/Logo';
 
 export default function SetupPage() {
   const [setupToken, setSetupToken] = useState('');
@@ -51,24 +52,22 @@ export default function SetupPage() {
 
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-fg rounded-xl mb-4">
-            <Layers size={20} strokeWidth={2} className="text-black" />
-          </div>
-          <h1 className="text-xl font-semibold text-fg tracking-tight">Craftarr</h1>
+          <LogoMark size={40} className="mx-auto mb-5" />
+          <h1 className="text-[20px] font-semibold text-fg tracking-tight">Craftarr</h1>
           <p className="text-fg-2 text-sm mt-1">{t('setup.subtitle')}</p>
         </div>
 
         <div
           className="flex items-start gap-3 rounded-xl px-4 py-3 mb-5 text-sm"
-          style={{ background: 'rgba(var(--accent-rgb),0.06)', border: '1px solid rgba(var(--accent-rgb),0.15)' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
         >
-          <ShieldCheck size={15} strokeWidth={1.5} className="shrink-0 mt-0.5 text-accent" />
+          <ShieldCheck size={15} strokeWidth={1.5} className="shrink-0 mt-0.5 text-fg-2" />
           <span className="text-fg-2">{t('setup.notice')}</span>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="glass space-y-4 p-7 rounded-[28px]"
+          className="card space-y-4 !p-6"
         >
           <div>
             <label className="label">{t('setup.token')}</label>
@@ -134,7 +133,7 @@ export default function SetupPage() {
 
           <button
             type="submit"
-            className="btn-primary w-full justify-center py-2.5 mt-2"
+            className="btn-primary w-full mt-2"
             disabled={loading || (confirm.length > 0 && password !== confirm)}
           >
             {loading ? t('setup.loading') : t('setup.submit')}

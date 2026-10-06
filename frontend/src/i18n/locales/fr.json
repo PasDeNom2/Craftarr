@@ -10,7 +10,9 @@
     "noServers": "Aucun serveur déployé",
     "collapse": "Réduire",
     "expand": "Développer",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "overview": "Vue d'ensemble",
+    "newServer": "Nouveau serveur"
   },
   "login": {
     "title": "Connexion",
@@ -77,7 +79,8 @@
       "kitchen-sink": "Kitchen Sink",
       "lightweight": "Léger",
       "sci-fi": "Sci-Fi"
-    }
+    },
+    "vanillaServer": "Serveur vanilla"
   },
   "modpack": {
     "deploy": "Déployer",
@@ -146,7 +149,8 @@
       "files": "Fichiers",
       "settings": "Paramètres",
       "players": "Joueurs",
-      "whitelist": "Liste blanche"
+      "whitelist": "Liste blanche",
+      "mods": "Mods"
     },
     "actions": {
       "start": "Démarrer",
@@ -279,7 +283,9 @@
       "weather": "Beau temps",
       "list": "Lister",
       "announce": "Annoncer un message…"
-    }
+    },
+    "ramAlloc": "Jeu : {alloc} Go max — Java utilise un peu plus (JVM, mods)",
+    "ramHint": "Mémoire totale du processus Java, comparée à la RAM de la machine"
   },
   "metrics": {
     "cpu": "CPU",
@@ -445,7 +451,31 @@
     "modrinthDesc": "Améliore le rate limit pour les recherches Modrinth. Disponible sur modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API Key (optionnelle)",
     "appearance": "Apparence Minecraft",
-    "system": "Système"
+    "system": "Système",
+    "theme": "Thème",
+    "themeHint": "Apparence de l'interface Craftarr.",
+    "themeDark": "Sombre",
+    "themeLight": "Clair",
+    "themeSystem": "Système",
+    "colorblind": "Couleurs adaptées au daltonisme",
+    "colorblindHint": "Remplace le vert et le rouge des états par du bleu et de l'orange.",
+    "apiKeysHint": "Nécessaires pour parcourir et installer les modpacks.",
+    "keyConfigured": "Configurée",
+    "notifications": "Notifications",
+    "notificationsHint": "Recevez une alerte quand un serveur plante en boucle, qu'une mise à jour échoue ou qu'un backup rate.",
+    "webhookUrl": "URL du webhook",
+    "webhookHint": "Discord : Paramètres du salon → Intégrations → Webhooks → Copier l'URL. Compatible Slack.",
+    "webhookFromEnv": "Un webhook est déjà défini dans le fichier .env (NOTIFY_WEBHOOK_URL).",
+    "notifyTest": "Envoyer un test",
+    "notifyTestSent": "Notification de test envoyée",
+    "account": "Compte",
+    "accountHint": "Changer le mot de passe déconnecte toutes les autres sessions.",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer",
+    "passwordHint": "8 caractères minimum.",
+    "changePassword": "Changer le mot de passe",
+    "passwordChanged": "Mot de passe changé — les autres sessions sont déconnectées"
   },
   "sources": {
     "title": "Sources",
@@ -724,6 +754,66 @@
     "vanillaNote": "Chunky a besoin d'un loader : le serveur utilisera Fabric. Les joueurs se connectent toujours avec un Minecraft normal.",
     "vanillaUnsupported": "Non disponible sur un serveur vanilla déjà créé",
     "footer": "Chunky est installé automatiquement dans la version adaptée à ce serveur et reprend tout seul après un redémarrage.",
-    "enableFailed": "Pré-génération impossible : {error}"
+    "enableFailed": "Pré-génération impossible : {error}",
+    "worldsLabel": "Dimensions",
+    "worldsHint": "Générées l'une après l'autre. Nether et End sont centrés sur 0,0.",
+    "worlds": {
+      "overworld": "Overworld",
+      "nether": "Nether",
+      "end": "End"
+    }
+  },
+  "dashboard": {
+    "title": "Vue d'ensemble",
+    "subtitle": "Tous vos serveurs Minecraft en un coup d'œil.",
+    "online": "En ligne",
+    "total": "Serveurs",
+    "busy": "En cours",
+    "errors": "En erreur",
+    "ramInUse": "RAM allouée (actifs)",
+    "colServer": "Serveur",
+    "colStatus": "État",
+    "colAddress": "Adresse",
+    "emptyTitle": "Aucun serveur pour l'instant",
+    "emptyBody": "Choisissez un modpack dans le catalogue, ou lancez un serveur vanilla en quelques secondes."
+  },
+  "mods": {
+    "add": "Ajouter des mods",
+    "addTitle": "Ajouter des mods",
+    "upload": "Envoyer des .jar",
+    "searchPlaceholder": "Rechercher un mod (ex. JEI, Create…)",
+    "sourceAll": "Tous",
+    "compatibleWith": "Seuls les mods compatibles avec Minecraft {mc} · {loader} sont proposés, sans les mods client-only.",
+    "searchError": "Recherche impossible pour le moment.",
+    "noResults": "Aucun mod compatible trouvé.",
+    "partialResults": "Une des sources n'a pas répondu : résultats partiels.",
+    "install": "Installer",
+    "installed": "installé",
+    "dependencies": "dépendance(s)",
+    "filterPlaceholder": "Filtrer les mods installés…",
+    "count": "{count} mods",
+    "disabledCount": "{count} désactivé(s)",
+    "busy": "Installation ou mise à jour en cours : la gestion des mods est en pause.",
+    "restartRequired": "Redémarrez le serveur pour appliquer les changements de mods.",
+    "later": "Plus tard",
+    "problemsTitle": "{count} problème(s) détecté(s)",
+    "fixDeps": "Installer les dépendances manquantes",
+    "loadError": "Impossible de lire les mods.",
+    "emptyTitle": "Aucun mod installé",
+    "emptyBody": "Ajoutez des mods depuis Modrinth ou CurseForge, ou glissez-déposez des fichiers .jar ici.",
+    "colMod": "Mod",
+    "colVersion": "Version",
+    "colLoader": "Loader",
+    "toggle": "Activer / désactiver",
+    "remove": "Retirer (corbeille)",
+    "noMatch": "Aucun mod ne correspond.",
+    "footer": "Un mod retiré est déplacé dans .craftarr/trash/mods (récupérable depuis l'onglet Fichiers). Glissez-déposez des .jar pour les ajouter.",
+    "dropHere": "Déposez les fichiers .jar pour les ajouter",
+    "onlyJars": "Seuls les fichiers .jar sont acceptés",
+    "uploaded": "{count} mod(s) ajouté(s)",
+    "movedToTrash": "{name} déplacé dans la corbeille",
+    "depsInstalled": "{count} dépendance(s) installée(s)",
+    "depsUnresolved": "Introuvable automatiquement : {list}",
+    "depsNothing": "Aucune dépendance manquante à installer"
   }
 }

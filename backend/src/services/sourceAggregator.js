@@ -114,7 +114,8 @@ async function getModpackVersions(sourceId, modpackId) {
   const apiKey = getSourceApiKey(source);
 
   if (sourceId === 'curseforge') {
-    return curseforge.getModpackFiles(apiKey, modpackId);
+    // Les server packs ne sont pas des versions à proposer : l'installeur prend celui de la version choisie
+    return (await curseforge.getModpackFiles(apiKey, modpackId)).filter(f => !f.isServerPack);
   }
   if (sourceId === 'modrinth') {
     return modrinth.getVersions(apiKey, modpackId);

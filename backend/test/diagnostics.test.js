@@ -37,3 +37,19 @@ test('TPS : commande et parsing selon le loader', () => {
   assert.strictEqual(parseTps('Average time per tick: 62.5ms (Target: 50.0ms)').tps1, 16);
   assert.strictEqual(parseTps('Unknown or incomplete command'), null);
 });
+
+test('Mixin : erreur fatale diagnostiquée, simple WARN ignoré', () => {
+  assert.match(diagnoseLine('Caused by: org.spongepowered.asm.mixin.transformer.throwables.MixinApplyError: Mixin [x.json:Foo] failed'), /Conflit/);
+  assert.strictEqual(diagnoseLine('[22:19:29] [main/WARN]: Mixin apply for mod necronomicon failed necronomicon-common.mixins.json:item.X'), null);
+});
+
+test('Fabric : « recommends … which is missing » ignoré, « requires » diagnostiqué', () => {
+  assert.strictEqual(diagnoseLine(" - Mod 'Debugify' (debugify) 1.20.1+2.0 recommends any version of modmenu, which is missing!"), null);
+  assert.match(diagnoseLine(" - Mod 'Create' (create) 6.0 requires any version of flywheel, which is missing!"), /requis/);
+  assert.match(diagnoseLine('net.fabricmc.loader.impl.FormattedException: Incompatible mods found!'), /requis/);
+});
+
+test('Mixin : trace d\'un avertissement ignorée, cause d\'un crash diagnostiquée', () => {
+  assert.strictEqual(diagnoseLine('org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure: @Inject annotation on getName'), null);
+  assert.match(diagnoseLine('Caused by: org.spongepowered.asm.mixin.injection.throwables.InvalidInjectionException: Critical injection failure'), /Conflit/);
+});

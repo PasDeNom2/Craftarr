@@ -8,6 +8,9 @@ const dockerService = require('./docker');
 const { getSourceApiKey, getCurseForgeKey } = require('./sourceAggregator');
 const curseforge = require('./curseforge');
 const modrinth = require('./modrinth');
+const cfExcludes = require('./cfExcludes');
+const serverLock = require('./serverLock');
+const { readModInfo, analyze: analyzeMods, unmetRequirements, describeProblems, listJars } = require('./modJar');
 const { startLogStream } = require('../websocket/logs');
 const { isMcVersion, mcVersionFromNeoForge, requiredJava, loaderVersionFromSetupConfig } = require('./mcVersion');
 
@@ -165,6 +168,15 @@ async function runThinPackSetup(server, serverDir, thinScriptDataPath) {
 }
 
 async function installServer(server) {
+  const release = serverLock.acquire(server.id, 'installation');
+  try {
+    return await doInstallServer(server);
+  } finally {
+    release();
+  }
+}
+
+async function doInstallServer(server) {
   const db = getDb();
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
   const modsDir = path.join(serverDir, 'mods');
@@ -176,10 +188,8 @@ async function installServer(server) {
 
     const { mcVersion, loaderType, apiKey } = await resolveModpackMeta(server);
 
-    progress(server.id, 'pull', 'Téléchargement de l\'image Docker itzg/minecraft-server', 15);
-    await dockerService.pullImage('itzg/minecraft-server:latest',
-      pullProgress(server.id, 'pull', 'Docker pull', 15)
-    );
+    // L'image itzg utilisée est la variante javaXX choisie à la création du container :
+    // plus de pull de :latest ici (des centaines de Mo téléchargés pour rien à chaque installation).
 
     // Téléchargement et installation des mods selon la source
     if (server.modpack_source === 'curseforge' && apiKey) {
@@ -195,6 +205,13 @@ async function installServer(server) {
     if (advice) {
       progress(server.id, 'warn', advice, 81);
       emit(server.id, 'log', { line: `[Craftarr] ${advice}`, timestamp: Date.now() }); // reste visible dans la console
+    }
+
+    // RAM réglée au-delà de ce que la machine peut fournir : swap → lag permanent
+    const hostWarn = await dockerService.hostRamWarning(updatedServer.ram_mb);
+    if (hostWarn) {
+      progress(server.id, 'warn', `⚠ ${hostWarn}`, 81);
+      emit(server.id, 'log', { line: `[Craftarr] ⚠ ${hostWarn}`, timestamp: Date.now() });
     }
 
     // Pré-génération demandée : Chunky adapté au loader et à la version, installé avant le 1er démarrage
@@ -231,117 +248,126 @@ async function installServer(server) {
 }
 
 /**
- * Installe un modpack CurseForge en téléchargeant tous les mods via l'API.
- * Méthode :
- *   1. Récupère le fichier client pack (manifest.json + overrides)
- *   2. Parse manifest.json pour lister les mods
- *   3. Télécharge chaque mod JAR depuis CurseForge CDN
- *   4. Copie les overrides (configs) dans serverDir
+ * Fichiers CurseForge à installer pour la version demandée :
+ *  - clientFile : le client pack (manifest.json = source de vérité : version MC + loader exact),
+ *  - serverPackFile : le server pack associé À CETTE VERSION uniquement, ou null.
+ * Jamais de repli silencieux sur une autre version : un server pack d'une autre version
+ * (autre version MC / autres mods) rendait le serveur incompatible avec les clients.
+ */
+async function resolveCurseForgeFiles(apiKey, server) {
+  let clientFile = null;
+  let serverPackFile = null;
+
+  if (server.modpack_version_id) {
+    let picked;
+    try {
+      picked = await curseforge.getFileById(apiKey, server.modpack_id, server.modpack_version_id);
+    } catch (err) {
+      throw new Error(`Version ${server.modpack_version_id} du modpack introuvable sur CurseForge (${err.response?.status || err.message})`);
+    }
+    if (picked.isServerPack) {
+      // L'utilisateur a choisi le server pack lui-même : remonter au client pack correspondant
+      serverPackFile = picked;
+      clientFile = picked.parentProjectFileId
+        ? await curseforge.getFileById(apiKey, server.modpack_id, picked.parentProjectFileId).catch(() => null)
+        : null;
+    } else {
+      clientFile = picked;
+    }
+  } else {
+    const files = await curseforge.getModpackFiles(apiKey, server.modpack_id);
+    clientFile = files.find(f => !f.isServerPack) || null;
+  }
+  if (!clientFile && !serverPackFile) throw new Error('Aucun fichier de modpack trouvé pour ' + server.modpack_id);
+
+  if (!serverPackFile && clientFile?.serverPackFileId) {
+    try {
+      serverPackFile = await curseforge.getFileById(apiKey, server.modpack_id, clientFile.serverPackFileId);
+    } catch (err) {
+      console.warn(`[Installer] Server pack ${clientFile.serverPackFileId} inaccessible : ${err.message}`);
+    }
+  }
+  return { clientFile, serverPackFile };
+}
+
+/** Version MC + loader exacts déclarés par un manifest CurseForge (modLoaders[].id = "neoforge-21.1.77"). */
+function manifestMeta(manifest) {
+  if (!manifest) return { mcVersion: null, loader: null, loaderVersion: null };
+  const loaders = manifest.minecraft?.modLoaders || [];
+  const primary = loaders.find(l => l.primary) || loaders[0];
+  const m = primary?.id?.match(/^(neoforge|forge|fabric|quilt)-(.+)$/i);
+  return {
+    mcVersion: isMcVersion(manifest.minecraft?.version) ? manifest.minecraft.version : null,
+    loader: m ? m[1].toLowerCase() : null,
+    loaderVersion: m ? m[2] : null,
+  };
+}
+
+/** Slug CurseForge du modpack (pour les exceptions par pack de la liste client-only), ou null. */
+async function modpackSlug(apiKey, modpackId) {
+  try {
+    return (await curseforge.getModsInfo(apiKey, [modpackId])).get(String(modpackId))?.slug || null;
+  } catch { return null; }
+}
+
+/**
+ * Installe un modpack CurseForge :
+ *   1. server pack de la version choisie s'il existe (fat : mods inclus, thin : ServerStarter),
+ *   2. sinon (ou server pack vide) client pack : manifest.json → mods via l'API, sans les mods client-only.
+ * Dans tous les cas la version exacte du loader est lue dans le manifest du client pack et épinglée
+ * (.craftarr-pack.json), sinon itzg installe le dernier Forge/NeoForge → mods incompatibles.
  */
 async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVersion) {
   const db = getDb();
 
-  // Trouver le server pack (priorité) ou le client pack si aucun server pack disponible
   progress(server.id, 'resolve', 'Récupération des informations du modpack', 20);
-  const files = await curseforge.getModpackFiles(apiKey, server.modpack_id);
+  const { clientFile, serverPackFile } = await resolveCurseForgeFiles(apiKey, server);
 
-  // Séparer server packs et client packs
-  const serverPacks = files.filter(f => f.isServerPack);
-  const clientPacks = files.filter(f => !f.isServerPack);
-
-  let clientFile = clientPacks[0]; // fichier client de référence (pour la version)
-  if (server.modpack_version_id) {
-    clientFile = clientPacks.find(f => String(f.id) === String(server.modpack_version_id)) || clientPacks[0];
-  }
-  if (!clientFile) throw new Error('Aucun fichier de modpack trouvé pour ' + server.modpack_id);
-
-  // Chercher le server pack correspondant à la version client sélectionnée
-  // La liste paginée peut ne pas le contenir — on le récupère directement par ID si possible
-  let serverPackFile = null;
-  if (clientFile.serverPackFileId) {
-    // Essayer d'abord dans la liste déjà chargée
-    serverPackFile = serverPacks.find(f => String(f.id) === String(clientFile.serverPackFileId));
-    // Sinon fetch direct par ID
-    if (!serverPackFile) {
-      try {
-        const fetched = await curseforge.getFileById(apiKey, server.modpack_id, clientFile.serverPackFileId);
-        if (fetched && fetched.isServerPack) serverPackFile = fetched;
-        else if (fetched) serverPackFile = fetched; // accepter même si isServerPack n'est pas marqué
-      } catch (err) {
-        console.warn(`[Installer] Impossible de récupérer le server pack ${clientFile.serverPackFileId}:`, err.message);
-      }
-    }
-  }
-  if (!serverPackFile && serverPacks.length > 0) {
-    // Prendre le server pack le plus récent de la liste
-    serverPackFile = serverPacks[0];
+  // Manifest du client pack : ne télécharge que manifest.json quand le CDN le permet
+  const manifest = clientFile ? await curseforge.getClientManifest(clientFile).catch(() => null) : null;
+  const meta = manifestMeta(manifest);
+  const refFile = clientFile || serverPackFile;
+  const loaderType = meta.loader || detectLoader(refFile.gameVersions);
+  const resolvedMcVersion = meta.mcVersion || extractMcVer(refFile.gameVersions) || mcVersion;
+  if (meta.loader) {
+    progress(server.id, 'resolve', `Minecraft ${resolvedMcVersion || '?'} — ${meta.loader} ${meta.loaderVersion}`, 21);
   }
 
-  // Si aucun server pack disponible, demander confirmation à l'utilisateur avant de continuer avec le client pack
+  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
+    .run(resolvedMcVersion, loaderType, refFile.displayName || refFile.fileName, String(refFile.id), server.id);
+
+  // Pas de server pack : demander confirmation avant d'installer depuis le pack client
   if (!serverPackFile) {
     progress(server.id, 'warn', 'Aucun server pack disponible pour cette version', 22);
-    if (io) io.to(`server:${server.id}`).emit('install:no-server-pack', {
-      serverId: server.id,
-      modpackName: clientFile.displayName || clientFile.fileName,
-    });
-    // Attendre la confirmation (max 5 minutes)
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (pendingClientPackConfirm.has(server.id)) {
-          pendingClientPackConfirm.delete(server.id);
-          reject(new Error('Délai dépassé — installation annulée (aucune réponse)'));
-        }
-      }, 5 * 60 * 1000);
-      pendingClientPackConfirm.set(server.id, {
-        resolve: () => { clearTimeout(timer); resolve(); },
-        reject: (err) => { clearTimeout(timer); reject(err); },
-      });
-    });
+    await waitClientPackConfirmation(server, clientFile);
     progress(server.id, 'info', 'Installation avec le pack client confirmée', 24);
   }
 
-  const targetFile = serverPackFile || clientFile;
-  const isUsingServerPack = !!serverPackFile;
-  console.log(`[Installer] Utilisation du ${isUsingServerPack ? 'SERVER PACK' : 'client pack'} : ${targetFile.displayName || targetFile.id}`);
-
-  // Déduire mc_version et loader depuis le client pack (plus fiable car le server pack peut ne pas les lister)
-  const loaderType = detectLoader(clientFile.gameVersions);
-  const resolvedMcVersion = extractMcVer(clientFile.gameVersions) || mcVersion;
-
-  db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
-    .run(resolvedMcVersion, loaderType,
-      clientFile.displayName || clientFile.fileName,
-      String(clientFile.id),
-      server.id);
-
-  // CurseForge peut retourner downloadUrl: null — fallback CDN
-  const packUrl = targetFile.downloadUrl || buildCurseForgeUrl(targetFile.id, targetFile.fileName);
-
-  progress(server.id, 'download', `Téléchargement du server pack`, 25);
   const zipPath = path.join(DATA_PATH, 'servers', server.id, 'pack.zip');
 
-  if (isUsingServerPack) {
-    await downloadFile(packUrl, zipPath, pct =>
-      progress(server.id, 'download', `Server pack : ${pct}%`, 25 + Math.floor(pct * 0.1))
-    );
+  if (serverPackFile) {
+    console.log(`[Installer] SERVER PACK : ${serverPackFile.displayName || serverPackFile.id}`);
+    progress(server.id, 'download', 'Téléchargement du server pack', 25);
+    await downloadAny(curseforge.fileUrls(serverPackFile), zipPath, pct =>
+      progress(server.id, 'download', `Server pack : ${pct}%`, 25 + Math.floor(pct * 0.1)));
 
-    progress(server.id, 'extract', 'Extraction du server pack', 60);
+    progress(server.id, 'extract', 'Extraction du server pack', 40);
     const zip = new AdmZip(zipPath);
+    for (const entry of zip.getEntries()) safeJoin(serverDir, entry.entryName); // zip-slip
     zip.extractAllTo(serverDir, true);
     fs.unlinkSync(zipPath);
+    hoistNestedServerPack(serverDir);
+    if (meta.loader) writePackMeta(serverDir, meta);
 
-    // Vérifier si le server pack est "fat" (contient des mods) ou "thin" (structure ServerStarter sans JARs)
-    const jarCount = fs.existsSync(modsDir)
-      ? fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length
-      : 0;
-
+    // Server pack "fat" : les mods sont fournis
+    const jarCount = listJars(modsDir).length;
     if (jarCount > 0) {
-      progress(server.id, 'mods_done', `Server pack extrait (${jarCount} mods)`, 80);
+      progress(server.id, 'mods_done', `Server pack extrait (${jarCount} mods)`, 78);
+      reportModProblems(server, serverDir);
       return;
     }
 
-    // Thin server pack (ex: Craftoria, ATM) — on lance startserver.sh dans un container temporaire
-    // pour installer NeoForge + mods. itzg démarrera ensuite normalement avec run.sh déjà créé.
+    // Thin server pack (ex: Craftoria, ATM) — startserver.sh dans un container temporaire installe loader + mods
     const thinScript = dockerService.detectThinPackStartScript(serverDir);
     if (thinScript) {
       await runThinPackSetup(server, serverDir, thinScript);
@@ -350,46 +376,87 @@ async function installCurseForgeModpack(server, serverDir, modsDir, apiKey, mcVe
         const mc = mcVersionFromNeoForge(loaderVersionFromSetupConfig(serverDir));
         if (mc) db.prepare('UPDATE servers SET mc_version = ? WHERE id = ?').run(mc, server.id);
       }
+      reportModProblems(server, serverDir);
+      return;
     }
-    return;
+
+    // Server pack sans mods ni ServerStarter : avant, le serveur démarrait sans aucun mod
+    if (!clientFile) throw new Error('Server pack vide (aucun mod, aucun script d\'installation) et pack client introuvable');
+    progress(server.id, 'warn', 'Server pack sans mods — installation des mods depuis le pack client', 45);
   }
 
-  // Pas de server pack (confirmé par l'utilisateur) : client pack uniquement
-  progress(server.id, 'download', `Téléchargement du pack client`, 25);
-  await downloadFile(packUrl, zipPath, pct =>
-    progress(server.id, 'download', `Pack client : ${pct}%`, 25 + Math.floor(pct * 0.1))
-  );
-  progress(server.id, 'parse', 'Lecture du manifest', 36);
+  progress(server.id, 'download', 'Téléchargement du pack client', 46);
+  await downloadAny(curseforge.fileUrls(clientFile), zipPath, pct =>
+    progress(server.id, 'download', `Pack client : ${pct}%`, 46 + Math.floor(pct * 0.04)));
+  progress(server.id, 'parse', 'Lecture du manifest', 50);
   await downloadModsFromClientPack(server, zipPath, serverDir, modsDir, apiKey);
+  reportModProblems(server, serverDir);
+}
+
+/** Attend (5 min max) que l'utilisateur confirme l'installation sans server pack. */
+function waitClientPackConfirmation(server, clientFile) {
+  if (io) io.to(`server:${server.id}`).emit('install:no-server-pack', {
+    serverId: server.id,
+    modpackName: clientFile?.displayName || clientFile?.fileName,
+  });
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      if (pendingClientPackConfirm.has(server.id)) {
+        pendingClientPackConfirm.delete(server.id);
+        reject(new Error('Délai dépassé — installation annulée (aucune réponse)'));
+      }
+    }, 5 * 60 * 1000);
+    pendingClientPackConfirm.set(server.id, {
+      resolve: () => { clearTimeout(timer); resolve(); },
+      reject: (err) => { clearTimeout(timer); reject(err); },
+    });
+  });
 }
 
 /**
+ * Beaucoup de server packs mettent tout dans un sous-dossier (ex: "Pack-Server-1.2/mods/…") :
+ * mods/ n'était alors pas à la racine du serveur et le serveur démarrait sans mods.
+ * Si la racine n'a pas de mods/ et qu'UN seul sous-dossier en a un, on remonte son contenu.
+ */
+function hoistNestedServerPack(serverDir) {
+  if (listJars(path.join(serverDir, 'mods')).length > 0) return;
+  const candidates = fs.readdirSync(serverDir, { withFileTypes: true })
+    .filter(e => e.isDirectory() && !['mods', '__MACOSX', '.craftarr'].includes(e.name))
+    .filter(d => listJars(path.join(serverDir, d.name, 'mods')).length > 0);
+  if (candidates.length !== 1) return;
+  const nested = path.join(serverDir, candidates[0].name);
+  for (const name of fs.readdirSync(nested)) {
+    const dest = path.join(serverDir, name);
+    fs.rmSync(dest, { recursive: true, force: true });
+    fs.renameSync(path.join(nested, name), dest);
+  }
+  fs.rmSync(nested, { recursive: true, force: true });
+  console.log(`[Installer] Server pack remonté depuis le sous-dossier ${candidates[0].name}/`);
+}
+
+/** Dossier où sont mis de côté les mods client-only (consultables / restaurables à la main). */
+const clientModsDir = serverDir => path.join(serverDir, '.craftarr', 'client-mods');
+
+/**
  * Télécharge les mods depuis un client pack CurseForge (.zip avec manifest.json).
- * Extrait les overrides et télécharge chaque mod JAR depuis l'API CurseForge.
- * Réutilisé par les thin server packs (pas de mods dans le server pack).
+ * Extrait les overrides et télécharge chaque mod JAR depuis l'API CurseForge :
+ *  - mods désactivés dans le pack (required: false) ignorés,
+ *  - mods client-only (liste communautaire, tag CurseForge, server-setup-config.yaml) mis de côté,
+ *    puis réintégrés si un mod serveur en dépend (sinon : crash "missing dependency").
  */
 async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, apiKey) {
   const zip = new AdmZip(zipPath);
   const manifestEntry = zip.getEntry('manifest.json');
   if (!manifestEntry) {
     // Pas un manifest CurseForge standard — extraction brute
+    for (const entry of zip.getEntries()) safeJoin(serverDir, entry.entryName);
     zip.extractAllTo(serverDir, true);
     fs.unlinkSync(zipPath);
     return;
   }
 
   const manifest = JSON.parse(zip.readAsText('manifest.json'));
-  const totalMods = manifest.files?.length || 0;
-  console.log(`[Installer] ${totalMods} mods à télécharger pour ${server.modpack_id}`);
-
-  // Version MC + loader exacts déclarés par le pack (ex: modLoaders[0].id = "neoforge-21.1.77")
-  const primaryLoader = (manifest.minecraft?.modLoaders || []).find(l => l.primary) || manifest.minecraft?.modLoaders?.[0];
-  const loaderMatch = primaryLoader?.id?.match(/^(neoforge|forge|fabric|quilt)-(.+)$/i);
-  writePackMeta(serverDir, {
-    mcVersion: isMcVersion(manifest.minecraft?.version) ? manifest.minecraft.version : null,
-    loader: loaderMatch ? loaderMatch[1].toLowerCase() : null,
-    loaderVersion: loaderMatch ? loaderMatch[2] : null,
-  });
+  writePackMeta(serverDir, manifestMeta(manifest));
 
   // Extraire les overrides (configs, scripts, etc.)
   const overridesDir = manifest.overrides || 'overrides';
@@ -403,12 +470,18 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
   });
   fs.unlinkSync(zipPath);
 
+  // required: false = mod désactivé par l'auteur du pack (souvent justement parce qu'incompatible)
+  const wanted = (manifest.files || []).filter(f => f.required !== false);
+  const disabled = (manifest.files?.length || 0) - wanted.length;
+  if (disabled) console.log(`[Installer] ${disabled} mod(s) désactivé(s) dans le manifest ignoré(s)`);
+  const totalMods = wanted.length;
+  console.log(`[Installer] ${totalMods} mods à télécharger pour ${server.modpack_id}`);
   if (totalMods === 0) return;
 
-  progress(server.id, 'mods', `Résolution de ${totalMods} mods...`, 38);
+  progress(server.id, 'mods', `Résolution de ${totalMods} mods...`, 52);
 
   // Batch: récupérer les infos de tous les fichiers (CurseForge bulk endpoint)
-  const fileIds = manifest.files.map(f => f.fileID);
+  const fileIds = wanted.map(f => f.fileID);
   const modFiles = await fetchModFilesBulk(apiKey, fileIds);
 
   // Un fichier absent de la réponse API = un mod qu'on ne pourra pas installer → le serveur crasherait
@@ -418,52 +491,126 @@ async function downloadModsFromClientPack(server, zipPath, serverDir, modsDir, a
     throw new Error(`${unresolved.length} mod(s) introuvable(s) sur l'API CurseForge (fileID : ${formatFailures(unresolved)})`);
   }
 
-  // Lire les projets à ignorer depuis server-setup-config.yaml (mods client-only listés par le modpack)
+  // Slugs des projets (liste client-only) + exceptions propres au modpack
+  const projects = await curseforge.getModsInfo(apiKey, [...new Set(modFiles.map(f => f.modId))]).catch(err => {
+    console.warn(`[Installer] Infos projets indisponibles (${err.message}) — filtrage client-only réduit`);
+    return new Map();
+  });
+  const rules = await cfExcludes.getRules(await modpackSlug(apiKey, server.modpack_id));
   const ignoredProjectIds = readIgnoredProjects(serverDir);
-  if (ignoredProjectIds.size > 0) {
-    console.log(`[Installer] ${ignoredProjectIds.size} projets client-only ignorés (server-setup-config.yaml)`);
-  }
 
-  let downloaded = 0;
-  let skipped = 0;
+  const holdDir = clientModsDir(serverDir);
+  fs.rmSync(holdDir, { recursive: true, force: true });
+  fs.mkdirSync(holdDir, { recursive: true });
+
+  let done = 0;
+  let excluded = 0;
   const failures = [];
-  const CONCURRENCY = 5;
+  const CONCURRENCY = 6;
 
   for (let i = 0; i < modFiles.length; i += CONCURRENCY) {
     const batch = modFiles.slice(i, i + CONCURRENCY);
     await Promise.all(batch.map(async (file) => {
       if (!file.fileName) { failures.push(`fileID ${file.id}`); return; }
+      const project = projects.get(String(file.modId));
+      const reason = clientOnlyReason(file, project?.slug, rules, ignoredProjectIds);
+      if (reason) excluded++;
 
-      // Ignorer les mods client-only listés dans server-setup-config.yaml
-      if (file.modId && ignoredProjectIds.has(String(file.modId))) { skipped++; return; }
-
-      // Ignorer les mods explicitement marqués "Client" uniquement par CurseForge
-      if (isClientOnlyMod(file)) { skipped++; return; }
-
-      const dest = safeJoin(modsDir, file.fileName);
-      if (fs.existsSync(dest)) { downloaded++; return; }
-
-      // CurseForge peut retourner downloadUrl: null (restrictions CDN)
-      const url = file.downloadUrl || buildCurseForgeUrl(file.id, file.fileName);
+      const dest = safeJoin(reason ? holdDir : modsDir, file.fileName);
+      if (fs.existsSync(dest)) { done++; return; }
       const sha1 = (file.hashes || []).find(h => h.algo === 1)?.value;
       try {
-        await downloadFile(url, dest, null, sha1 ? { sha1 } : {});
-        downloaded++;
+        await downloadAny(curseforge.fileUrls(file), dest, null, sha1 ? { sha1 } : {});
+        done++;
       } catch (err) {
         console.warn(`[Installer] ${err.message}`);
-        failures.push(file.fileName);
+        if (reason) return; // un mod client-only introuvable n'empêche pas le serveur de démarrer
+        const blocked = project && !project.allowModDistribution;
+        failures.push(blocked ? `${file.fileName} (distribution tierce interdite par l'auteur)` : file.fileName);
       }
     }));
     const pct = Math.min(100, Math.round((i + CONCURRENCY) / modFiles.length * 100));
-    progress(server.id, 'mods', `Mods : ${downloaded}/${totalMods} téléchargés`, 38 + Math.floor(pct * 0.42));
+    progress(server.id, 'mods', `Mods : ${done}/${totalMods} téléchargés`, 52 + Math.floor(pct * 0.26));
   }
 
-  console.log(`[Installer] Mods téléchargés: ${downloaded}, client-only ignorés: ${skipped}, échecs: ${failures.length}`);
   if (failures.length) {
     // Mieux vaut échouer clairement que démarrer un serveur qui crashera en boucle (mods manquants)
-    throw new Error(`${failures.length} mod(s) n'ont pas pu être téléchargés : ${formatFailures(failures)}. Relancez l'installation.`);
+    throw new Error(`${failures.length} mod(s) n'ont pas pu être téléchargés : ${formatFailures(failures)}. `
+      + 'Relancez l\'installation, ou téléchargez-les depuis CurseForge et déposez-les dans mods/.');
   }
-  progress(server.id, 'mods_done', `${downloaded} mods installés`, 80);
+
+  const restored = restoreRequiredClientMods(modsDir, holdDir);
+  if (restored.length) {
+    emit(server.id, 'log', {
+      line: `[Craftarr] ${restored.length} mod(s) marqué(s) client-only mais requis par d'autres mods, conservé(s) : ${formatFailures(restored)}`,
+      timestamp: Date.now(),
+    });
+  }
+  const setAside = excluded - restored.length;
+  console.log(`[Installer] Mods : ${listJars(modsDir).length} installés, ${setAside} client-only mis de côté, ${restored.length} réintégrés`);
+  progress(server.id, 'mods_done', `${listJars(modsDir).length} mods installés`
+    + (setAside > 0 ? ` (${setAside} mods client-only écartés)` : ''), 80);
+}
+
+/**
+ * Pourquoi un mod CurseForge ne doit pas aller sur le serveur, ou null s'il doit y aller.
+ * Ordre : exceptions du pack > server-setup-config.yaml > liste communautaire > tag CurseForge.
+ */
+function clientOnlyReason(file, slug, rules, ignoredProjectIds) {
+  if (slug && rules.forceIncludes.has(slug)) return null;
+  if (file.modId && ignoredProjectIds.has(String(file.modId))) return 'server-setup-config.yaml';
+  if (slug && rules.excludes.has(slug)) return 'liste client-only';
+  const versions = file.gameVersions || [];
+  if (versions.includes('Client') && !versions.includes('Server')) return 'tag CurseForge « Client »';
+  return null;
+}
+
+/**
+ * Réintègre dans mods/ les jars mis de côté dont un mod serveur a besoin (dépendance obligatoire),
+ * jusqu'à stabilisation. Les tags/listes client-only se trompent parfois : sans ça, le serveur
+ * crashe sur "Missing mandatory dependencies". Retourne les noms des jars réintégrés.
+ */
+function restoreRequiredClientMods(modsDir, holdDir) {
+  const prefer = packLoader(path.dirname(modsDir));
+  const kept = listJars(modsDir).map(f => readModInfo(f, { prefer })).filter(Boolean);
+  let held = listJars(holdDir).map(file => ({ file, info: readModInfo(file, { prefer }) })).filter(e => e.info);
+  const restored = [];
+  for (;;) {
+    const need = unmetRequirements(kept);
+    const pick = held.filter(e => e.info.ids.some(id => need.has(id)));
+    if (!pick.length) break;
+    for (const e of pick) {
+      fs.renameSync(e.file, path.join(modsDir, path.basename(e.file)));
+      kept.push(e.info);
+      restored.push(path.basename(e.file));
+    }
+    held = held.filter(e => !pick.includes(e));
+  }
+  return restored;
+}
+
+/** Loader déclaré par le pack (.craftarr-pack.json), ou null. */
+function packLoader(serverDir) {
+  try { return JSON.parse(fs.readFileSync(path.join(serverDir, '.craftarr-pack.json'), 'utf8')).loader || null; } catch { return null; }
+}
+
+/**
+ * Vérifie le dossier mods/ avant le premier démarrage (dépendances manquantes, doublons,
+ * incompatibilités déclarées) et l'affiche dans la console. Jamais bloquant : l'analyse
+ * des métadonnées n'est pas infaillible, mais elle évite de chercher dans une stacktrace.
+ */
+function reportModProblems(server, serverDir) {
+  try {
+    const prefer = packLoader(serverDir) || server.loader_type || null;
+    const lines = describeProblems(analyzeMods(listJars(path.join(serverDir, 'mods')), f => readModInfo(f, { prefer })));
+    if (!lines.length) return;
+    progress(server.id, 'warn', `${lines.length} problème(s) potentiel(s) détecté(s) dans les mods — voir la console`, 80);
+    for (const l of lines.slice(0, 30)) emit(server.id, 'log', { line: `[Craftarr] ⚠ ${l}`, timestamp: Date.now() });
+    if (lines.length > 30) emit(server.id, 'log', { line: `[Craftarr] ⚠ … et ${lines.length - 30} autre(s)`, timestamp: Date.now() });
+    console.warn(`[Installer][${server.id.slice(0, 8)}] ${lines.length} problème(s) de mods :\n  ${lines.join('\n  ')}`);
+  } catch (err) {
+    console.warn('[Installer] Analyse des mods impossible :', err.message);
+  }
 }
 
 /**
@@ -492,34 +639,6 @@ function readIgnoredProjects(serverDir) {
   return ids;
 }
 
-/**
- * Retourne true si un fichier CurseForge est client-only (ne doit pas être installé sur un serveur).
- * Critères :
- *   1. gameVersions contient "Client" mais pas "Server" (tag explicite CurseForge)
- *   2. Slug ou fileName correspond à une liste connue de mods client-only
- */
-const CLIENT_ONLY_SLUGS = new Set([
-  'drippyloadingscreen', 'fancymenu', 'optifine', 'betterfps-render-distance',
-  'blur-fabric', 'betterf3', 'dynamic-fps', 'fps-reducer',
-  'entityculling', 'smoothboot-fabric', 'replaymod',
-  'itemphysic', 'controlling-for-create',
-]);
-
-function isClientOnlyMod(file) {
-  // Vérification via les gameVersions de l'API CurseForge
-  const versions = file.gameVersions || [];
-  if (versions.includes('Client') && !versions.includes('Server')) return true;
-
-  // Fallback sur le slug (modId string) ou le nom de fichier
-  const slug = (file.slug || '').toLowerCase();
-  const fileName = (file.fileName || '').toLowerCase();
-  if (slug && CLIENT_ONLY_SLUGS.has(slug)) return true;
-  for (const s of CLIENT_ONLY_SLUGS) {
-    if (fileName.startsWith(s)) return true;
-  }
-  return false;
-}
-
 async function fetchModFilesBulk(apiKey, fileIds) {
   // CurseForge bulk files endpoint — max 50 par appel, 3 tentatives par lot
   const results = [];
@@ -542,53 +661,53 @@ async function fetchModFilesBulk(apiKey, fileIds) {
   return results;
 }
 
+
 async function installGenericModpack(server, serverDir) {
+  if (server.modpack_source !== 'modrinth') return;
   const db = getDb();
   const sourceRow = db.prepare('SELECT * FROM api_sources WHERE id = ?').get(server.modpack_source);
   if (!sourceRow) return;
-  const apiKey = getSourceApiKey(sourceRow);
+  await installModrinthModpack(server, serverDir, getSourceApiKey(sourceRow));
+}
 
-  let mcVersion = server.mc_version;
-  let loaderType = server.loader_type;
-  let downloadUrl = null;
-  let modpackVersion = server.modpack_version;
-  let modpackVersionId = server.modpack_version_id;
-
-  if (server.modpack_source === 'modrinth') {
-    // Récupère la version sélectionnée (ou la plus récente)
-    const versions = await modrinth.getVersions(apiKey, server.modpack_id);
-    let selectedVersion = versions[0];
-    if (server.modpack_version_id) {
-      selectedVersion = versions.find(v => v.id === server.modpack_version_id) || versions[0];
+/**
+ * Télécharge et installe la version Modrinth choisie (ou la plus récente), puis enregistre
+ * en base la version MC / le loader réellement installés (lus dans l'index du pack).
+ */
+async function installModrinthModpack(server, serverDir, apiKey) {
+  const db = getDb();
+  let selectedVersion;
+  if (server.modpack_version_id) {
+    // Par id : jamais de repli silencieux sur une autre version que celle choisie
+    try {
+      selectedVersion = await modrinth.getVersion(apiKey, server.modpack_version_id);
+    } catch (err) {
+      throw new Error(`Version Modrinth ${server.modpack_version_id} introuvable (${err.response?.status || err.message})`);
     }
-    if (!selectedVersion) throw new Error('Aucune version Modrinth trouvée pour ' + server.modpack_id);
-
-    mcVersion = selectedVersion.mcVersions?.[0] || mcVersion;
-    loaderType = selectedVersion.loaders?.[0] || loaderType;
-
-    // Fichier principal (.mrpack)
-    const primaryFile = selectedVersion.files.find(f => f.primary) || selectedVersion.files[0];
-    if (!primaryFile?.url) throw new Error('Aucun fichier .mrpack trouvé pour la version ' + selectedVersion.id);
-    downloadUrl = primaryFile.url;
-    modpackVersion = selectedVersion.versionNumber;
-    modpackVersionId = selectedVersion.id;
-
-    progress(server.id, 'download', `Téléchargement du modpack Modrinth`, 30);
-    const mrpackPath = path.join(DATA_PATH, 'servers', server.id, 'modpack.mrpack');
-    await downloadFile(downloadUrl, mrpackPath, pct =>
-      progress(server.id, 'download', `Téléchargement : ${pct}%`, 30 + Math.floor(pct * 0.2))
-    );
-
-    progress(server.id, 'extract', 'Extraction et installation des mods serveur', 50);
-    const packMeta = await installMrpack(server, mrpackPath, serverDir, apiKey);
-    fs.unlinkSync(mrpackPath);
-    // L'index du pack fait foi (la liste mcVersions de la version Modrinth peut en contenir plusieurs)
-    if (packMeta?.mcVersion) mcVersion = packMeta.mcVersion;
-    if (packMeta?.loader) loaderType = packMeta.loader;
+  } else {
+    selectedVersion = (await modrinth.getVersions(apiKey, server.modpack_id))[0];
   }
+  if (!selectedVersion) throw new Error('Aucune version Modrinth trouvée pour ' + server.modpack_id);
 
+  const primaryFile = selectedVersion.files.find(f => f.primary) || selectedVersion.files[0];
+  if (!primaryFile?.url) throw new Error('Aucun fichier .mrpack trouvé pour la version ' + selectedVersion.id);
+
+  progress(server.id, 'download', 'Téléchargement du modpack Modrinth', 30);
+  const mrpackPath = path.join(DATA_PATH, 'servers', server.id, 'modpack.mrpack');
+  await downloadFile(primaryFile.url, mrpackPath, pct =>
+    progress(server.id, 'download', `Téléchargement : ${pct}%`, 30 + Math.floor(pct * 0.2))
+  );
+
+  progress(server.id, 'extract', 'Extraction et installation des mods serveur', 50);
+  const packMeta = await installMrpack(server, mrpackPath, serverDir, apiKey);
+  fs.unlinkSync(mrpackPath);
+  reportModProblems(server, serverDir);
+
+  // L'index du pack fait foi (la liste mcVersions de la version Modrinth peut en contenir plusieurs)
+  const mcVersion = packMeta?.mcVersion || selectedVersion.mcVersions?.find(isMcVersion) || server.mc_version;
+  const loaderType = packMeta?.loader || selectedVersion.loaders?.[0] || server.loader_type;
   db.prepare('UPDATE servers SET mc_version = ?, loader_type = ?, modpack_download_url = ?, modpack_version = ?, modpack_version_id = ? WHERE id = ?')
-    .run(mcVersion, loaderType, downloadUrl, modpackVersion, modpackVersionId, server.id);
+    .run(mcVersion, loaderType, primaryFile.url, selectedVersion.versionNumber, selectedVersion.id, server.id);
 }
 
 /**
@@ -713,6 +832,20 @@ async function downloadFile(url, dest, onProgress, expected = {}) {
   throw new Error(`Téléchargement échoué (${path.basename(dest)}) : ${lastErr?.message}`);
 }
 
+/** Essaie chaque URL dans l'ordre (API puis CDN de secours) ; échoue avec la dernière erreur. */
+async function downloadAny(urls, dest, onProgress, expected = {}) {
+  let lastErr = new Error('aucune URL de téléchargement');
+  for (const url of urls) {
+    try {
+      await downloadFile(url, dest, onProgress, expected);
+      return;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
 async function downloadOnce(url, dest, onProgress, expected) {
   const tmp = `${dest}.part`;
   const res = await axios.get(url, { responseType: 'stream', timeout: 120000 });
@@ -794,16 +927,6 @@ function formatFailures(failures) {
   return failures.length > 10 ? `${shown} … (+${failures.length - 10})` : shown;
 }
 
-/**
- * Construit l'URL CDN CurseForge quand downloadUrl est null.
- * Format : https://mediafilez.forgecdn.net/files/{id/1000}/{id%1000}/{fileName}
- */
-function buildCurseForgeUrl(fileId, fileName) {
-  const part1 = Math.floor(fileId / 1000);
-  const part2 = fileId % 1000;
-  return `https://mediafilez.forgecdn.net/files/${part1}/${part2}/${encodeURIComponent(fileName)}`;
-}
-
 function extractMcVer(versions = []) {
   // Minecraft : 1.x.y ou schéma annuel 26.x.y (voir mcVersion.js).
   // Ignore les versions Forge (47.2.0) et les tags de loader ("NeoForge", "Server"…).
@@ -824,14 +947,20 @@ function detectLoader(versions = []) {
  * Utilisé pour réparer un serveur sans mods sans le recréer entièrement.
  */
 async function installModsOnly(server, serverDir, modsDir) {
+  return serverLock.withLock(server.id, 'téléchargement des mods', () => doInstallModsOnly(server, serverDir, modsDir));
+}
+
+async function doInstallModsOnly(server, serverDir, modsDir) {
   const db = getDb();
   const sourceRow = db.prepare('SELECT * FROM api_sources WHERE id = ?').get(server.modpack_source);
   if (!sourceRow) throw new Error('Source introuvable: ' + server.modpack_source);
   const apiKey = getSourceApiKey(sourceRow);
-  if (!apiKey) throw new Error('Clé API manquante pour ' + server.modpack_source);
+  if (!apiKey && server.modpack_source === 'curseforge') throw new Error('Clé API manquante pour ' + server.modpack_source);
 
   if (server.modpack_source === 'curseforge') {
     await installCurseForgeModpack(server, serverDir, modsDir, apiKey, server.mc_version);
+  } else if (server.modpack_source === 'modrinth') {
+    await installModrinthModpack(server, serverDir, apiKey);
   }
 }
 
@@ -856,25 +985,34 @@ async function freshInstallModpack(server, serverDir) {
     if (!apiKey) throw new Error('Clé API CurseForge manquante');
     await installCurseForgeModpack(server, serverDir, modsDir, apiKey, server.mc_version);
   } else if (server.modpack_source === 'modrinth') {
-    const versions = await modrinth.getVersions(apiKey, server.modpack_id);
-    let selectedVersion = versions[0];
-    if (server.modpack_version_id) {
-      selectedVersion = versions.find(v => v.id === server.modpack_version_id) || versions[0];
-    }
-    if (!selectedVersion) throw new Error('Version Modrinth introuvable');
-    const primaryFile = selectedVersion.files.find(f => f.primary) || selectedVersion.files[0];
-    if (!primaryFile?.url) throw new Error('Aucun fichier .mrpack trouvé');
-    const mrpackPath = path.join(DATA_PATH, 'servers', server.id, 'update.mrpack');
-    await downloadFile(primaryFile.url, mrpackPath);
-    await installMrpack(server, mrpackPath, serverDir, apiKey);
-    fs.unlinkSync(mrpackPath);
+    await installModrinthModpack(server, serverDir, apiKey);
   } else {
     throw new Error('Source non supportée: ' + server.modpack_source);
   }
 }
 
+/**
+ * Avant une réinstallation (serveur en erreur) : vide le dossier serveur en gardant le monde
+ * et les fichiers de l'utilisateur. Sinon les mods/loader d'une tentative précédente restaient
+ * à côté des nouveaux → mods en double, mauvaise version du loader.
+ */
+function cleanForReinstall(serverDir) {
+  if (!fs.existsSync(serverDir)) return;
+  const backupService = require('./backup');
+  const keep = new Set([
+    ...backupService.getWorldDirs(serverDir),
+    'server.properties', 'ops.json', 'whitelist.json', 'banned-players.json', 'banned-ips.json', 'usercache.json',
+  ]);
+  for (const name of fs.readdirSync(serverDir)) {
+    if (!keep.has(name)) fs.rmSync(path.join(serverDir, name), { recursive: true, force: true });
+  }
+}
+
 module.exports = {
-  installServer, installModsOnly, freshInstallModpack, confirmClientPack, cancelClientPack, setIo,
+  installServer, installModsOnly, cleanForReinstall, freshInstallModpack, confirmClientPack, cancelClientPack, setIo,
   // Exposé pour les tests uniquement
-  _internals: { downloadFile, safeJoin, installMrpack, ramAdvice },
+  _internals: {
+    downloadFile, downloadAny, safeJoin, installMrpack, ramAdvice, manifestMeta, clientOnlyReason,
+    hoistNestedServerPack, restoreRequiredClientMods, downloadModsFromClientPack, cleanForReinstall,
+  },
 };

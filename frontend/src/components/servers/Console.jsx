@@ -52,7 +52,7 @@ function LogEntry({ entry, search, showTime, wrap }) {
 
   if (entry.kind === 'command') {
     return (
-      <div className="py-1 px-1 border-b border-white/[0.03]">
+      <div className="py-1 px-1 border-b border-tint/[0.03]">
         <div className="flex gap-2 text-fg">
           <span className="text-fg-3 select-none">{'>'}</span>
           <span className="font-semibold"><Highlight text={entry.command} term={search} /></span>
@@ -67,12 +67,12 @@ function LogEntry({ entry, search, showTime, wrap }) {
   }
 
   const icon = entry.kind === 'join' ? LogIn : entry.kind === 'leave' ? LogOut : entry.kind === 'chat' ? MessageSquare : null;
-  const color = tone || (entry.kind === 'join' ? 'var(--accent)' : entry.kind === 'leave' ? 'var(--fg-2)' : entry.level === 'DEBUG' ? 'var(--fg-3)' : 'var(--fg)');
+  const color = tone || (entry.kind === 'join' ? 'var(--success)' : entry.kind === 'leave' ? 'var(--fg-2)' : entry.level === 'DEBUG' ? 'var(--fg-3)' : 'var(--fg)');
   const Icon = icon;
 
   return (
     <div
-      className="group relative px-1 py-[1px] border-b border-white/[0.03] hover:bg-white/[0.025]"
+      className="group relative px-1 py-[1px] border-b border-tint/[0.03] hover:bg-tint/[0.025]"
       style={tone ? { boxShadow: `inset 2px 0 0 ${tone}` } : undefined}
     >
       <div className={clsx('flex gap-2', wrap ? '' : 'whitespace-pre')}>
@@ -274,7 +274,7 @@ export default function Console({ server }) {
 
   return (
     <div className="flex h-full overflow-hidden gap-3">
-      <div className="glass flex-1 flex flex-col min-w-0 rounded-[26px] overflow-hidden">
+      <div className="glass flex-1 flex flex-col min-w-0 rounded-2xl overflow-hidden">
         {/* ── Barre d'outils ── */}
         <div className="flex items-center gap-3 px-3 h-12 shrink-0">
           <Segmented
@@ -296,7 +296,7 @@ export default function Console({ server }) {
           <div className="relative flex-1 max-w-xs">
             <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
             <input
-              className="w-full h-7 pl-7 pr-14 rounded-full bg-[rgba(118,118,128,0.2)] border border-transparent text-xs text-fg placeholder:text-fg-3 outline-none focus:border-white/20 focus:bg-[rgba(118,118,128,0.28)] transition-colors"
+              className="w-full h-7 pl-7 pr-14 rounded-md bg-surface-2 border border-transparent text-xs text-fg placeholder:text-fg-3 outline-none focus:border-tint/20 focus:border-line-strong transition-colors"
               placeholder={t('console.search')}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -364,7 +364,7 @@ export default function Console({ server }) {
         )}
 
         {/* ── Logs ── */}
-        <div className="well relative flex-1 min-h-0 mx-2 rounded-[18px] overflow-hidden">
+        <div className="well relative flex-1 min-h-0 mx-2 rounded-xl overflow-hidden">
           <div
             ref={containerRef}
             onScroll={onScroll}
@@ -387,7 +387,7 @@ export default function Console({ server }) {
           {!following && (
             <button
               onClick={jumpToBottom}
-              className="glass-strong absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs px-3.5 h-8 rounded-full text-fg font-semibold pop-in active:scale-95 transition-transform"
+              className="glass-strong absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs px-3.5 h-8 rounded-md text-fg font-semibold pop-in transition-transform"
             >
               <ArrowDown size={12} strokeWidth={2} />
               {unread > 0 ? t('console.newLines', { count: unread > 999 ? '999+' : unread }) : t('console.resume')}

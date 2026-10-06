@@ -26,7 +26,7 @@ function PlayerHead({ name, size = 22 }) {
 
 function Stat({ label, value, unit, sub, tone }) {
   return (
-    <div className="rounded-2xl px-3 py-2.5 bg-white/[0.06] min-w-0">
+    <div className="rounded-2xl px-3 py-2.5 bg-tint/[0.06] min-w-0">
       <p className="text-[10px] uppercase tracking-[0.08em] text-fg-3 font-medium truncate">{label}</p>
       <p className="mt-1 font-mono text-lg leading-none font-semibold truncate" style={{ color: tone || 'var(--fg)' }}>
         {value}{unit && <span className="text-[11px] text-fg-3 font-normal ml-1">{unit}</span>}
@@ -38,7 +38,7 @@ function Stat({ label, value, unit, sub, tone }) {
 
 function Section({ title, right, children }) {
   return (
-    <section className="px-4 py-4 border-b border-white/[0.06] last:border-b-0">
+    <section className="px-4 py-4 border-b border-tint/[0.06] last:border-b-0">
       <div className="flex items-center justify-between mb-3">
         <h3 className="eyebrow">{title}</h3>
         {right}
@@ -56,10 +56,13 @@ export default function LivePanel({ server, onlinePlayers, onRun, onPickPlayer }
   const running = server.status === 'running';
 
   const tps = metrics?.tps?.tps1;
-  const tpsTone = tps == null ? 'var(--fg-3)' : tps >= 18 ? 'var(--accent)' : tps >= 12 ? 'var(--warn)' : 'var(--danger)';
+  const tpsTone = tps == null ? 'var(--fg-3)' : tps >= 18 ? 'var(--success)' : tps >= 12 ? 'var(--warn)' : 'var(--danger)';
+  // memUsed = tout le processus Java (jeu + JVM + natif), qui dépasse normalement la RAM allouée au jeu
+  // (~+25 %) : on le compare donc à la mémoire de la machine, pas à ram_mb (barre rouge à tort sinon).
   const usedGb = metrics?.memUsed ? metrics.memUsed / 1024 : null;
   const allocGb = server.ram_mb / 1024;
-  const memPct = usedGb ? Math.min(100, (usedGb / allocGb) * 100) : 0;
+  const limitGb = metrics?.memLimit ? metrics.memLimit / 1024 : null;
+  const memPct = usedGb && limitGb ? Math.min(100, (usedGb / limitGb) * 100) : 0;
   const cpu = metrics?.cpu;
 
   const quick = [
@@ -70,20 +73,21 @@ export default function LivePanel({ server, onlinePlayers, onRun, onPickPlayer }
   ];
 
   return (
-    <aside className="glass w-[290px] shrink-0 rounded-[26px] overflow-y-auto hidden xl:block">
-      <Section title={t('console.live')} right={running && <span className="status-block live text-accent" />}>
+    <aside className="glass w-[290px] shrink-0 rounded-2xl overflow-y-auto hidden xl:block">
+      <Section title={t('console.live')} right={running && <span className="status-block live text-success" />}>
         <div className="grid grid-cols-2 gap-2">
           <Stat label="TPS" value={tps != null ? tps.toFixed(1) : '—'} tone={tpsTone} />
           <Stat label={t('console.players')} value={metrics?.players?.online ?? onlinePlayers.length} unit={`/ ${server.max_players}`} />
           <Stat label="CPU" value={cpu != null ? cpu.toFixed(0) : '—'} unit="%" />
-          <Stat label="RAM" value={usedGb != null ? usedGb.toFixed(1) : '—'} unit={`/ ${allocGb} Go`} />
+          <Stat label="RAM" value={usedGb != null ? usedGb.toFixed(1) : '—'} unit={limitGb ? `/ ${limitGb.toFixed(0)} Go` : 'Go'} />
         </div>
-        <div className="mt-2 h-1 rounded-full bg-surface-2 overflow-hidden" title={`${memPct.toFixed(0)} %`}>
+        <div className="mt-2 h-1 rounded-full bg-surface-2 overflow-hidden" title={t('console.ramHint')}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${memPct}%`, background: memPct > 90 ? 'var(--danger)' : memPct > 75 ? 'var(--warn)' : 'var(--fg)' }}
           />
         </div>
+        <p className="mt-1.5 text-[10.5px] text-fg-3">{t('console.ramAlloc', { alloc: allocGb })}</p>
       </Section>
 
       {server.pregen_enabled && server.pregen_status !== 'done' && (
@@ -100,7 +104,7 @@ export default function LivePanel({ server, onlinePlayers, onRun, onPickPlayer }
             {onlinePlayers.map(p => (
               <li key={p.username}>
                 <button
-                  className="w-full flex items-center gap-2.5 px-1.5 py-1.5 rounded-xl hover:bg-white/[0.08] active:scale-[0.98] transition-all text-left group"
+                  className="w-full flex items-center gap-2.5 px-1.5 py-1.5 rounded-xl hover:bg-tint/[0.08] transition-all text-left group"
                   onClick={() => onPickPlayer(p.username)}
                   title={t('console.insertPlayer')}
                 >
@@ -122,7 +126,7 @@ export default function LivePanel({ server, onlinePlayers, onRun, onPickPlayer }
               disabled={!running}
               onClick={() => onRun(cmd)}
               title={`/${cmd}`}
-              className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.07] text-xs font-medium text-fg-2 hover:text-fg hover:bg-white/[0.13] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-md bg-tint/[0.07] text-xs font-medium text-fg-2 hover:text-fg hover:bg-tint/[0.13] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <Icon size={13} strokeWidth={1.5} className="shrink-0" />
               <span className="truncate">{label}</span>
@@ -136,14 +140,14 @@ export default function LivePanel({ server, onlinePlayers, onRun, onPickPlayer }
           <div className="relative flex-1">
             <Megaphone size={12} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
             <input
-              className="input !h-9 !rounded-full !pl-7 text-xs"
+              className="input !h-9 !pl-7 text-xs"
               placeholder={t('console.quick.announce')}
               value={announce}
               onChange={e => setAnnounce(e.target.value)}
               disabled={!running}
             />
           </div>
-          <button type="submit" disabled={!running || !announce.trim()} className={clsx('w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-fg text-black active:scale-90 disabled:opacity-30 transition-all')} aria-label={t('console.send')}>
+          <button type="submit" disabled={!running || !announce.trim()} className={clsx('w-9 h-9 shrink-0 flex items-center justify-center rounded-md bg-fg text-inverse disabled:opacity-30 transition-all')} aria-label={t('console.send')}>
             <Send size={12} strokeWidth={1.5} />
           </button>
         </form>

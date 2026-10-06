@@ -201,7 +201,10 @@ function readPackMeta(serverDir) {
   }
 }
 
-function buildEnvVars(server) {
+/**
+ * buildEnvVars(server, { javaVersion }) — javaVersion = Java de l'image choisie (voir requiredJava).
+ */
+function buildEnvVars(server, { javaVersion = null } = {}) {
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
 
   // Détecte server-setup-config.yaml en premier — ServerStarter gère tout (NeoForge inclus)
@@ -250,6 +253,16 @@ function buildEnvVars(server) {
     // itzg les écrit aussi dans user_jvm_args.txt pour les run.sh Forge/NeoForge.
     'USE_AIKAR_FLAGS=true',
   ];
+  // Sans ça, Java garde pour toujours la mémoire qu'il a prise (jusqu'à MAX_MEMORY), même serveur vide.
+  // GC périodique (toutes les 60 s, seulement si aucun GC n'a eu lieu et que la machine est peu chargée) :
+  // le tas inutilisé est rendu au système. Option JDK 12+ : jamais pour les images Java 8.
+  // MaxHeapFreeRatio=40 : sinon Java ne rend la mémoire que si le tas est vide à plus de 70 %
+  // (après une pré-génération Chunky, 1,8 Go utilisés sur 6 Go restaient réservés pour toujours).
+  if (javaVersion && javaVersion >= 17) {
+    env.push('JVM_XX_OPTS=-XX:G1PeriodicGCInterval=60000 -XX:MinHeapFreeRatio=20 -XX:MaxHeapFreeRatio=40');
+  }
+  // glibc crée une zone mémoire par thread (≈100 threads Java) : jusqu'à ~2 Go gaspillés hors du tas
+  env.push('MALLOC_ARENA_MAX=2');
 
   if (installedNeoForgeVersion) {
     // NeoForge déjà installé par ServerStarter — passer la version exacte pour qu'itzg ne réinstalle pas
@@ -332,7 +345,11 @@ function buildEnvVars(server) {
  * Utiliser la mauvaise version Java provoque ClassCastException ou UnsupportedClassVersionError.
  */
 function resolveMinecraftImage(mcVersion, neoforgeVersion) {
-  return `itzg/minecraft-server:java${requiredJava(mcVersion, neoforgeVersion)}`;
+  const java = requiredJava(mcVersion, neoforgeVersion);
+  // MINECRAFT_IMAGE_VERSION fige une version testée de l'image (tags <version>-javaXX) :
+  // sans elle, une nouvelle version publiée par l'auteur peut changer le comportement des serveurs.
+  const pinned = (process.env.MINECRAFT_IMAGE_VERSION || '').trim();
+  return pinned ? `itzg/minecraft-server:${pinned}-java${java}` : `itzg/minecraft-server:java${java}`;
 }
 
 /**
@@ -407,9 +424,13 @@ async function createServerContainer(server, onProgress) {
       || detectNeoForgeVersionFromStartScript(serverDir))
     : null;
 
+  const javaVersion = requiredJava(packMeta?.mcVersion || server.mc_version, neoforgeVersion);
   const image = resolveMinecraftImage(packMeta?.mcVersion || server.mc_version, neoforgeVersion);
   console.log(`[Docker] Image sélectionnée pour MC ${server.mc_version || '?'}${neoforgeVersion ? ` / NeoForge ${neoforgeVersion}` : ''} : ${image}`);
   await ensureImage(image, onProgress);
+
+  const ramWarning = await hostRamWarning(server.ram_mb);
+  if (ramWarning) console.warn(`[Docker] ${server.name || server.id} : ${ramWarning}`);
 
   const exposedPorts = { '25565/tcp': {} };
   // RCON (25575) volontairement NON publié sur l'hôte : le backend y accède via le réseau
@@ -426,7 +447,7 @@ async function createServerContainer(server, onProgress) {
   const container = await docker.createContainer({
     name: containerName,
     Image: image,
-    Env: buildEnvVars(server),
+    Env: buildEnvVars(server, { javaVersion }),
     ExposedPorts: exposedPorts,
     HostConfig: {
       Binds: [`${hostServerDir}:/data`],
@@ -442,6 +463,25 @@ async function createServerContainer(server, onProgress) {
   });
 
   return { containerId: container.id, containerName };
+}
+
+/**
+ * Java occupe en pratique MAX_MEMORY + ~25 % (métaspace, threads, buffers natifs des mods).
+ * Si ça dépasse la RAM de la machine Docker, le système swappe : lag, "Can't keep up", voire OOM-kill.
+ * Retourne un avertissement lisible, ou null.
+ */
+async function hostRamWarning(ramMb) {
+  try {
+    const hostMb = Math.floor((await docker.info()).MemTotal / 1024 / 1024);
+    const expectedMb = Math.round(ramMb * 1.25 + 512);
+    if (!hostMb || expectedMb <= hostMb * 0.9) return null;
+    const suggested = Math.max(2048, Math.floor((hostMb * 0.9 - 512) / 1.25 / 512) * 512);
+    return `RAM réglée à ${Math.round(ramMb / 1024 * 10) / 10} Go : Java utilisera ~${Math.round(expectedMb / 1024 * 10) / 10} Go `
+      + `alors que la machine Docker n'a que ${Math.round(hostMb / 1024 * 10) / 10} Go au total (autres containers et système compris). `
+      + `Risque de swap et de lag : ${Math.round(suggested / 1024 * 10) / 10} Go maximum conseillés.`;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -566,7 +606,8 @@ async function getContainerStats(containerId) {
       const numCpus = data.cpu_stats.online_cpus || 1;
       const cpuPercent = systemDelta > 0 ? (cpuDelta / systemDelta) * numCpus * 100 : 0;
 
-      const memUsed = data.memory_stats.usage - (data.memory_stats.stats?.cache || 0);
+      const st = data.memory_stats.stats || {};
+      const memUsed = data.memory_stats.usage - (st.inactive_file ?? st.total_inactive_file ?? st.cache ?? 0);
       const memLimit = data.memory_stats.limit;
 
       resolve({
@@ -723,6 +764,7 @@ module.exports = {
   streamContainerLogs,
   getRecentLogs,
   pullImage,
+  hostRamWarning,
   // Exposé pour les tests uniquement
   _internals: { buildEnvVars, resolveMinecraftImage, ensureVoiceChatPort, detectPackNeoForgeVersion },
 };

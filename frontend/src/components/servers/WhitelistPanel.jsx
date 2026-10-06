@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getWhitelist, addToWhitelist, removeFromWhitelist, patchServer } from '../../services/api';
 import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
@@ -64,7 +64,7 @@ export default function WhitelistPanel({ server }) {
       <div className="card flex items-center justify-between gap-4 !py-3.5 !px-4">
         <div className="flex items-center gap-3">
           {server.whitelist_enabled
-            ? <ShieldCheck size={18} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
+            ? <ShieldCheck size={18} strokeWidth={1.5} style={{ color: 'var(--success)' }} />
             : <ShieldOff size={18} strokeWidth={1.5} className="text-fg-2" />
           }
           <div>
@@ -103,9 +103,9 @@ export default function WhitelistPanel({ server }) {
         ) : list.length === 0 ? (
           <div className="p-6 text-center text-sm text-fg-3">{t('whitelist.empty')}</div>
         ) : (
-          <ul className="divide-y divide-white/[0.06] stagger-fast">
+          <ul className="divide-y divide-tint/[0.06] stagger-fast">
             {list.map(player => (
-              <li key={player.name} className="group flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors">
+              <li key={player.name} className="group flex items-center justify-between px-4 py-3 hover:bg-tint/[0.03] transition-colors">
                 <div className="flex items-center gap-3">
                   <img
                     src={`https://mc-heads.net/avatar/${player.name}/64`}

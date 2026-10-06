@@ -1,28 +1,21 @@
 import React from 'react';
 import clsx from 'clsx';
 import { useI18n } from '../../i18n';
+import { statusColor } from './status';
 
-const STATUS_STYLE = {
-  running:    { dot: 'var(--accent)', text: 'var(--accent)',  bg: 'rgba(var(--accent-rgb),0.08)',  border: 'rgba(var(--accent-rgb),0.2)'  },
-  starting:   { dot: 'var(--warn)', text: 'var(--warn)',  bg: 'rgba(var(--warn-rgb),0.08)',  border: 'rgba(var(--warn-rgb),0.2)'  },
-  stopped:    { dot: 'var(--fg-2)', text: 'var(--fg-2)',  bg: 'rgba(var(--fg-2-rgb),0.08)', border: 'rgba(var(--fg-2-rgb),0.2)' },
-  installing: { dot: 'var(--warn)', text: 'var(--warn)',  bg: 'rgba(var(--warn-rgb),0.08)',  border: 'rgba(var(--warn-rgb),0.2)'  },
-  updating:   { dot: 'var(--warn)', text: 'var(--warn)',  bg: 'rgba(var(--warn-rgb),0.08)',  border: 'rgba(var(--warn-rgb),0.2)'  },
-  error:      { dot: 'var(--danger)', text: 'var(--danger)',  bg: 'rgba(var(--danger-rgb),0.08)', border: 'rgba(var(--danger-rgb),0.2)' },
-};
-
+/** Badge d'état : point de couleur + libellé, sur fond neutre. */
 export default function StatusBadge({ status, className }) {
   const { t } = useI18n();
-  const s = STATUS_STYLE[status] || STATUS_STYLE.stopped;
-
   return (
     <span
-      className={clsx('inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold', className)}
-      style={{ color: s.text, background: s.bg, border: `1px solid ${s.border}` }}
+      className={clsx(
+        'inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] font-medium text-fg-2 border border-line bg-surface',
+        className,
+      )}
     >
       <span
         className={clsx('w-1.5 h-1.5 rounded-full shrink-0', status === 'running' && 'pulse-dot')}
-        style={{ backgroundColor: s.dot }}
+        style={{ backgroundColor: statusColor(status) }}
       />
       {t(`server.status.${status}`, t('server.status.stopped'))}
     </span>

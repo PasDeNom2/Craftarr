@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import {
-  Users, Search, Crown, Ban, ShieldCheck, AlertTriangle, LogOut, Clock, Activity, TrendingUp, UserPlus, Wifi, ChevronRight, Trophy,
+  Users, Search, Crown, Clock, Activity, TrendingUp, Wifi, ChevronRight, Trophy,
 } from 'lucide-react';
 import {
   getPlayers, getPlayersOverview, kickPlayer, warnPlayer, banPlayer, unbanPlayer, opPlayer, deopPlayer,
@@ -182,7 +181,7 @@ export default function PlayersPanel({ server }) {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 stagger">
         <Kpi icon={Users} label={t('players.kpiUnique')} value={totals?.players ?? players.length}
           sub={totals?.new_players ? t('players.kpiNew', { n: totals.new_players }) : t('players.kpiActive', { n: activePlayers })} tone="var(--info)" />
-        <Kpi icon={Wifi} label={t('players.kpiOnline')} value={counts.online} sub={`/ ${server.max_players}`} tone="var(--accent)" />
+        <Kpi icon={Wifi} label={t('players.kpiOnline')} value={counts.online} sub={`/ ${server.max_players}`} tone="var(--success)" />
         <Kpi icon={Clock} label={t('players.kpiPlaytime')} value={formatDuration(periodSeconds, { short: true })}
           sub={t('players.kpiTotal', { d: formatDuration(totals?.playtime_all || 0, { short: true }) })} tone="var(--purple)" />
         <Kpi icon={Activity} label={t('players.kpiSessions')} value={periodSessions}
@@ -201,7 +200,7 @@ export default function PlayersPanel({ server }) {
               <XAxis dataKey="label" tick={{ fontSize: 9.5, fill: 'rgba(235,235,245,0.35)' }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={14} />
               <YAxis tick={{ fontSize: 9.5, fill: 'rgba(235,235,245,0.35)' }} axisLine={false} tickLine={false} allowDecimals={false} width={40} />
               <Tooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                cursor={{ fill: 'rgba(var(--tint-rgb),0.05)' }}
                 content={({ active, payload }) => active && payload?.length ? (
                   <div className="glass-strong rounded-xl px-3 py-2 text-[11px]">
                     <p className="text-fg font-semibold">{payload[0].payload.label}</p>
@@ -224,11 +223,11 @@ export default function PlayersPanel({ server }) {
           <ol className="space-y-1.5">
             {leaderboard.map(([name, secs], i) => (
               <li key={name}>
-                <button onClick={() => setSelected(name)} className="w-full flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-white/[0.05] transition-colors text-left">
+                <button onClick={() => setSelected(name)} className="w-full flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-tint/[0.05] transition-colors text-left">
                   <span className="w-5 text-center text-[12px] font-bold tabular-nums" style={{ color: ['#FFD60A', '#C7C7CC', '#D08A4E'][i] || 'var(--fg-3)' }}>{i + 1}</span>
                   <PlayerAvatar username={name} size={24} className="rounded-md" />
                   <span className="text-[13px] text-fg font-medium w-32 truncate">{name}</span>
-                  <div className="flex-1 h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="flex-1 h-2 rounded-full bg-tint/[0.06] overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${(secs / leaderboard[0][1]) * 100}%`, background: 'var(--purple)' }} />
                   </div>
                   <span className="w-16 text-right text-[12px] font-mono text-fg-2 tabular-nums">{formatDuration(secs, { short: secs >= 36000 })}</span>
@@ -243,7 +242,7 @@ export default function PlayersPanel({ server }) {
       <div className="flex items-center gap-2 flex-wrap pt-2">
         <Segmented size="sm" value={filter} onChange={setFilter} items={[
           { id: 'all', label: t('players.filterAll'), badge: <span className="text-[10px] text-fg-3 font-mono">{counts.all}</span> },
-          { id: 'online', label: t('players.filterOnline'), badge: counts.online ? <span className="text-[10px] font-mono" style={{ color: 'var(--accent)' }}>{counts.online}</span> : null },
+          { id: 'online', label: t('players.filterOnline'), badge: counts.online ? <span className="text-[10px] font-mono" style={{ color: 'var(--success)' }}>{counts.online}</span> : null },
           { id: 'ops', label: t('players.op'), badge: counts.ops ? <span className="text-[10px] text-fg-3 font-mono">{counts.ops}</span> : null },
           { id: 'banned', label: t('players.filterBanned'), badge: counts.banned ? <span className="text-[10px] font-mono" style={{ color: 'var(--danger)' }}>{counts.banned}</span> : null },
         ]} />
@@ -254,7 +253,7 @@ export default function PlayersPanel({ server }) {
         ]} />
         <div className="relative ml-auto">
           <Search size={13} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
-          <input className="input !h-9 !rounded-full !pl-8 text-xs w-52" placeholder={t('players.search')} value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input !h-9 !pl-8 text-xs w-52" placeholder={t('players.search')} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
@@ -262,24 +261,24 @@ export default function PlayersPanel({ server }) {
         <div className="space-y-2">{[0, 1, 2].map(i => <div key={i} className="skeleton h-16" />)}</div>
       ) : list.length === 0 ? (
         <div className="card flex flex-col items-center py-14 gap-3 text-center">
-          <span className="w-14 h-14 rounded-2xl bg-white/[0.06] flex items-center justify-center text-fg-3"><Users size={24} strokeWidth={1.5} /></span>
+          <span className="w-14 h-14 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><Users size={24} strokeWidth={1.5} /></span>
           <p className="text-sm text-fg-2">{search ? t('players.noResults') : t('players.noPlayers')}</p>
           {!search && <p className="text-xs text-fg-3">{t('players.noPlayersHint')}</p>}
         </div>
       ) : (
-        <div className="card !p-0 overflow-hidden divide-y divide-white/[0.06] stagger-fast">
+        <div className="card !p-0 overflow-hidden divide-y divide-tint/[0.06] stagger-fast">
           {list.map(p => {
             const last = parseDbDate(p.last_seen);
             const onlineSince = parseDbDate(p.online_since);
             return (
               <div key={p.username} onClick={() => setSelected(p.username)}
-                className="group flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                className="group flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-tint/[0.04] transition-colors"
                 style={p.is_banned ? { background: 'rgba(var(--danger-rgb),0.05)' } : undefined}>
                 <div className="relative shrink-0" style={{ opacity: p.is_banned ? 0.5 : 1 }}>
                   <PlayerAvatar username={p.username} size={40} className="rounded-xl" />
                   {p.is_online === 1 && (
                     <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 pulse-dot"
-                      style={{ background: 'var(--accent)', borderColor: 'rgb(30,30,36)' }} />
+                      style={{ background: 'var(--success)', borderColor: 'var(--surface)' }} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -290,7 +289,7 @@ export default function PlayersPanel({ server }) {
                   </div>
                   <p className="text-[11.5px] text-fg-3 mt-0.5 truncate">
                     {p.is_online === 1 && onlineSince
-                      ? <span style={{ color: 'var(--accent)' }}>{t('players.onlineSince', { d: formatDuration((Date.now() - onlineSince) / 1000) })}</span>
+                      ? <span style={{ color: 'var(--success)' }}>{t('players.onlineSince', { d: formatDuration((Date.now() - onlineSince) / 1000) })}</span>
                       : last && t('players.lastSeen', { ago: formatDistanceToNow(last, { addSuffix: true, locale }) })}
                     {' · '}{t('players.nSessions', { n: p.session_count || p.join_count || 0 })}
                     {p.death_count > 0 && <> · {t('players.nDeaths', { n: p.death_count })}</>}

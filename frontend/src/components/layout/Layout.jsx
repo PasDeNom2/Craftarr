@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useServerStore } from '../../store';
 import { getServers } from '../../services/api';
 import { getSocket } from '../../hooks/useSocket';
@@ -48,8 +47,8 @@ export default function Layout() {
     const onInstallError   = ({ serverId }) => applyStatus(serverId, 'error');
     const onUpdateDone     = ({ serverId, version }) => applyStatus(serverId, 'running', { modpack_version: version });
     const onServerStatus   = ({ serverId, status }) => applyStatus(serverId, status);
-    const onPregen = ({ serverId, status, progress, eta, message }) => {
-      const patch = { pregen_status: status, pregen_progress: progress, pregen_eta: eta, pregen_message: message };
+    const onPregen = ({ serverId, status, progress, eta, message, worldIndex }) => {
+      const patch = { pregen_status: status, pregen_progress: progress, pregen_eta: eta, pregen_message: message, pregen_world_index: worldIndex ?? 0 };
       updateServer(serverId, patch);
       qc.setQueryData(['server', serverId], old => old ? { ...old, ...patch } : old);
     };
@@ -79,14 +78,11 @@ export default function Layout() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden p-3 gap-3">
+    <div className="flex h-screen overflow-hidden bg-bg">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <ConnectionBanner />
-        <div className="flex items-center justify-end px-1 pb-2 shrink-0">
-          <LanguageSwitcher />
-        </div>
-        <main className="flex-1 overflow-y-auto rounded-[26px]">
+        <main className="flex-1 overflow-y-auto">
           {/* Une page qui plante n'emporte pas la navigation ; changer de page efface l'erreur */}
           <ErrorBoundary scope="panel" resetKey={location.pathname}>
             <div key={location.pathname} className="page-in h-full">

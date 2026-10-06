@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getCatalog } from '../services/api';
-import { useServerStore } from '../store';
 import { useI18n } from '../i18n';
 import ModpackCard from '../components/catalog/ModpackCard';
 import ModpackDetail from '../components/catalog/ModpackDetail';
 import DeployModal from '../components/catalog/DeployModal';
 import VanillaModal from '../components/catalog/VanillaModal';
-import { Search, X, AlertCircle, Activity, Server, Loader, Box, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Search, X, AlertCircle, Box, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import PageHeader, { Page } from '../components/layout/PageHeader';
 
 const MC_VERSIONS = ['26.2', '26.1.2', '26.1', '1.21.4', '1.21.1', '1.21', '1.20.4', '1.20.1', '1.19.4', '1.19.2', '1.18.2', '1.16.5', '1.12.2', '1.7.10'];
 const SOURCES = ['modrinth', 'curseforge'];
@@ -36,13 +36,6 @@ function useFilterDefs(t) {
   ];
 }
 
-// Couleurs par type de filtre
-const FILTER_COLORS = {
-  mcVersion: { bg: 'rgba(var(--accent-rgb),0.08)', border: 'rgba(var(--accent-rgb),0.25)', text: 'var(--accent)',  dot: 'var(--accent)' },
-  category:  { bg: 'rgba(var(--purple-rgb),0.08)', border: 'rgba(var(--purple-rgb),0.25)', text: 'var(--purple)', dot: 'var(--purple)' },
-source:    { bg: 'rgba(var(--warn-rgb),0.08)', border: 'rgba(var(--warn-rgb),0.25)', text: 'var(--warn)',  dot: 'var(--warn)' },
-};
-
 // activeFilters = { mcVersion: ['1.21', '1.20.1'], category: ['adventure'], source: ['modrinth'] }
 function FilterPanel({ activeFilters, onToggle, onClear, onClose, filterDefs, t }) {
   const ref = useRef(null);
@@ -50,21 +43,21 @@ function FilterPanel({ activeFilters, onToggle, onClear, onClose, filterDefs, t 
 
   useEffect(() => {
     function onClick(e) { if (ref.current && !ref.current.contains(e.target)) onClose(); }
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
     document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onClick); document.removeEventListener('keydown', onKey); };
   }, [onClose]);
 
   return (
     <div
       ref={ref}
-      className="glass-strong absolute right-0 top-full mt-2 rounded-[22px] z-50 flex flex-col pop-in origin-top-right"
-      style={{ width: '340px', maxHeight: '520px', overflowY: 'auto' }}
+      className="glass-strong absolute right-0 top-full mt-2 rounded-xl z-50 flex flex-col pop-in w-[340px] max-h-[520px] overflow-y-auto"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'rgba(30,30,36,0.72)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span className="text-xs font-semibold text-fg uppercase tracking-widest">{t('catalog.filters')}</span>
+      <div className="flex items-center justify-between px-4 h-11 sticky top-0 z-10 bg-surface-3 border-b border-line">
+        <span className="text-[13px] font-medium text-fg">{t('catalog.filters')}</span>
         {totalActive > 0 && (
-          <button onClick={onClear} className="text-[11px] text-danger hover:text-red-400 transition-colors">
+          <button onClick={onClear} className="text-[12px] text-fg-2 hover:text-fg transition-colors">
             {t('catalog.filtersClear')} ({totalActive})
           </button>
         )}
@@ -72,19 +65,10 @@ function FilterPanel({ activeFilters, onToggle, onClear, onClose, filterDefs, t 
 
       <div className="p-4 flex flex-col gap-5">
         {filterDefs.map(def => {
-          const col = FILTER_COLORS[def.key];
           const selected = activeFilters[def.key] || [];
           return (
             <div key={def.key}>
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-[11px] font-semibold text-fg-3 uppercase tracking-widest">{def.label}</p>
-                {selected.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                    style={{ background: col.bg, color: col.text, border: `1px solid ${col.border}` }}>
-                    {selected.length}
-                  </span>
-                )}
-              </div>
+              <p className="eyebrow mb-2">{def.label}</p>
               <div className="flex flex-wrap gap-1.5">
                 {def.options.map(opt => {
                   const active = selected.includes(opt.value);
@@ -92,15 +76,12 @@ function FilterPanel({ activeFilters, onToggle, onClear, onClose, filterDefs, t 
                     <button
                       key={opt.value}
                       type="button"
+                      aria-pressed={active}
                       onClick={() => onToggle(def.key, opt.value)}
-                      className="text-xs px-2.5 py-1 rounded-lg transition-all duration-150 font-medium flex items-center gap-1.5"
-                      style={{
-                        background: active ? col.bg : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${active ? col.border : 'rgba(255,255,255,0.07)'}`,
-                        color: active ? col.text : 'var(--fg-2)',
-                      }}
+                      className={active
+                        ? 'text-[12px] h-7 px-2.5 rounded-md font-medium bg-fg text-inverse border border-fg'
+                        : 'text-[12px] h-7 px-2.5 rounded-md font-medium text-fg-2 border border-line-strong hover:text-fg hover:border-fg-3 transition-colors'}
                     >
-                      {active && <span className="w-1 h-1 rounded-full shrink-0" style={{ background: col.dot }} />}
                       {opt.label}
                     </button>
                   );
@@ -125,10 +106,6 @@ export default function CatalogPage() {
   const { t } = useI18n();
   const filterDefs = useFilterDefs(t);
 
-  const servers = useServerStore(s => s.servers);
-  const runningCount = servers.filter(s => s.status === 'running').length;
-  const stoppedCount = servers.filter(s => s.status === 'stopped').length;
-  const installingCount = servers.filter(s => ['installing', 'updating'].includes(s.status)).length;
 
   // activeFilters: { key: string[] }
   const totalFilterCount = Object.values(activeFilters).reduce((n, arr) => n + arr.length, 0);
@@ -179,193 +156,131 @@ export default function CatalogPage() {
     setQuery(inputValue.trim());
   }, [inputValue]);
 
+  // Recherche pendant la frappe (après une courte pause), Entrée reste immédiat
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(inputValue.trim()), 400);
+    return () => clearTimeout(id);
+  }, [inputValue]);
+
   const hasActiveSearch = query || totalFilterCount > 0;
 
   return (
-    <div className="p-7 max-w-screen-xl mx-auto">
-      <div className="mb-7">
-        <h1 className="text-[28px] leading-tight font-bold text-fg tracking-tight">{t('catalog.title')}</h1>
-        <p className="text-sm text-fg-2 mt-1">{t('catalog.subtitle')}</p>
-      </div>
+    <Page wide>
+      <PageHeader
+        title={t('catalog.title')}
+        description={t('catalog.subtitle')}
+        actions={(
+          <button onClick={() => setVanillaOpen(true)} className="btn-secondary" title={t('catalog.vanillaHint')}>
+            <Box size={14} strokeWidth={1.75} /> {t('catalog.vanillaServer')}
+          </button>
+        )}
+      />
 
-      <div className="grid grid-cols-3 gap-4 mb-7">
-        <StatCard
-          icon={Activity}
-          label={t('catalog.activeServers')}
-          value={runningCount}
-          accent={runningCount > 0}
-          sub={runningCount > 0 ? `${runningCount} ${t('catalog.online')}` : t('catalog.noneActive')}
-        />
-        <StatCard
-          icon={Server}
-          label={t('catalog.stoppedServers')}
-          value={stoppedCount}
-          sub={`${servers.length} ${t('catalog.totalServers')}`}
-        />
-        <StatCard
-          icon={Loader}
-          label={t('catalog.inProgress')}
-          value={installingCount}
-          sub={installingCount > 0 ? t('catalog.installing') : t('catalog.noneInProgress')}
-        />
-      </div>
-
-      <div className="card">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-fg uppercase tracking-[0.08em]">{t('catalog.available')}</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-fg-2">{modpacks.length} {t('catalog.results')}</span>
-            <button
-              onClick={() => setVanillaOpen(true)}
-              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg transition-all duration-200"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--fg-2)' }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'var(--fg)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--fg-2)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-              title={t('catalog.vanillaHint')}
-            >
-              <Box size={12} strokeWidth={1.5} />
-              {t('catalog.vanilla')}
-            </button>
-          </div>
+      {/* Recherche + filtres */}
+      <form onSubmit={handleSearch} className="flex gap-2 mb-3">
+        <div className="flex-1 relative">
+          <Search size={15} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
+          <input
+            className="input !h-10 pl-9 w-full"
+            placeholder={t('catalog.search')}
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+          />
         </div>
 
-        {/* Search bar + filter button */}
-        <form onSubmit={handleSearch} className="flex gap-3 mb-3">
-          <div className="flex-1 relative">
-            <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
-            <input
-              className="input pl-9 w-full"
-              placeholder={t('catalog.search')}
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-            />
-          </div>
-
-          {/* Filters button */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setFilterOpen(o => !o)}
-              className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg h-full transition-all duration-200 font-medium whitespace-nowrap"
-              style={{
-                background: totalFilterCount > 0 ? 'rgba(var(--accent-rgb),0.08)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${totalFilterCount > 0 ? 'rgba(var(--accent-rgb),0.25)' : 'rgba(255,255,255,0.08)'}`,
-                color: totalFilterCount > 0 ? 'var(--accent)' : 'var(--fg-2)',
-              }}
-            >
-              <SlidersHorizontal size={13} strokeWidth={1.5} />
-              {t('catalog.filters')}
-              {totalFilterCount > 0 && (
-                <span
-                  className="flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
-                  style={{ background: 'var(--accent)', color: 'var(--bg)' }}
-                >
-                  {totalFilterCount}
-                </span>
-              )}
-              <ChevronDown
-                size={11}
-                strokeWidth={2}
-                style={{ transform: filterOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-              />
-            </button>
-            {filterOpen && (
-              <FilterPanel
-                activeFilters={activeFilters}
-                onToggle={toggleFilter}
-                onClear={clearAllFilters}
-                onClose={() => setFilterOpen(false)}
-                filterDefs={filterDefs}
-                t={t}
-              />
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setFilterOpen(o => !o)}
+            aria-expanded={filterOpen}
+            className="btn-secondary !h-10"
+          >
+            <SlidersHorizontal size={14} strokeWidth={1.75} />
+            {t('catalog.filters')}
+            {totalFilterCount > 0 && (
+              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10.5px] font-semibold bg-fg text-inverse">
+                {totalFilterCount}
+              </span>
             )}
-          </div>
-
-          {hasActiveSearch && (
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => { setQuery(''); setInputValue(''); setActiveFilters({}); }}
-            >
-              <X size={13} strokeWidth={1.5} />
-              {t('catalog.clear')}
-            </button>
+            <ChevronDown size={13} strokeWidth={2} className={filterOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+          </button>
+          {filterOpen && (
+            <FilterPanel
+              activeFilters={activeFilters}
+              onToggle={toggleFilter}
+              onClear={clearAllFilters}
+              onClose={() => setFilterOpen(false)}
+              filterDefs={filterDefs}
+              t={t}
+            />
           )}
-        </form>
+        </div>
 
-        {/* Active filter chips — une chip par valeur sélectionnée */}
-        {totalFilterCount > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {Object.entries(activeFilters).flatMap(([key, values]) => {
-              const col = FILTER_COLORS[key];
-              const def = filterDefs.find(d => d.key === key);
-              return values.map(value => {
-                const label = def?.options.find(o => o.value === value)?.label || value;
-                return (
-                  <span
-                    key={`${key}:${value}`}
-                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{ background: col.bg, border: `1px solid ${col.border}`, color: col.text }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: col.dot }} />
-                    {def?.label} : {label}
-                    <button
-                      onClick={() => removeFilterValue(key, value)}
-                      className="ml-0.5 hover:opacity-70 transition-opacity"
-                      type="button"
-                    >
-                      <X size={10} strokeWidth={2.5} />
-                    </button>
-                  </span>
-                );
-              });
-            })}
-          </div>
+        {hasActiveSearch && (
+          <button
+            type="button"
+            className="btn-ghost !h-10"
+            onClick={() => { setQuery(''); setInputValue(''); setActiveFilters({}); }}
+          >
+            <X size={14} strokeWidth={1.75} />
+            {t('catalog.clear')}
+          </button>
         )}
+      </form>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="skeleton h-48 rounded-xl" />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center py-16 gap-3 text-center">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(var(--danger-rgb),0.08)', border: '1px solid rgba(var(--danger-rgb),0.2)' }}
-            >
-              <AlertCircle size={20} strokeWidth={1.5} className="text-danger" />
-            </div>
-            <p className="font-medium text-fg text-sm">{t('catalog.loadError')}</p>
-            <p className="text-sm text-fg-2">{t('catalog.loadErrorHint')}</p>
-            <button className="btn-secondary mt-1" onClick={() => refetch()}>{t('catalog.retry')}</button>
-          </div>
-        ) : modpacks.length === 0 ? (
-          <div className="flex flex-col items-center py-16 gap-2 text-center">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <Search size={18} strokeWidth={1.5} className="text-fg-3" />
-            </div>
-            <p className="font-medium text-fg text-sm mt-1">{t('catalog.noResults')}</p>
-            {query && <p className="text-sm text-fg-2">{t('catalog.noResultsHint')}</p>}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {modpacks.map((mp, idx) => (
-              <div key={`${mp.source}:${mp.id}`} className="card-in" style={{ animationDelay: `${idx * 30}ms` }}>
-                <ModpackCard
-                  modpack={mp}
-                  onDeploy={setDeployModpack}
-                  onDetail={setSelectedModpack}
-                />
-              </div>
-            ))}
-          </div>
+      {/* Filtres actifs + nombre de résultats */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-5 min-h-[28px]">
+        {Object.entries(activeFilters).flatMap(([key, values]) => {
+          const def = filterDefs.find(d => d.key === key);
+          return values.map(value => {
+            const label = def?.options.find(o => o.value === value)?.label || value;
+            return (
+              <span key={`${key}:${value}`} className="inline-flex items-center gap-1.5 h-7 pl-2.5 pr-1 rounded-md text-[12px] border border-line-strong text-fg-2">
+                <span className="text-fg-3">{def?.label}</span>
+                <span className="text-fg">{label}</span>
+                <button onClick={() => removeFilterValue(key, value)} className="icon-btn !h-5 !min-w-5 !px-0" type="button" aria-label={t('catalog.clear')}>
+                  <X size={11} strokeWidth={2} />
+                </button>
+              </span>
+            );
+          });
+        })}
+        {!isLoading && !isError && (
+          <span className="text-[12.5px] text-fg-3 ml-auto">{modpacks.length} {t('catalog.results')}</span>
         )}
       </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="skeleton h-[188px] !rounded-xl" />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="card flex flex-col items-center py-16 gap-2 text-center">
+          <AlertCircle size={22} strokeWidth={1.5} className="text-danger mb-1" />
+          <p className="font-medium text-fg text-[14px]">{t('catalog.loadError')}</p>
+          <p className="text-[13px] text-fg-2">{t('catalog.loadErrorHint')}</p>
+          <button className="btn-secondary mt-3" onClick={() => refetch()}>{t('catalog.retry')}</button>
+        </div>
+      ) : modpacks.length === 0 ? (
+        <div className="card flex flex-col items-center py-16 gap-2 text-center">
+          <Search size={20} strokeWidth={1.5} className="text-fg-3 mb-1" />
+          <p className="font-medium text-fg text-[14px]">{t('catalog.noResults')}</p>
+          {query && <p className="text-[13px] text-fg-2">{t('catalog.noResultsHint')}</p>}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 stagger">
+          {modpacks.map(mp => (
+            <ModpackCard
+              key={`${mp.source}:${mp.id}`}
+              modpack={mp}
+              onDeploy={setDeployModpack}
+              onDetail={setSelectedModpack}
+            />
+          ))}
+        </div>
+      )}
 
       {selectedModpack && (
         <ModpackDetail
@@ -381,29 +296,6 @@ export default function CatalogPage() {
         />
       )}
       <VanillaModal open={vanillaOpen} onClose={() => setVanillaOpen(false)} />
-    </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value, sub, accent }) {
-  return (
-    <div className="card flex flex-col gap-3">
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center"
-        style={{
-          background: accent ? 'rgba(var(--accent-rgb),0.1)' : 'rgba(255,255,255,0.04)',
-          border: accent ? '1px solid rgba(var(--accent-rgb),0.2)' : '1px solid rgba(255,255,255,0.06)',
-        }}
-      >
-        <Icon size={15} strokeWidth={1.5} style={{ color: accent ? 'var(--accent)' : 'var(--fg-2)' }} />
-      </div>
-      <div>
-        <p className="text-fg-2 text-xs uppercase tracking-[0.08em] font-medium">{label}</p>
-        <p className="text-[28px] font-semibold text-fg tracking-tight leading-none mt-1">{value}</p>
-      </div>
-      {sub && (
-        <p className="text-xs" style={{ color: accent ? 'var(--accent)' : 'var(--fg-2)' }}>{sub}</p>
-      )}
-    </div>
+    </Page>
   );
 }

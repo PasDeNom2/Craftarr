@@ -15,7 +15,7 @@ const CREEPER = [
   '00100100',
 ];
 // Nuances de vert pour la « peau » (déterministe, façon texture)
-const SKIN = ['var(--accent)', 'rgba(var(--accent-rgb),0.78)', 'rgba(var(--accent-rgb),0.62)'];
+const SKIN = ['#4CAF50', '#43A047', '#5DBB63'];
 
 function CreeperFace({ size = 88, shaking }) {
   const px = size / 8;
@@ -82,7 +82,7 @@ function CrashScreen({ error, info, onRetry, scope }) {
             <RefreshCw size={14} strokeWidth={1.75} /> {t('crash.reload')}
           </button>
           <button className="btn-ghost" onClick={copyReport}>
-            {copied ? <Check size={14} className="text-accent" /> : <ClipboardCopy size={14} strokeWidth={1.75} />}
+            {copied ? <Check size={14} className="text-success" /> : <ClipboardCopy size={14} strokeWidth={1.75} />}
             {copied ? t('crash.copied') : t('crash.copy')}
           </button>
         </div>
@@ -95,7 +95,7 @@ function CrashScreen({ error, info, onRetry, scope }) {
           <ChevronDown size={12} style={{ transform: showDetails ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
         </button>
         {showDetails && (
-          <pre className="mt-3 text-left text-[11px] leading-relaxed font-mono text-danger bg-black/40 border border-white/[0.07] rounded-2xl p-3 max-h-48 overflow-auto whitespace-pre-wrap fade-in">
+          <pre className="mt-3 text-left text-[11px] leading-relaxed font-mono text-danger bg-black/40 border border-tint/[0.07] rounded-2xl p-3 max-h-48 overflow-auto whitespace-pre-wrap fade-in">
             {error?.message || String(error)}
             {'\n\n'}
             <span className="text-fg-3">{(error?.stack || '').split('\n').slice(1, 6).join('\n')}</span>

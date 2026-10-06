@@ -45,23 +45,24 @@ export default function LanguageSwitcher({ placement = "down", compact = false }
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="glass flex items-center gap-1.5 px-3 h-8 rounded-full text-fg-2 hover:text-fg transition-colors text-xs font-medium"
-        title={t('language.label')}
+        className={compact
+          ? 'icon-btn'
+          : 'flex items-center gap-1.5 px-2.5 h-8 rounded-md border border-line-strong text-fg-2 hover:text-fg hover:bg-surface-2 transition-colors text-xs font-medium'}
+        title={`${t('language.label')} — ${current.native}`}
+        aria-label={t('language.label')}
       >
-        <Globe size={14} strokeWidth={1.5} />
-        {compact
-          ? <span>{current.flag}</span>
-          : <><span className="hidden sm:inline">{current.flag} {current.native}</span><span className="sm:hidden">{current.flag}</span></>}
+        <Globe size={14} strokeWidth={1.75} />
+        {!compact && <span>{current.flag} {current.native}</span>}
       </button>
 
       {open && (
         <div
           className={placement === 'up'
-            ? 'glass-strong absolute left-0 bottom-full mb-2 w-56 rounded-2xl overflow-hidden z-50 pop-in'
-            : 'glass-strong absolute right-0 top-full mt-2 w-56 rounded-2xl overflow-hidden z-50 pop-in'}
+            ? 'glass-strong absolute right-0 bottom-full mb-2 w-56 rounded-xl overflow-hidden z-50 pop-in'
+            : 'glass-strong absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden z-50 pop-in'}
         >
           {/* Search */}
-          <div className="p-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="p-2" style={{ borderBottom: '1px solid rgba(var(--tint-rgb),0.06)' }}>
             <input
               ref={searchRef}
               type="text"
@@ -83,16 +84,16 @@ export default function LanguageSwitcher({ placement = "down", compact = false }
                   onClick={() => { changeLang(l.code); setOpen(false); setSearch(''); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors duration-150 text-left"
                   style={{
-                    background: l.code === lang ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    background: l.code === lang ? 'rgba(var(--tint-rgb),0.05)' : 'transparent',
                     color: l.code === lang ? 'var(--fg)' : 'var(--fg-2)',
                   }}
-                  onMouseEnter={e => { if (l.code !== lang) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'var(--fg)'; }}
+                  onMouseEnter={e => { if (l.code !== lang) e.currentTarget.style.background = 'rgba(var(--tint-rgb),0.03)'; e.currentTarget.style.color = 'var(--fg)'; }}
                   onMouseLeave={e => { if (l.code !== lang) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--fg-2)'; } }}
                 >
                   <span className="text-base leading-none">{l.flag}</span>
                   <span className="flex-1 text-xs font-medium">{l.native}</span>
                   {l.code === lang && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-fg shrink-0" />
                   )}
                 </button>
               ))

@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 // Toutes les couleurs pointent vers les variables CSS de src/index.css :
 // changer de thème (data-theme) change réellement toute l'interface.
+const rgbVar = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 module.exports = {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
@@ -10,25 +12,31 @@ module.exports = {
         surface: { DEFAULT: 'var(--surface)', 2: 'var(--surface-2)', 3: 'var(--surface-3)' },
         fg: { DEFAULT: 'var(--fg)', 2: 'var(--fg-2)', 3: 'var(--fg-3)' },
         line: { DEFAULT: 'var(--line)', strong: 'var(--line-strong)' },
+        // Voile neutre qui suit le thème : blanc en sombre, noir en clair (bg-tint/[0.06]…)
+        tint: rgbVar('--tint-rgb'),
+        // Couleur inverse du texte (texte posé sur un fond --fg)
+        inverse: 'var(--inverse)',
         accent: { DEFAULT: 'var(--accent)', hover: 'var(--accent-hover)', ink: 'var(--accent-ink)' },
-        danger: 'var(--danger)',
-        warn: 'var(--warn)',
-        info: 'var(--info)',
-        purple: 'var(--purple)',
-        orange: 'var(--orange)',
+        success: rgbVar('--success-rgb'),
+        danger: rgbVar('--danger-rgb'),
+        warn: rgbVar('--warn-rgb'),
+        info: rgbVar('--info-rgb'),
+        purple: rgbVar('--purple-rgb'),
+        orange: rgbVar('--orange-rgb'),
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'Fira Code', 'Consolas', 'monospace'],
+        sans: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"Geist Mono"', '"JetBrains Mono"', 'Consolas', 'monospace'],
       },
       borderRadius: {
-        '2xl': '16px',
-        '3xl': '24px',
+        xl: '10px',
+        '2xl': '12px',
+        '3xl': '16px',
       },
       keyframes: {
         'fade-in-up': {
-          from: { opacity: '0', transform: 'translateY(8px)' },
+          from: { opacity: '0', transform: 'translateY(4px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         'pulse-dot': {
@@ -37,7 +45,7 @@ module.exports = {
         },
       },
       animation: {
-        'fade-in-up': 'fade-in-up 0.25s cubic-bezier(0.16,1,0.3,1) forwards',
+        'fade-in-up': 'fade-in-up 0.2s ease-out forwards',
         'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
       },
     },

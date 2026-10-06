@@ -76,45 +76,103 @@ async function getModpack(apiKey, modpackId) {
   return normalized;
 }
 
+/** Normalise un fichier CurseForge (client pack, server pack ou mod). */
+function normalizeFile(f) {
+  const gv = f.gameVersions || [];
+  return {
+    id: String(f.id),
+    displayName: f.displayName,
+    fileName: f.fileName,
+    fileDate: f.fileDate,
+    downloadUrl: f.downloadUrl,
+    isServerPack: f.isServerPack || false,
+    serverPackFileId: f.serverPackFileId ? String(f.serverPackFileId) : null,
+    parentProjectFileId: f.parentProjectFileId ? String(f.parentProjectFileId) : null,
+    gameVersions: gv,
+    mcVersions: gv.filter(isMcVersion),
+    loaders: detectLoaders(gv),
+    releaseType: f.releaseType,
+    fileSize: f.fileLength,
+  };
+}
+
+// Plafond de pagination : les très vieux packs ont des centaines de fichiers
+const MAX_FILES = 500;
+
+/**
+ * Tous les fichiers d'un modpack (client packs ET server packs), du plus récent au plus ancien.
+ * L'API est paginée (50 max par page) : sans pagination, une version ancienne choisie par
+ * l'utilisateur était introuvable et l'installeur prenait silencieusement la dernière.
+ */
 async function getModpackFiles(apiKey, modpackId) {
   if (!apiKey) return [];
   const client = createClient(apiKey);
-  const res = await client.get(`/v1/mods/${modpackId}/files`, {
-    params: { gameVersion: undefined, pageSize: 50 }
-  });
-  return res.data.data.map(f => {
-    const gv = f.gameVersions || [];
-    return {
-      id: String(f.id),
-      displayName: f.displayName,
-      fileName: f.fileName,
-      fileDate: f.fileDate,
-      downloadUrl: f.downloadUrl,
-      isServerPack: f.isServerPack || false,
-      serverPackFileId: f.serverPackFileId ? String(f.serverPackFileId) : null,
-      gameVersions: gv,
-      mcVersions: gv.filter(isMcVersion),
-      loaders: detectLoaders(gv),
-      releaseType: f.releaseType,
-      fileSize: f.fileLength,
-    };
-  });
+  const files = [];
+  for (let index = 0; index < MAX_FILES; index += 50) {
+    const res = await client.get(`/v1/mods/${modpackId}/files`, { params: { pageSize: 50, index } });
+    const page = res.data.data || [];
+    files.push(...page.map(normalizeFile));
+    const total = res.data.pagination?.totalCount ?? 0;
+    if (page.length < 50 || files.length >= total) break;
+  }
+  return files.sort((a, b) => new Date(b.fileDate) - new Date(a.fileDate));
 }
 
 async function getFileById(apiKey, modpackId, fileId) {
   if (!apiKey) return null;
   const client = createClient(apiKey);
   const res = await client.get(`/v1/mods/${modpackId}/files/${fileId}`);
-  const f = res.data.data;
-  return {
-    id: String(f.id),
-    displayName: f.displayName,
-    fileName: f.fileName,
-    downloadUrl: f.downloadUrl,
-    isServerPack: f.isServerPack || false,
-    gameVersions: f.gameVersions || [],
-    fileSize: f.fileLength,
-  };
+  return normalizeFile(res.data.data);
+}
+
+/**
+ * Infos projet (slug, distribution autorisée…) pour une liste de projectIDs, par lots de 50.
+ * Retourne une Map projectId(string) → { slug, name, allowModDistribution }.
+ */
+async function getModsInfo(apiKey, modIds) {
+  const client = createClient(apiKey);
+  const out = new Map();
+  for (let i = 0; i < modIds.length; i += 50) {
+    const chunk = modIds.slice(i, i + 50);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await client.post('/v1/mods', { modIds: chunk }, { timeout: 30000 });
+        for (const m of res.data.data || []) {
+          out.set(String(m.id), { slug: m.slug, name: m.name, allowModDistribution: m.allowModDistribution !== false });
+        }
+        break;
+      } catch (err) {
+        if (attempt === 3) throw err;
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * URLs de téléchargement d'un fichier CurseForge. L'API renvoie downloadUrl: null quand l'auteur
+ * a désactivé la distribution tierce : le fichier reste en général servi par les CDN forgecdn.
+ */
+function fileUrls(file) {
+  const id = parseInt(file.id, 10);
+  const name = encodeURIComponent(file.fileName);
+  const p = `${Math.floor(id / 1000)}/${id % 1000}/${name}`;
+  return [...new Set([
+    file.downloadUrl,
+    `https://mediafilez.forgecdn.net/files/${p}`,
+    `https://edge.forgecdn.net/files/${p}`,
+  ].filter(Boolean))];
+}
+
+/** manifest.json d'un client pack, sans télécharger tout le zip quand le CDN accepte les Range. */
+async function getClientManifest(file) {
+  const { readZipJson } = require('./remoteZip');
+  for (const url of fileUrls(file)) {
+    const manifest = await readZipJson(url, 'manifest.json', file.fileSize);
+    if (manifest) return manifest;
+  }
+  return null;
 }
 
 function normalizeModpack(data) {
@@ -174,12 +232,11 @@ async function getModList(apiKey, modpackId) {
 
   // 1. Récupère les fichiers du modpack
   const files = await getModpackFiles(apiKey, modpackId);
-  const latest = files.find(f => !f.isServerPack) || files[0];
-  if (!latest?.downloadUrl) return [];
+  const latest = files.find(f => !f.isServerPack);
+  if (!latest) return [];
 
   // 2. Télécharge et parse uniquement manifest.json via Range requests
-  const axios = require('axios');
-  const manifest = await extractCfManifest(axios, latest.downloadUrl);
+  const manifest = await getClientManifest(latest);
   if (!manifest) return [];
 
   const projectIds = (manifest.files || []).map(f => f.projectID).filter(Boolean);
@@ -213,90 +270,6 @@ async function getModList(apiKey, modpackId) {
   return sorted;
 }
 
-// Extrait manifest.json depuis un zip CurseForge via Range requests HTTP
-async function extractCfManifest(axios, url) {
-  try {
-    const zlib = require('zlib');
-    const head = await axios.head(url, { timeout: 10000 }).catch(() => null);
-    const supportsRange = head?.headers?.['accept-ranges'] === 'bytes';
-    const fileSize = parseInt(head?.headers?.['content-length'] || '0', 10);
-
-    if (!supportsRange || !fileSize) {
-      const AdmZip = require('adm-zip');
-      const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
-      const zip = new AdmZip(Buffer.from(res.data));
-      const entry = zip.getEntry('manifest.json');
-      return entry ? JSON.parse(entry.getData().toString('utf8')) : null;
-    }
-
-    // Lire EOCD
-    const eocdSize = Math.min(65557, fileSize);
-    const eocdRes = await axios.get(url, {
-      responseType: 'arraybuffer', timeout: 15000,
-      headers: { Range: `bytes=${fileSize - eocdSize}-${fileSize - 1}` },
-    });
-    const eocdBuf = Buffer.from(eocdRes.data);
-    let eocdOffset = -1;
-    for (let i = eocdBuf.length - 22; i >= 0; i--) {
-      if (eocdBuf.readUInt32LE(i) === 0x06054b50) { eocdOffset = i; break; }
-    }
-    if (eocdOffset < 0) throw new Error('EOCD not found');
-
-    const cdOffset = eocdBuf.readUInt32LE(eocdOffset + 16);
-    const cdSize   = eocdBuf.readUInt32LE(eocdOffset + 12);
-
-    // Lire Central Directory
-    const cdRes = await axios.get(url, {
-      responseType: 'arraybuffer', timeout: 15000,
-      headers: { Range: `bytes=${cdOffset}-${cdOffset + cdSize - 1}` },
-    });
-    const cdBuf = Buffer.from(cdRes.data);
-
-    // Trouver manifest.json
-    let pos = 0, localHeaderOffset = -1, compressedSize = 0, compressionMethod = 0;
-    while (pos < cdBuf.length - 4) {
-      if (cdBuf.readUInt32LE(pos) !== 0x02014b50) break;
-      const method     = cdBuf.readUInt16LE(pos + 10);
-      const cSize      = cdBuf.readUInt32LE(pos + 20);
-      const fnLen      = cdBuf.readUInt16LE(pos + 28);
-      const extraLen   = cdBuf.readUInt16LE(pos + 30);
-      const commentLen = cdBuf.readUInt16LE(pos + 32);
-      const lhOffset   = cdBuf.readUInt32LE(pos + 42);
-      const filename   = cdBuf.slice(pos + 46, pos + 46 + fnLen).toString('utf8');
-      if (filename === 'manifest.json') {
-        localHeaderOffset = lhOffset; compressedSize = cSize; compressionMethod = method;
-      }
-      pos += 46 + fnLen + extraLen + commentLen;
-    }
-    if (localHeaderOffset < 0) return null;
-
-    // Lire Local File Header
-    const lhRes = await axios.get(url, {
-      responseType: 'arraybuffer', timeout: 15000,
-      headers: { Range: `bytes=${localHeaderOffset}-${localHeaderOffset + 29}` },
-    });
-    const lhBuf = Buffer.from(lhRes.data);
-    const dataOffset = localHeaderOffset + 30 + lhBuf.readUInt16LE(26) + lhBuf.readUInt16LE(28);
-
-    // Lire les données compressées
-    const dataRes = await axios.get(url, {
-      responseType: 'arraybuffer', timeout: 15000,
-      headers: { Range: `bytes=${dataOffset}-${dataOffset + compressedSize - 1}` },
-    });
-    const compressed = Buffer.from(dataRes.data);
-    const jsonBuf = compressionMethod === 8 ? zlib.inflateRawSync(compressed) : compressed;
-    return JSON.parse(jsonBuf.toString('utf8'));
-  } catch (_) {
-    try {
-      const AdmZip = require('adm-zip');
-      const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
-      const zip = new AdmZip(Buffer.from(res.data));
-      const entry = zip.getEntry('manifest.json');
-      return entry ? JSON.parse(entry.getData().toString('utf8')) : null;
-    } catch (__) { return null; }
-  }
-}
-
 async function testConnection(apiKey) {
   if (!apiKey) return { ok: false, error: 'Clé API manquante' };
   try {
@@ -314,4 +287,7 @@ async function testConnection(apiKey) {
   }
 }
 
-module.exports = { searchModpacks, getModpack, getModpackFiles, getFileById, getModList, testConnection };
+module.exports = {
+  searchModpacks, getModpack, getModpackFiles, getFileById, getModsInfo, getClientManifest, fileUrls,
+  getModList, testConnection,
+};

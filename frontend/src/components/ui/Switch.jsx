@@ -1,6 +1,6 @@
 import React from 'react';
 
-/** Interrupteur façon iOS (pastille à ressort) */
+/** Interrupteur compact : piste pleine (couleur du texte) quand activé. */
 export default function Switch({ checked, onChange, label, disabled }) {
   return (
     <button
@@ -10,15 +10,17 @@ export default function Switch({ checked, onChange, label, disabled }) {
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative shrink-0 w-[51px] h-[31px] rounded-full transition-colors duration-300 disabled:opacity-50"
-      style={{ background: checked ? 'var(--accent)' : 'rgba(120,120,128,0.32)' }}
+      className="relative shrink-0 w-9 h-5 rounded-full border transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+      style={{
+        background: checked ? 'var(--fg)' : 'var(--surface-2)',
+        borderColor: checked ? 'var(--fg)' : 'var(--line-strong)',
+      }}
     >
       <span
-        className="absolute top-[2px] left-[2px] w-[27px] h-[27px] rounded-full bg-white"
+        className="absolute top-[2px] left-[2px] w-3.5 h-3.5 rounded-full transition-transform duration-150"
         style={{
-          transform: checked ? 'translateX(20px)' : 'none',
-          transition: 'transform .35s cubic-bezier(.3,1.3,.5,1)',
-          boxShadow: '0 3px 8px rgba(0,0,0,.3), 0 1px 1px rgba(0,0,0,.16)',
+          background: checked ? 'var(--inverse)' : 'var(--fg-3)',
+          transform: checked ? 'translateX(16px)' : 'none',
         }}
       />
     </button>

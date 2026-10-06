@@ -4,6 +4,7 @@ const fs = require('fs');
 const { getDb } = require('../config/database');
 const authMiddleware = require('../middleware/auth');
 const backupService = require('../services/backup');
+const serverLock = require('../services/serverLock');
 
 const router = express.Router();
 
@@ -40,7 +41,7 @@ router.delete('/:serverId/backups/:backupId', authMiddleware, (req, res, next) =
 });
 
 // POST /api/servers/:serverId/backups/:backupId/restore
-router.post('/:serverId/backups/:backupId/restore', authMiddleware, async (req, res, next) => {
+router.post('/:serverId/backups/:backupId/restore', authMiddleware, serverLock.requireIdle, async (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.serverId);
@@ -50,7 +51,7 @@ router.post('/:serverId/backups/:backupId/restore', authMiddleware, async (req, 
       .get(req.params.backupId, req.params.serverId);
     if (!backup) return res.status(404).json({ error: 'Backup introuvable' });
 
-    await backupService.restoreBackup(server, backup);
+    await serverLock.withLock(server.id, 'restauration', () => backupService.restoreBackup(server, backup));
     res.json({ ok: true });
   } catch (err) {
     next(err);

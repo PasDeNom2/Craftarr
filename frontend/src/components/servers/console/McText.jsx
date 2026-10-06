@@ -47,7 +47,7 @@ export function Highlight({ text, term }) {
   let idx;
   while ((idx = lower.indexOf(needle, from)) !== -1) {
     if (idx > from) out.push(text.slice(from, idx));
-    out.push(<mark key={idx} className="bg-fg text-black rounded-[2px] px-px">{text.slice(idx, idx + needle.length)}</mark>);
+    out.push(<mark key={idx} className="bg-fg text-inverse rounded-[2px] px-px">{text.slice(idx, idx + needle.length)}</mark>);
     from = idx + needle.length;
   }
   if (from < text.length) out.push(text.slice(from));

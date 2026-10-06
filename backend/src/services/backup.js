@@ -227,6 +227,8 @@ async function runScheduledBackups() {
 
   for (const server of servers) {
     if (running.has(server.id)) continue;
+    // Pas pendant une restauration / mise à jour / téléchargement de mods
+    if (require('./serverLock').busyReason(server)) continue;
     running.add(server.id);
     try {
       // Garde-fou disque : il faut au moins 2× la taille du dernier backup de libre
@@ -241,6 +243,7 @@ async function runScheduledBackups() {
       await cleanOldBackups(server.id, keep, 'scheduled');
     } catch (err) {
       console.error(`[Backup] Échec du backup planifié de ${server.name} :`, err.message);
+      require('./notify').notify({ serverName: server.name, level: 'error', title: 'Backup en échec', message: err.message });
     } finally {
       running.delete(server.id);
     }

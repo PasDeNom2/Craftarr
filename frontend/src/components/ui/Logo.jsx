@@ -9,7 +9,7 @@ export function LogoMark({ size = 32, className }) {
       className={clsx('rounded-lg bg-fg flex items-center justify-center shrink-0', className)}
       style={{ width: size, height: size, borderRadius: Math.round(size / 4) }}
     >
-      <Layers size={Math.round(size / 2)} strokeWidth={2} className="text-black" />
+      <Layers size={Math.round(size / 2)} strokeWidth={2} className="text-inverse" />
     </div>
   );
 }

@@ -146,8 +146,8 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
   return (
     <div className="flex flex-col h-full min-h-0 fade-in" onKeyDown={onRootKey}>
       {/* En-tête */}
-      <div className="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-white/[0.06]">
-        <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.06] shrink-0" style={{ color }}>
+      <div className="flex items-center gap-3 px-3 h-14 shrink-0 border-b border-tint/[0.06]">
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-tint/[0.06] shrink-0" style={{ color }}>
           <Icon size={17} strokeWidth={1.75} />
         </span>
         <div className="min-w-0">
@@ -159,12 +159,12 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
         </div>
         <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {state.status === 'text' && (
-            <span className="hidden sm:inline-flex h-6 px-2.5 items-center rounded-full bg-white/[0.07] text-[11px] font-medium text-fg-2">
+            <span className="hidden sm:inline-flex h-6 px-2.5 items-center rounded-full bg-tint/[0.07] text-[11px] font-medium text-fg-2">
               {LANGUAGE_LABEL[language]}{format?.type === 'nbt' && format.compression !== 'none' ? ` · ${format.compression}` : ''}
             </span>
           )}
           {readOnly && (
-            <span className="inline-flex h-6 px-2.5 items-center gap-1 rounded-full bg-white/[0.07] text-[11px] font-medium text-fg-2">
+            <span className="inline-flex h-6 px-2.5 items-center gap-1 rounded-full bg-tint/[0.07] text-[11px] font-medium text-fg-2">
               <Lock size={10} /> {t('files.readOnly')}
             </span>
           )}
@@ -194,7 +194,7 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
       )}
 
       {/* Contenu */}
-      <div className="well flex-1 min-h-0 flex flex-col m-2 rounded-[18px] overflow-hidden">
+      <div className="well flex-1 min-h-0 flex flex-col m-2 rounded-xl overflow-hidden">
         {state.status === 'loading' && (
           <div className="p-4 space-y-2">
             {[70, 45, 85, 60, 30, 75].map((w, i) => <div key={i} className="skeleton h-3" style={{ width: `${w}%`, borderRadius: 6 }} />)}
@@ -210,7 +210,7 @@ function FileViewer({ server, file, onDownload, onDirty, active }) {
         )}
         {(state.status === 'binary' || state.status === 'error') && (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8 pop-in">
-            <span className="w-14 h-14 rounded-2xl bg-white/[0.06] flex items-center justify-center text-fg-2">
+            <span className="w-14 h-14 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-2">
               {state.status === 'error' ? <AlertTriangle size={24} className="text-warn" /> : <FileQuestion size={24} />}
             </span>
             <div>
@@ -451,11 +451,11 @@ export default function FileExplorer({ server }) {
   );
 
   return (
-    <div className="glass relative h-full rounded-[26px] overflow-hidden flex card-in" {...dnd}>
+    <div className="glass relative h-full rounded-2xl overflow-hidden flex card-in" {...dnd}>
       {/* ── Liste (colonne de gauche quand des fichiers sont ouverts) ── */}
       <div className={clsx('relative flex-col min-w-0 min-h-0',
         hasTabs
-          ? clsx('lg:w-[340px] xl:w-[380px] lg:shrink-0 lg:border-r border-white/[0.06] lg:flex', listNarrow ? 'flex flex-1 lg:flex-none' : 'hidden')
+          ? clsx('lg:w-[340px] xl:w-[380px] lg:shrink-0 lg:border-r border-tint/[0.06] lg:flex', listNarrow ? 'flex flex-1 lg:flex-none' : 'hidden')
           : 'flex flex-1')}>
         <>
           {/* ── Barre d'outils ── */}
@@ -465,7 +465,7 @@ export default function FileExplorer({ server }) {
             </button>
             <nav className="flex items-center min-w-0 flex-1 overflow-x-auto text-[13px]" aria-label="breadcrumb">
               <button
-                className={clsx('shrink-0 h-8 px-3 rounded-full font-semibold transition-colors', crumbs.length ? 'text-fg-2 hover:text-fg hover:bg-white/[0.07]' : 'text-fg')}
+                className={clsx('shrink-0 h-8 px-3 rounded-md font-semibold transition-colors', crumbs.length ? 'text-fg-2 hover:text-fg hover:bg-tint/[0.07]' : 'text-fg')}
                 onClick={() => setDir('')}
               >
                 {t('files.root')}
@@ -474,8 +474,8 @@ export default function FileExplorer({ server }) {
                 <React.Fragment key={i}>
                   <ChevronRight size={13} className="text-fg-3 shrink-0" />
                   <button
-                    className={clsx('shrink-0 h-8 px-3 rounded-full font-mono text-[12.5px] transition-colors truncate max-w-[16rem]',
-                      i === crumbs.length - 1 ? 'text-fg bg-white/[0.08]' : 'text-fg-2 hover:text-fg hover:bg-white/[0.07]')}
+                    className={clsx('shrink-0 h-8 px-3 rounded-md font-mono text-[12.5px] transition-colors truncate max-w-[16rem]',
+                      i === crumbs.length - 1 ? 'text-fg bg-tint/[0.08]' : 'text-fg-2 hover:text-fg hover:bg-tint/[0.07]')}
                     onClick={() => setDir(crumbs.slice(0, i + 1).join('/'))}
                   >
                     {c}
@@ -487,7 +487,7 @@ export default function FileExplorer({ server }) {
             <div className={clsx('relative shrink-0', compact ? 'order-last w-full' : 'w-44')}>
               <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
               <input
-                className="w-full h-8 pl-8 pr-7 rounded-full bg-[rgba(118,118,128,0.2)] border border-transparent text-xs text-fg placeholder:text-fg-3 outline-none focus:border-white/20 transition-colors"
+                className="w-full h-8 pl-8 pr-7 rounded-md bg-surface-2 border border-transparent text-xs text-fg placeholder:text-fg-3 outline-none focus:border-tint/20 transition-colors"
                 placeholder={t('files.search')}
                 value={filter}
                 onChange={e => setFilter(e.target.value)}
@@ -515,7 +515,7 @@ export default function FileExplorer({ server }) {
                 const { Icon, color } = iconOf(e);
                 return (
                   <button key={e.name} onClick={() => open(e)}
-                    className="shrink-0 inline-flex items-center gap-1.5 h-7 pl-2 pr-3 rounded-full bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 text-[12px] text-fg-2 hover:text-fg transition-all">
+                    className="shrink-0 inline-flex items-center gap-1.5 h-7 pl-2 pr-3 rounded-md bg-tint/[0.06] hover:bg-tint/[0.12] text-[12px] text-fg-2 hover:text-fg transition-all">
                     <Icon size={13} style={{ color }} /> {e.name}
                   </button>
                 );
@@ -524,11 +524,11 @@ export default function FileExplorer({ server }) {
           )}
 
           {/* ── Liste ── */}
-          <div className="well relative flex-1 min-h-0 mx-2 mb-2 rounded-[18px] flex flex-col overflow-hidden">
-            <div className={clsx('grid items-center h-9 px-2 text-[11px] font-medium text-fg-3 border-b border-white/[0.06] shrink-0', cols)}>
+          <div className="well relative flex-1 min-h-0 mx-2 mb-2 rounded-xl flex flex-col overflow-hidden">
+            <div className={clsx('grid items-center h-9 px-2 text-[11px] font-medium text-fg-3 border-b border-tint/[0.06] shrink-0', cols)}>
               <button
                 className={clsx('w-[18px] h-[18px] mx-auto rounded-md border flex items-center justify-center transition-colors',
-                  allSelected || selected.size ? 'bg-fg border-fg text-black' : 'border-white/20 hover:border-white/40')}
+                  allSelected || selected.size ? 'bg-fg border-fg text-inverse' : 'border-tint/20 hover:border-tint/40')}
                 onClick={() => setSelected(allSelected ? new Set() : new Set(entries.map(x => x.name)))}
                 aria-label="select all"
               >
@@ -552,7 +552,7 @@ export default function FileExplorer({ server }) {
                 </div>
               ) : entries.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center gap-3 text-center p-8 fade-in">
-                  <span className="w-14 h-14 rounded-2xl bg-white/[0.06] flex items-center justify-center text-fg-3"><FolderOpen size={24} strokeWidth={1.5} /></span>
+                  <span className="w-14 h-14 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><FolderOpen size={24} strokeWidth={1.5} /></span>
                   <p className="text-sm text-fg-2">{filter ? t('files.noMatch') : t('files.noFiles')}</p>
                   {!filter && <p className="text-xs text-fg-3">{t('files.dropHint')}</p>}
                 </div>
@@ -569,12 +569,12 @@ export default function FileExplorer({ server }) {
                         onDoubleClick={() => selected.size && open(entry)}
                         className={clsx('group grid items-center h-10 px-2 mx-1 rounded-xl cursor-pointer select-none transition-colors', cols,
                           isSel ? 'bg-[rgba(10,132,255,0.18)]'
-                            : active === joinPath(dir, entry.name) ? 'bg-white/[0.09]' : 'hover:bg-white/[0.05]')}
+                            : active === joinPath(dir, entry.name) ? 'bg-tint/[0.09]' : 'hover:bg-tint/[0.05]')}
                       >
                         <button
                           onClick={e => { e.stopPropagation(); toggle(entry.name); setAnchor(idx); }}
                           className={clsx('w-[18px] h-[18px] mx-auto rounded-md border flex items-center justify-center transition-all',
-                            isSel ? 'bg-info border-info text-white opacity-100' : 'border-white/20 opacity-0 group-hover:opacity-100', selected.size && 'opacity-100')}
+                            isSel ? 'bg-info border-info text-white opacity-100' : 'border-tint/20 opacity-0 group-hover:opacity-100', selected.size && 'opacity-100')}
                           aria-label={entry.name}
                         >
                           {isSel && <Check size={12} strokeWidth={3} />}
@@ -615,7 +615,7 @@ export default function FileExplorer({ server }) {
 
             {/* Pied : nombre d'éléments */}
             {data && !selected.size && (
-              <div className="h-8 px-4 flex items-center text-[11px] text-fg-3 border-t border-white/[0.06] shrink-0">
+              <div className="h-8 px-4 flex items-center text-[11px] text-fg-3 border-t border-tint/[0.06] shrink-0">
                 {t('files.items', { count: data.entries.length })}
                 {!compact && <span className="ml-auto hidden md:inline">{t('files.shortcutsHint')}</span>}
               </div>
@@ -656,14 +656,14 @@ export default function FileExplorer({ server }) {
                   title={'/' + tab.path}
                   onClick={() => setActive(tab.path)}
                   onAuxClick={e => { if (e.button === 1) closeTab(tab.path); }}
-                  className={clsx('group shrink-0 flex items-center gap-2 h-8 pl-3 pr-1.5 rounded-full cursor-pointer select-none transition-colors max-w-[15rem] pop-in',
-                    isActive ? 'bg-white/[0.14] text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]' : 'text-fg-2 hover:bg-white/[0.07] hover:text-fg')}
+                  className={clsx('group shrink-0 flex items-center gap-2 h-8 pl-3 pr-1.5 rounded-md cursor-pointer select-none transition-colors max-w-[15rem] pop-in',
+                    isActive ? 'bg-tint/[0.14] text-fg shadow-[inset_0_1px_0_rgba(var(--tint-rgb),0.14)]' : 'text-fg-2 hover:bg-tint/[0.07] hover:text-fg')}
                 >
                   <Icon size={13} style={{ color }} className="shrink-0" />
                   <span className="truncate text-[12.5px] font-medium">{tab.name}</span>
                   <button
                     onClick={e => { e.stopPropagation(); closeTab(tab.path); }}
-                    className="relative w-5 h-5 shrink-0 rounded-full flex items-center justify-center hover:bg-white/15"
+                    className="relative w-5 h-5 shrink-0 rounded-full flex items-center justify-center hover:bg-tint/15"
                     aria-label={t('files.closeTab')}
                     title={t('files.closeTab')}
                   >
@@ -688,7 +688,7 @@ export default function FileExplorer({ server }) {
       <>
           {/* Glisser-déposer */}
           {dragging && (
-            <div className="absolute inset-2 z-20 rounded-[22px] border-2 border-dashed border-[rgba(10,132,255,0.7)] bg-[rgba(10,132,255,0.10)] backdrop-blur-sm flex flex-col items-center justify-center gap-3 pointer-events-none fade-in">
+            <div className="absolute inset-2 z-20 rounded-xl border-2 border-dashed border-[rgba(10,132,255,0.7)] bg-[rgba(10,132,255,0.10)] backdrop-blur-sm flex flex-col items-center justify-center gap-3 pointer-events-none fade-in">
               <UploadCloud size={36} className="text-info" />
               <p className="text-[15px] font-semibold text-fg">{t('files.drop', { dir: `/${dir}` })}</p>
             </div>
@@ -702,7 +702,7 @@ export default function FileExplorer({ server }) {
             <span className="text-fg font-medium">{t('files.uploading', { count: upload.count })}</span>
             <span className="text-fg-3 font-mono">{Math.round(upload.progress * 100)} %</span>
           </div>
-          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-1.5 rounded-full bg-tint/10 overflow-hidden">
             <div className="h-full rounded-full bg-info transition-[width] duration-200" style={{ width: `${upload.progress * 100}%` }} />
           </div>
         </div>

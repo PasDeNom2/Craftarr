@@ -35,8 +35,9 @@ async function main() {
     process.exit(1);
   }
 
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await bcrypt.hash(password, 10), user.id);
-  console.log(`Mot de passe de "${user.username}" réinitialisé.`);
+  // token_version + 1 : les sessions ouvertes avec l'ancien mot de passe sont déconnectées
+  db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(await bcrypt.hash(password, 10), user.id);
+  console.log(`Mot de passe de "${user.username}" réinitialisé (sessions ouvertes déconnectées).`);
   if (!passwordArg) console.log(`Nouveau mot de passe : ${password}`);
 }
 

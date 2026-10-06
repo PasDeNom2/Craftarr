@@ -30,6 +30,7 @@ function formatServer(row) {
     needs_recreate: !!row.needs_recreate,
     pregen_enabled: !!row.pregen_enabled,
     pregen_pause_players: row.pregen_pause_players !== 0,
+    pregen_worlds: require('../../services/pregen').worldsOf(row),
   };
 }
 

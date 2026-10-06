@@ -9,6 +9,7 @@ const installer = require('./installer');
 const { getSourceApiKey } = require('./sourceAggregator');
 const curseforge = require('./curseforge');
 const modrinth = require('./modrinth');
+const serverLock = require('./serverLock');
 
 const { execSync } = require('child_process');
 
@@ -33,7 +34,9 @@ async function checkServerUpdate(server) {
     if (server.modpack_source === 'curseforge') {
       if (!apiKey) return null;
       const files = await curseforge.getModpackFiles(apiKey, server.modpack_id);
-      const latest = files[0];
+      // Le plus récent CLIENT pack : un server pack a un autre id que celui enregistré
+      // (modpack_version_id = client pack) → « mise à jour disponible » en boucle sinon
+      const latest = files.find(f => !f.isServerPack);
       if (!latest) return null;
       latestVersionId = String(latest.id);
       latestVersion = latest.displayName || latest.fileName;
@@ -104,6 +107,15 @@ async function recreateAndStart(serverId) {
  * En cas d'échec, l'ancienne installation est remise en place et redémarrée.
  */
 async function applyUpdate(server, updateInfo) {
+  const release = serverLock.acquire(server.id, 'mise à jour');
+  try {
+    return await doApplyUpdate(server, updateInfo);
+  } finally {
+    release();
+  }
+}
+
+async function doApplyUpdate(server, updateInfo) {
   const db = getDb();
   const baseDir = path.join(DATA_PATH, 'servers', server.id);
   const serverDir = path.join(baseDir, 'server');
@@ -126,6 +138,9 @@ async function applyUpdate(server, updateInfo) {
 
   db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('updating', server.id);
   if (io) io.to(`server:${server.id}`).emit('server:update-start', { serverId: server.id, ...updateInfo });
+  // Journal de reprise : si le backend s'arrête en pleine mise à jour, recoverInterruptedUpdates()
+  // remet l'ancienne installation en place au prochain démarrage (voir plus bas)
+  writeUpdateState(baseDir, { histId, previous, phase: 'installing' });
 
   try {
     // 1. Backup complet pré-update (monde + inventaire + configs) — filet de sécurité
@@ -158,7 +173,9 @@ async function applyUpdate(server, updateInfo) {
 
     // 5. Nouveau container avec les env vars de la nouvelle version
     await recreateAndStart(server.id);
+    writeUpdateState(baseDir, { histId, previous, phase: 'done' });
     fs.rmSync(oldDir, { recursive: true, force: true });
+    clearUpdateState(baseDir);
 
     db.prepare('UPDATE update_history SET status = ? WHERE id = ?').run('success', histId);
 
@@ -172,10 +189,12 @@ async function applyUpdate(server, updateInfo) {
     });
 
     console.log(`[Updater] Serveur ${server.id} mis à jour vers ${updateInfo.latestVersion}`);
+    require('./notify').notify({ serverName: server.name, level: 'success', title: 'Mise à jour réussie', message: `${server.modpack_version || '?'} → ${updateInfo.latestVersion}` });
   } catch (err) {
     console.error(`[Updater] Échec update serveur ${server.id}:`, err.message);
     db.prepare('UPDATE update_history SET status = ? WHERE id = ?').run('failed', histId);
     if (io) io.to(`server:${server.id}`).emit('server:update-error', { serverId: server.id, error: err.message });
+    require('./notify').notify({ serverName: server.name, level: 'warn', title: 'Mise à jour annulée', message: `${updateInfo.latestVersion} : ${err.message}. L'ancienne version a été remise en place.` });
 
     // Rollback : remettre l'ancienne installation et la redémarrer
     try {
@@ -186,6 +205,7 @@ async function applyUpdate(server, updateInfo) {
       fs.rmSync(stagingDir, { recursive: true, force: true });
       db.prepare('UPDATE servers SET modpack_version_id = ?, modpack_version = ?, mc_version = ?, loader_type = ? WHERE id = ?')
         .run(previous.modpack_version_id, previous.modpack_version, previous.mc_version, previous.loader_type, server.id);
+      clearUpdateState(baseDir);
       await recreateAndStart(server.id);
       console.log(`[Updater] Rollback effectué — ${server.id} relancé sur ${previous.modpack_version}`);
     } catch (rollbackErr) {
@@ -195,15 +215,98 @@ async function applyUpdate(server, updateInfo) {
   }
 }
 
+// ─── Reprise après interruption ───────────────────────────────────────────────
+const STATE_FILE = '.update-state.json';
+
+function writeUpdateState(baseDir, state) {
+  try { fs.writeFileSync(path.join(baseDir, STATE_FILE), JSON.stringify({ ...state, at: Date.now() })); }
+  catch (err) { console.warn('[Updater] Journal de reprise non écrit :', err.message); }
+}
+function clearUpdateState(baseDir) {
+  try { fs.rmSync(path.join(baseDir, STATE_FILE), { force: true }); } catch {}
+}
+
+/**
+ * Au démarrage : une mise à jour coupée net (crash, redémarrage du backend/de la machine) laissait
+ * le serveur en erreur, parfois sans dossier server/ (renommé server.old pendant la bascule).
+ * Ici on annule proprement : ancienne installation remise en place, versions restaurées en base,
+ * container recréé. Si la mise à jour était en fait terminée (phase « done »), on ne fait que nettoyer.
+ * Retourne les ids des serveurs remis en place (leur container est à recréer).
+ */
+function recoverInterruptedUpdates() {
+  const db = getDb();
+  const root = path.join(DATA_PATH, 'servers');
+  const recovered = [];
+  let dirs = [];
+  try { dirs = fs.readdirSync(root); } catch { return recovered; }
+
+  for (const id of dirs) {
+    const baseDir = path.join(root, id);
+    const stateFile = path.join(baseDir, STATE_FILE);
+    if (!fs.existsSync(stateFile)) continue;
+    let state = {};
+    try { state = JSON.parse(fs.readFileSync(stateFile, 'utf8')); } catch {}
+    const serverDir = path.join(baseDir, 'server');
+    const oldDir = path.join(baseDir, 'server.old');
+    const stagingDir = path.join(baseDir, 'server.staging');
+    try {
+      if (state.phase === 'done') {
+        // Nouvelle version installée et démarrée : il ne restait que le ménage
+        fs.rmSync(oldDir, { recursive: true, force: true });
+        if (state.histId) db.prepare("UPDATE update_history SET status = 'success' WHERE id = ? AND status = 'pending'").run(state.histId);
+      } else {
+        // Ancienne installation intacte dans server.old → elle redevient server/
+        if (fs.existsSync(oldDir)) {
+          fs.rmSync(serverDir, { recursive: true, force: true });
+          fs.renameSync(oldDir, serverDir);
+        }
+        fs.rmSync(stagingDir, { recursive: true, force: true });
+        const p = state.previous || {};
+        if (p.modpack_version_id !== undefined) {
+          db.prepare('UPDATE servers SET modpack_version_id = ?, modpack_version = ?, mc_version = ?, loader_type = ? WHERE id = ?')
+            .run(p.modpack_version_id, p.modpack_version, p.mc_version, p.loader_type, id);
+        }
+        db.prepare("UPDATE servers SET status = 'stopped' WHERE id = ?").run(id);
+        if (state.histId) db.prepare("UPDATE update_history SET status = 'failed' WHERE id = ?").run(state.histId);
+        recovered.push(id);
+        console.log(`[Updater] Mise à jour interrompue de ${id.slice(0, 8)} annulée — ancienne installation remise en place`);
+      }
+      fs.rmSync(stateFile, { force: true });
+    } catch (err) {
+      console.error(`[Updater] Reprise impossible pour ${id.slice(0, 8)} :`, err.message);
+    }
+  }
+  return recovered;
+}
+
 async function checkAllServers() {
   const db = getDb();
   const servers = db.prepare('SELECT * FROM servers WHERE auto_update = 1').all();
   for (const server of servers) {
+    // Jamais pendant une autre opération, ni sur un serveur en erreur (on ne l'empirerait pas)
+    if (serverLock.busyReason(server) || !['running', 'stopped'].includes(server.status)) continue;
     const update = await checkServerUpdate(server);
-    if (update) {
-      console.log(`[Updater] Nouvelle version disponible pour ${server.name}: ${update.latestVersion}`);
-      if (io) io.emit('server:update-available', { serverId: server.id, serverName: server.name, ...update });
+    if (!update) continue;
+    console.log(`[Updater] Nouvelle version disponible pour ${server.name}: ${update.latestVersion}`);
+    if (io) io.emit('server:update-available', { serverId: server.id, serverName: server.name, ...update });
+
+    // Des joueurs connectés : on ne les coupe pas, la mise à jour est retentée au prochain passage
+    if (server.status === 'running') {
+      const players = await require('./rcon').getPlayerList(server).then(r => r.names).catch(() => []);
+      if (players.length) {
+        console.log(`[Updater] ${server.name} : ${players.length} joueur(s) connecté(s), mise à jour reportée`);
+        if (io) io.to(`server:${server.id}`).emit('log', {
+          serverId: server.id,
+          line: `[Craftarr] Mise à jour ${update.latestVersion} disponible — reportée tant que des joueurs sont connectés`,
+          timestamp: Date.now(),
+        });
+        continue;
+      }
+    }
+    try {
       await applyUpdate(server, update);
+    } catch (err) {
+      console.error(`[Updater] ${server.name} :`, err.message);
     }
   }
 }
@@ -238,9 +341,8 @@ async function resolveCurseForgeDownloadUrl(server, targetFile, allFiles) {
       } catch {}
     }
     if (sp) resolvedFile = sp;
-  } else if (serverPacks.length > 0) {
-    resolvedFile = serverPacks[0];
   }
+  // Pas de repli sur le server pack d'une autre version : l'installeur utilisera le client pack
 
   return resolvedFile.downloadUrl || buildCdnUrl(resolvedFile.id, resolvedFile.fileName);
 }
@@ -250,4 +352,7 @@ function buildCdnUrl(fileId, fileName) {
   return `https://mediafilez.forgecdn.net/files/${Math.floor(id / 1000)}/${id % 1000}/${encodeURIComponent(fileName)}`;
 }
 
-module.exports = { scheduleUpdater, checkAllServers, checkServerUpdate, applyUpdate, resolveCurseForgeDownloadUrl, setIo };
+module.exports = {
+  scheduleUpdater, checkAllServers, checkServerUpdate, applyUpdate, resolveCurseForgeDownloadUrl, setIo,
+  recoverInterruptedUpdates, recreateAndStart,
+};

@@ -34,8 +34,8 @@ export default function IconPicker({ value, onChange, label }) {
         <div
           style={{
             width: 52, height: 52, borderRadius: 10,
-            background: preview ? 'transparent' : 'rgba(255,255,255,0.05)',
-            border: `2px dashed ${preview ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(255,255,255,0.12)'}`,
+            background: preview ? 'transparent' : 'rgba(var(--tint-rgb),0.05)',
+            border: `2px dashed ${preview ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(var(--tint-rgb),0.12)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
             transition: 'border-color 0.2s',

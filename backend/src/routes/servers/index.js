@@ -6,5 +6,6 @@ router.use(require('./lifecycle'));
 router.use(require('./world'));
 router.use(require('./players'));
 router.use(require('./files'));
+router.use(require('./mods'));
 
 module.exports = router;

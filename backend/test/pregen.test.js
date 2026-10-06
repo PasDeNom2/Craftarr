@@ -118,3 +118,40 @@ test('désactivé en pause quand pregen_pause_players = 0', async () => {
   assert.strictEqual(row().pregen_status, 'running');
   assert.ok(chunky.task);
 });
+
+test('plusieurs dimensions : overworld → nether → end, progression globale, puis terminé', async () => {
+  Object.assign(chunky, { task: null, saved: null, players: [], log: [] });
+  db.prepare(`UPDATE servers SET pregen_status = 'pending', pregen_progress = 0, pregen_world_index = 0,
+    pregen_worlds = 'minecraft:the_end,minecraft:overworld,minecraft:the_nether' WHERE id = ?`).run(id);
+  assert.deepStrictEqual(pregen.worldsOf(row()), ['minecraft:overworld', 'minecraft:the_nether', 'minecraft:the_end']);
+
+  await tick();
+  assert.ok(chunky.log.includes('chunky world minecraft:overworld') && chunky.log.includes('chunky spawn'));
+  chunky.task.pct = 50;
+  await tick();
+  assert.strictEqual(row().pregen_progress, 16.7); // (0 + 50) / 3
+
+  // Overworld terminée → Nether démarré, centré en 0,0
+  chunky.task = null;
+  chunky.log = [];
+  await tick();
+  assert.strictEqual(row().pregen_world_index, 1);
+  assert.strictEqual(row().pregen_status, 'running');
+  assert.ok(chunky.log.includes('chunky world minecraft:the_nether') && chunky.log.includes('chunky center 0 0'));
+  chunky.task.pct = 50;
+  await tick();
+  assert.strictEqual(row().pregen_progress, 50); // (100 + 50) / 3
+
+  chunky.task = null;
+  await tick();
+  assert.strictEqual(row().pregen_world_index, 2);
+  chunky.task = null;
+  await tick();
+  assert.strictEqual(row().pregen_status, 'done');
+  assert.strictEqual(row().pregen_progress, 100);
+});
+
+test('normalizeWorlds : filtre les valeurs inconnues, overworld par défaut', () => {
+  assert.strictEqual(pregen.normalizeWorlds(['minecraft:the_end', 'evil', 'minecraft:the_nether']), 'minecraft:the_nether,minecraft:the_end');
+  assert.strictEqual(pregen.normalizeWorlds([]), 'minecraft:overworld');
+});

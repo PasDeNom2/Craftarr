@@ -61,4 +61,29 @@ function getJwtSecret() {
   return secret;
 }
 
-module.exports = { loadOrCreateSecrets, getJwtSecret };
+/**
+ * Vérifie un jeton de SESSION utilisateur (en-tête Authorization ou socket).
+ * Refuse les jetons à usage unique (liens de téléchargement, signés avec le même secret) :
+ * avant, un lien vu dans les logs du proxy ouvrait toute l'API pendant 5 minutes.
+ * Refuse aussi les sessions d'avant un changement de mot de passe (token_version).
+ */
+function verifyUserToken(token) {
+  const jwt = require('jsonwebtoken');
+  const claims = jwt.verify(token, getJwtSecret());
+  if (claims.purpose || !claims.id) throw new Error('jeton non utilisable pour une session');
+  const { getDb } = require('./database');
+  const user = getDb().prepare('SELECT id, username, token_version FROM users WHERE id = ?').get(claims.id);
+  if (!user) throw new Error('utilisateur supprimé');
+  if ((claims.tv || 0) !== (user.token_version || 0)) throw new Error('session révoquée');
+  return { id: user.id, username: user.username };
+}
+
+/** Jeton de session (7 jours) pour un utilisateur. */
+function signUserToken(user) {
+  const jwt = require('jsonwebtoken');
+  return jwt.sign({ id: user.id, username: user.username, tv: user.token_version || 0 }, getJwtSecret(), { expiresIn: '7d' });
+}
+
+module.exports = {
+  verifyUserToken,
+  signUserToken, loadOrCreateSecrets, getJwtSecret };

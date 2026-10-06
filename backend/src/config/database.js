@@ -82,9 +82,24 @@ function initDb() {
     "ALTER TABLE servers ADD COLUMN pregen_progress REAL NOT NULL DEFAULT 0",
     "ALTER TABLE servers ADD COLUMN pregen_eta TEXT",
     "ALTER TABLE servers ADD COLUMN pregen_message TEXT",
+    // Dimensions à pré-générer (liste séparée par des virgules) et index de celle en cours
+    "ALTER TABLE servers ADD COLUMN pregen_worlds TEXT NOT NULL DEFAULT 'minecraft:overworld'",
+    "ALTER TABLE servers ADD COLUMN pregen_world_index INTEGER NOT NULL DEFAULT 0",
+    // Incrémenté à chaque changement de mot de passe : invalide toutes les sessions ouvertes
+    "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
+    // Réglages globaux modifiables dans l'interface (webhook de notifications…)
+    "CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)",
   ];
   for (const sql of migrations) {
-    try { db.exec(sql); } catch { /* colonne déjà présente */ }
+    try {
+      db.exec(sql);
+    } catch (err) {
+      // Migrations idempotentes : seul « déjà appliquée » est normal. Toute autre erreur est
+      // signalée (avant, elle était avalée et une colonne pouvait manquer sans que personne le sache).
+      if (!/duplicate column|already exists|no such column/i.test(err.message)) {
+        console.error(`[DB] Migration en échec : ${sql.trim().slice(0, 80)} — ${err.message}`);
+      }
+    }
   }
   // Jamais bloquant : un historique non reconstitué ne doit pas empêcher Craftarr de démarrer
   try { backfillSessions(db); } catch (err) { console.error('[DB] Reconstitution des sessions impossible :', err.message); }

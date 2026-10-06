@@ -15,6 +15,8 @@ services:
       - UPDATE_CHECK_INTERVAL_HOURS=${UPDATE_CHECK_INTERVAL_HOURS:-6}
       - BACKUP_INTERVAL_HOURS=${BACKUP_INTERVAL_HOURS:-6}
       - BACKUP_KEEP=${BACKUP_KEEP:-8}
+      - MINECRAFT_IMAGE_VERSION=${MINECRAFT_IMAGE_VERSION:-}
+      - NOTIFY_WEBHOOK_URL=${NOTIFY_WEBHOOK_URL:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data

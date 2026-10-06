@@ -20,6 +20,29 @@ const MODRINTH = 'https://api.modrinth.com/v2';
 const TICK_MS = 30_000;
 const PLUGIN_LOADERS = new Set(['paper', 'purpur', 'spigot', 'bukkit', 'folia']);
 
+// Dimensions pré-générables, dans l'ordre de génération
+const WORLDS = ['minecraft:overworld', 'minecraft:the_nether', 'minecraft:the_end'];
+
+/** Dimensions choisies pour un serveur (ordre de WORLDS, overworld par défaut). */
+function worldsOf(server) {
+  const wanted = new Set(String(server.pregen_worlds || '').split(',').map(w => w.trim()));
+  const list = WORLDS.filter(w => wanted.has(w));
+  return list.length ? list : [WORLDS[0]];
+}
+
+/** Normalise une liste reçue de l'API (tableau ou chaîne) en valeur de colonne. */
+function normalizeWorlds(value) {
+  const arr = Array.isArray(value) ? value : String(value || '').split(',');
+  return worldsOf({ pregen_worlds: arr.join(',') }).join(',');
+}
+
+/** Progression globale : dimensions terminées + avancement de la dimension en cours. */
+function overallProgress(server, percent) {
+  const n = worldsOf(server).length;
+  const idx = Math.min(server.pregen_world_index || 0, n - 1);
+  return Math.round(((idx * 100 + percent) / n) * 10) / 10;
+}
+
 let io = null;
 let timer = null;
 const busy = new Set();
@@ -37,6 +60,7 @@ function setState(server, fields) {
   Object.assign(server, fields);
   emit(server, {
     status: server.pregen_status, progress: server.pregen_progress, eta: server.pregen_eta ?? null, message: server.pregen_message ?? null,
+    worldIndex: server.pregen_world_index || 0,
   });
 }
 
@@ -151,13 +175,17 @@ async function send(server, cmd) {
   return strip(await rcon.sendCommand(server, cmd));
 }
 
-/** Démarre une nouvelle tâche (centre = spawn, rayon choisi). */
+/**
+ * Démarre la tâche de la dimension en cours (pregen_world_index), rayon choisi.
+ * Overworld : centrée sur le spawn ; Nether / End : centrées en 0,0 (portails, île principale).
+ */
 async function startTask(server) {
   const radius = Math.max(100, Math.min(50_000, server.pregen_radius || 3000));
+  const world = worldsOf(server)[server.pregen_world_index || 0] || WORLDS[0];
   // Une ligne de progression par minute dans la console au lieu d'une par seconde
   await send(server, 'chunky quiet 60');
-  await send(server, 'chunky world minecraft:overworld').catch(() => {});
-  await send(server, 'chunky spawn');
+  await send(server, `chunky world ${world}`).catch(() => {});
+  await send(server, world === 'minecraft:overworld' ? 'chunky spawn' : 'chunky center 0 0');
   await send(server, `chunky radius ${radius}`);
   let resp = await send(server, 'chunky start');
   // Une ancienne tâche existe : on la relance proprement
@@ -196,11 +224,12 @@ async function tickServer(server) {
 
   if (prog) {
     // Tâche en cours
+    const overall = overallProgress(server, prog.percent);
     if (shouldPause) {
       await send(server, 'chunky pause');
-      setState(server, { pregen_status: 'paused', pregen_progress: prog.percent, pregen_eta: null, pregen_message: 'players' });
+      setState(server, { pregen_status: 'paused', pregen_progress: overall, pregen_eta: null, pregen_message: 'players' });
     } else {
-      setState(server, { pregen_status: 'running', pregen_progress: prog.percent, pregen_eta: prog.eta, pregen_message: null });
+      setState(server, { pregen_status: 'running', pregen_progress: overall, pregen_eta: prog.eta, pregen_message: null });
     }
     return;
   }
@@ -216,23 +245,35 @@ async function tickServer(server) {
       const resp = await send(server, 'chunky continue');
       if (!/no tasks/i.test(resp)) { setState(server, { pregen_status: 'running', pregen_message: null }); return; }
     }
-    const resp = await startTask(server);
-    if (/Task started|continuing/i.test(resp)) {
-      setState(server, { pregen_status: 'running', pregen_progress: server.pregen_progress || 0, pregen_message: null });
-      console.log(`[Pregen] Tâche démarrée pour ${server.id.slice(0, 8)} (rayon ${server.pregen_radius})`);
-    } else {
-      setState(server, { pregen_status: 'error', pregen_message: resp.slice(0, 300) || 'Réponse inattendue de Chunky' });
-    }
+    await startCurrentWorld(server);
     return;
   }
   // running/paused sans tâche active : soit terminée, soit interrompue par un redémarrage
   const resp = await send(server, 'chunky continue');
   if (/no tasks/i.test(resp)) {
+    // Dimension terminée : passer à la suivante s'il en reste
+    const next = (server.pregen_world_index || 0) + 1;
+    if (next < worldsOf(server).length) {
+      setState(server, { pregen_world_index: next, pregen_progress: overallProgress({ ...server, pregen_world_index: next }, 0), pregen_eta: null });
+      await startCurrentWorld(server);
+      return;
+    }
     setState(server, { pregen_status: 'done', pregen_progress: 100, pregen_eta: null, pregen_message: null });
     console.log(`[Pregen] Pré-génération terminée pour ${server.id.slice(0, 8)}`);
     io?.emit('log', { serverId: server.id, line: '[Craftarr] ✓ Pré-génération du monde terminée', timestamp: Date.now() });
   } else {
     setState(server, { pregen_status: 'running', pregen_message: null });
+  }
+}
+
+async function startCurrentWorld(server) {
+  const resp = await startTask(server);
+  const world = worldsOf(server)[server.pregen_world_index || 0];
+  if (/Task started|continuing/i.test(resp)) {
+    setState(server, { pregen_status: 'running', pregen_progress: server.pregen_progress || 0, pregen_message: null });
+    console.log(`[Pregen] Tâche démarrée pour ${server.id.slice(0, 8)} : ${world} (rayon ${server.pregen_radius})`);
+  } else {
+    setState(server, { pregen_status: 'error', pregen_message: resp.slice(0, 300) || 'Réponse inattendue de Chunky' });
   }
 }
 
@@ -273,6 +314,6 @@ async function cancelTask(server) {
 }
 
 module.exports = {
-  setIo, start, stop, ensureChunky, cancelTask, tick, isAvailable,
+  setIo, start, stop, ensureChunky, cancelTask, tick, isAvailable, WORLDS, worldsOf, normalizeWorlds,
   _internals: { parseProgress, targetFor, chunkyJarIn, disablePauseWhenEmpty, tickServer, strip },
 };

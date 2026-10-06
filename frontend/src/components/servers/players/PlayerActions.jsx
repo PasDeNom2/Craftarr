@@ -8,7 +8,7 @@ export default function PlayerActions({ player, actions, compact }) {
   const btn = compact ? 'btn-secondary !h-8 !px-2.5 text-[11.5px] gap-1' : 'btn-secondary !h-9 text-[12.5px]';
   if (player.is_banned) {
     return (
-      <button className={btn} style={{ color: 'var(--accent)' }} onClick={() => actions.unban(player)} disabled={actions.busy}>
+      <button className={btn} style={{ color: 'var(--success)' }} onClick={() => actions.unban(player)} disabled={actions.busy}>
         <ShieldCheck size={13} /> {t('players.unban')}
       </button>
     );

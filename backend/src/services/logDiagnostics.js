@@ -18,6 +18,24 @@ const RULES = [
     hint: () => 'Mod manquant ou de mauvaise version. Réinstallez le modpack, ou retirez le mod ajouté manuellement.',
   },
   {
+    re: /Found duplicate mods|Duplicate mods found|DuplicateModsFoundException|Mod ID .* is provided by multiple/i,
+    hint: () => 'Le même mod est présent en double dans mods/ (deux versions). Supprimez l\'ancien jar, ou réinstallez le modpack.',
+  },
+  {
+    // « requires … which is missing » / « Incompatible mod set » bloquent le démarrage.
+    // « recommends / suggests … which is missing » ne sont que des suggestions : ignorées.
+    re: /Incompatible mods? (?:found|set)|requires .* which is missing/i,
+    skip: /\b(recommends|suggests)\b/i,
+    hint: () => 'Fabric/Quilt : un mod requis manque ou n\'est pas dans la bonne version. Le message ci-dessus indique lequel.',
+  },
+  {
+    // Seules les erreurs Mixin fatales : MixinApplyError, ou une injection en échec remontée comme cause d'un crash.
+    // Un mixin optionnel qui échoue est loggé en WARN (+ sa trace) et le serveur continue : pas un problème.
+    re: /MixinApplyError|Caused by: \S*InvalidInjectionException|Mixin apply(?: for mod \S+)? failed/,
+    skip: /\/WARN\]/,
+    hint: () => 'Conflit entre deux mods (Mixin). Souvent un mod ajouté à la main ou une version non prévue par le pack : retirez-le ou réinstallez le modpack.',
+  },
+  {
     re: /OutOfMemoryError|Could not reserve enough space for .* object heap/,
     hint: () => 'Mémoire insuffisante. Augmentez la RAM du serveur (8 Go+ pour un gros modpack) puis recréez le container.',
   },
@@ -39,7 +57,7 @@ const RULES = [
 function diagnoseLine(line) {
   for (const rule of RULES) {
     const m = line.match(rule.re);
-    if (m) return rule.hint(m);
+    if (m && !(rule.skip && rule.skip.test(line))) return rule.hint(m);
   }
   return null;
 }

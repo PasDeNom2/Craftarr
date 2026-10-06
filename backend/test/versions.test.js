@@ -72,3 +72,10 @@ test('Simple Voice Chat : port UDP = port du serveur, autres réglages conservé
   docker.ensureVoiceChatPort(server);
   assert.strictEqual(fs.readFileSync(file, 'utf8'), '# conf\nport=25570\nmax_voice_distance=48.0\n');
 });
+
+test('env : GC périodique (rend la RAM inutilisée) uniquement pour Java 17+', () => {
+  const base = { id: 'gc1', ram_mb: 4096, rcon_password: 'x', max_players: 10, loader_type: 'fabric', mc_version: '1.20.1' };
+  serverDir('gc1');
+  assert.ok(docker.buildEnvVars(base, { javaVersion: 17 }).some(e => e.startsWith('JVM_XX_OPTS=') && e.includes('G1PeriodicGCInterval=60000') && e.includes('MaxHeapFreeRatio=40')));
+  assert.ok(!docker.buildEnvVars(base, { javaVersion: 8 }).some(e => e.startsWith('JVM_XX_OPTS=')));
+});

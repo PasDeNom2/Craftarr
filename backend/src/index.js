@@ -23,6 +23,7 @@ const catalogRoutes = require('./routes/catalog');
 const sourcesRoutes = require('./routes/sources');
 const backupsRoutes = require('./routes/backups');
 const vanillaRoutes = require('./routes/vanilla');
+const settingsRoutes = require('./routes/settings');
 
 const { setupLogsSocket, startLogStream, setIo: setLogsIo } = require('./websocket/logs');
 const metrics = require('./services/metrics');
@@ -34,6 +35,10 @@ const PORT = process.env.PORT || 3000;
 // ─── Init DB ────────────────────────────────────────────────
 initDb();
 require('./services/backup').migrateBackupLocation();
+
+// Mises à jour coupées net (crash / redémarrage) : ancienne installation remise en place AVANT
+// le reset ci-dessous ; leur container est recréé une fois le serveur HTTP démarré.
+const interruptedUpdates = require('./services/updater').recoverInterruptedUpdates();
 
 // Reset stuck installs/updates from a previous process crash
 {
@@ -56,7 +61,8 @@ app.use(morgan('tiny'));
 // Le backend n'est joignable que via nginx (1 proxy) : req.ip = vraie IP du client (X-Forwarded-For)
 app.set('trust proxy', 1);
 
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 200, standardHeaders: true });
+// 600/min : l'explorateur de fichiers, les métriques et plusieurs onglets ouverts dépassaient 200
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 600, standardHeaders: true });
 app.use('/api/', limiter);
 
 // Anti brute-force : 10 échecs / 15 min par IP sur la connexion et la création du compte admin.
@@ -78,6 +84,7 @@ app.use('/api/catalog', catalogRoutes);
 app.use('/api/sources', sourcesRoutes);
 app.use('/api/servers', backupsRoutes);
 app.use('/api/vanilla', vanillaRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
@@ -89,13 +96,12 @@ const io = new Server(server, {
 });
 
 // Authentification socket via JWT
-const jwt = require('jsonwebtoken');
 io.use((socket, next) => {
   // Token uniquement via auth (pas en query string : il finirait dans les logs d'accès)
   const token = socket.handshake.auth?.token;
   if (!token) return next(new Error('Token manquant'));
   try {
-    socket.user = jwt.verify(token, getJwtSecret());
+    socket.user = require('./config/secrets').verifyUserToken(token);
     next();
   } catch {
     next(new Error('Token invalide'));
@@ -151,8 +157,21 @@ server.listen(PORT, async () => {
   console.log(`[Craftarr] Backend démarré sur le port ${PORT}`);
   initSetupToken();
   await reconcileServerStates();
+  // Serveurs dont la mise à jour a été annulée au démarrage : on relance l'ancienne installation
+  for (const id of interruptedUpdates) {
+    updater.recreateAndStart(id)
+      .then(() => startLogStream(io, id))
+      .catch(err => {
+        console.error(`[Startup] Relance de ${id.slice(0, 8)} impossible :`, err.message);
+        getDb().prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(id);
+      });
+  }
   metrics.startPolling();
   pregen.start();
+  // Coupe-circuit des crashs en boucle (arrête un serveur qui redémarre sans fin)
+  const crashGuard = require('./services/crashGuard');
+  crashGuard.setIo(io);
+  crashGuard.start();
   updater.scheduleUpdater();
   require('./services/backup').scheduleBackups();
 });

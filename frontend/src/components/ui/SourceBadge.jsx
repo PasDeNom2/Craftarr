@@ -1,31 +1,18 @@
 import React from 'react';
 import clsx from 'clsx';
 
+// Une pastille de la couleur de la plateforme suffit à la reconnaître
 const SOURCES = {
-  curseforge: { label: 'CurseForge', color: 'var(--orange)', bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.25)'  },
-  modrinth:   { label: 'Modrinth',   color: 'var(--accent)', bg: 'rgba(var(--accent-rgb),0.08)', border: 'rgba(var(--accent-rgb),0.2)'   },
+  curseforge: { label: 'CurseForge', color: '#F16436' },
+  modrinth:   { label: 'Modrinth',   color: '#1BD96A' },
 };
 
 export default function SourceBadge({ source, sourceName, className }) {
   const s = SOURCES[source];
-
-  if (s) {
-    return (
-      <span
-        className={clsx('inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium', className)}
-        style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
-      >
-        {s.label}
-      </span>
-    );
-  }
-
   return (
-    <span
-      className={clsx('inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium', className)}
-      style={{ color: 'var(--fg)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-    >
-      {sourceName || source}
+    <span className={clsx('inline-flex items-center gap-1.5 text-[11.5px] text-fg-3 font-medium whitespace-nowrap', className)}>
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s?.color || 'var(--fg-3)' }} />
+      {s?.label || sourceName || source}
     </span>
   );
 }

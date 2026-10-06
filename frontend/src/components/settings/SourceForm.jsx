@@ -152,7 +152,7 @@ export default function SourceForm({ onClose }) {
             <Plug size={14} strokeWidth={1.75} /> {testing ? t('sources.testing') : t('sources.testConnection')}
           </button>
           {testResult && (
-            <span className={`inline-flex items-center gap-1.5 text-sm fade-in ${testResult.ok ? 'text-accent' : 'text-danger'}`}>
+            <span className={`inline-flex items-center gap-1.5 text-sm fade-in ${testResult.ok ? 'text-success' : 'text-danger'}`}>
               {testResult.ok ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
               {testResult.ok ? t('sources.testSuccess') : testResult.error}
             </span>

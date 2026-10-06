@@ -10,7 +10,9 @@
     "noServers": "No servers deployed",
     "collapse": "Collapse",
     "expand": "Expand",
-    "logout": "Log out"
+    "logout": "Log out",
+    "overview": "Overview",
+    "newServer": "New server"
   },
   "login": {
     "title": "Sign in",
@@ -77,7 +79,8 @@
       "kitchen-sink": "Kitchen Sink",
       "lightweight": "Lightweight",
       "sci-fi": "Sci-Fi"
-    }
+    },
+    "vanillaServer": "Vanilla server"
   },
   "modpack": {
     "deploy": "Deploy",
@@ -146,7 +149,8 @@
       "files": "Files",
       "settings": "Settings",
       "players": "Players",
-      "whitelist": "Whitelist"
+      "whitelist": "Whitelist",
+      "mods": "Mods"
     },
     "actions": {
       "start": "Start",
@@ -279,7 +283,9 @@
       "weather": "Clear weather",
       "list": "List",
       "announce": "Broadcast a message…"
-    }
+    },
+    "ramAlloc": "Game: {alloc} GB max — Java uses a bit more (JVM, mods)",
+    "ramHint": "Total memory of the Java process, compared to the machine RAM"
   },
   "metrics": {
     "cpu": "CPU",
@@ -445,7 +451,31 @@
     "modrinthDesc": "Improves rate limit for Modrinth searches. Available at modrinth.com/settings/pats",
     "modrinthOptional": "Modrinth API Key (optional)",
     "appearance": "Minecraft Appearance",
-    "system": "System"
+    "system": "System",
+    "theme": "Theme",
+    "themeHint": "How the Craftarr interface looks.",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "System",
+    "colorblind": "Colorblind-friendly colors",
+    "colorblindHint": "Replaces green and red status colors with blue and orange.",
+    "apiKeysHint": "Required to browse and install modpacks.",
+    "keyConfigured": "Configured",
+    "notifications": "Notifications",
+    "notificationsHint": "Get an alert when a server crash-loops, an update fails or a backup fails.",
+    "webhookUrl": "Webhook URL",
+    "webhookHint": "Discord: Channel settings → Integrations → Webhooks → Copy URL. Slack compatible.",
+    "webhookFromEnv": "A webhook is already set in the .env file (NOTIFY_WEBHOOK_URL).",
+    "notifyTest": "Send a test",
+    "notifyTestSent": "Test notification sent",
+    "account": "Account",
+    "accountHint": "Changing the password signs out every other session.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm",
+    "passwordHint": "At least 8 characters.",
+    "changePassword": "Change password",
+    "passwordChanged": "Password changed — other sessions signed out"
   },
   "sources": {
     "title": "Sources",
@@ -724,6 +754,66 @@
     "vanillaNote": "Chunky needs a mod loader: the server will use Fabric. Players still join with regular Minecraft.",
     "vanillaUnsupported": "Not available on an existing vanilla server",
     "footer": "Chunky is installed automatically in the right version for this server and resumes on its own after a restart.",
-    "enableFailed": "Pre-generation unavailable: {error}"
+    "enableFailed": "Pre-generation unavailable: {error}",
+    "worldsLabel": "Dimensions",
+    "worldsHint": "Generated one after another. Nether and End are centered on 0,0.",
+    "worlds": {
+      "overworld": "Overworld",
+      "nether": "Nether",
+      "end": "End"
+    }
+  },
+  "dashboard": {
+    "title": "Overview",
+    "subtitle": "All your Minecraft servers at a glance.",
+    "online": "Online",
+    "total": "Servers",
+    "busy": "In progress",
+    "errors": "Errors",
+    "ramInUse": "RAM allocated (active)",
+    "colServer": "Server",
+    "colStatus": "Status",
+    "colAddress": "Address",
+    "emptyTitle": "No servers yet",
+    "emptyBody": "Pick a modpack from the catalog, or start a vanilla server in seconds."
+  },
+  "mods": {
+    "add": "Add mods",
+    "addTitle": "Add mods",
+    "upload": "Upload .jar",
+    "searchPlaceholder": "Search a mod (e.g. JEI, Create…)",
+    "sourceAll": "All",
+    "compatibleWith": "Only mods compatible with Minecraft {mc} · {loader} are shown, without client-only mods.",
+    "searchError": "Search unavailable right now.",
+    "noResults": "No compatible mod found.",
+    "partialResults": "One source did not answer: partial results.",
+    "install": "Install",
+    "installed": "installed",
+    "dependencies": "dependencies",
+    "filterPlaceholder": "Filter installed mods…",
+    "count": "{count} mods",
+    "disabledCount": "{count} disabled",
+    "busy": "Install or update in progress: mod management is paused.",
+    "restartRequired": "Restart the server to apply mod changes.",
+    "later": "Later",
+    "problemsTitle": "{count} problem(s) detected",
+    "fixDeps": "Install missing dependencies",
+    "loadError": "Could not read mods.",
+    "emptyTitle": "No mods installed",
+    "emptyBody": "Add mods from Modrinth or CurseForge, or drag and drop .jar files here.",
+    "colMod": "Mod",
+    "colVersion": "Version",
+    "colLoader": "Loader",
+    "toggle": "Enable / disable",
+    "remove": "Remove (trash)",
+    "noMatch": "No mod matches.",
+    "footer": "Removed mods are moved to .craftarr/trash/mods (recoverable from the Files tab). Drag and drop .jar files to add them.",
+    "dropHere": "Drop .jar files to add them",
+    "onlyJars": "Only .jar files are accepted",
+    "uploaded": "{count} mod(s) added",
+    "movedToTrash": "{name} moved to trash",
+    "depsInstalled": "{count} dependenc(ies) installed",
+    "depsUnresolved": "Could not find automatically: {list}",
+    "depsNothing": "No missing dependency to install"
   }
 }

@@ -208,3 +208,19 @@ test('reset-password.js puis redémarrage', async () => {
   await waitFor(/Backups planifiés toutes les 6 h/);
   assert.strictEqual((await req('POST', '/auth/login', { username: 'admin', password: 'nouveau-mdp-42' })).status, 200);
 });
+
+test('sécurité : un lien de téléchargement ne vaut pas session ; changer le mot de passe révoque', async () => {
+  // Le test précédent a réinitialisé le mot de passe : l'ancienne session est révoquée, on se reconnecte
+  assert.strictEqual((await req('GET', '/auth/me', null, jwt)).status, 401);
+  jwt = (await req('POST', '/auth/login', { username: 'admin', password: 'nouveau-mdp-42' })).data.token;
+  const { data } = await req('POST', `/servers/${id}/world-download-token`, null, jwt);
+  const linkToken = decodeURIComponent(new URL(data.url, 'http://x').searchParams.get('token'));
+  assert.strictEqual((await req('GET', '/auth/me', null, linkToken)).status, 401);
+
+  assert.strictEqual((await req('POST', '/auth/password', { currentPassword: 'mauvais', newPassword: 'nouveaumdp1' }, jwt)).status, 403);
+  const ch = await req('POST', '/auth/password', { currentPassword: 'nouveau-mdp-42', newPassword: 'nouveaumdp1' }, jwt);
+  assert.strictEqual(ch.status, 200);
+  assert.strictEqual((await req('GET', '/auth/me', null, jwt)).status, 401); // ancienne session révoquée
+  jwt = ch.data.token;
+  assert.strictEqual((await req('GET', '/auth/me', null, jwt)).status, 200);
+});
