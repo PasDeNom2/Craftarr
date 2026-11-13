@@ -161,6 +161,38 @@ server {
 
 ---
 
+## API
+
+Craftarr expose une API HTTP complète (documentée selon la spécification OpenAPI 3.1.0) ainsi que des clés d'API révocables pour l'automatisation et la supervision.
+
+### Clés API et authentification
+
+* Créez et révoquez vos clés depuis l'interface web dans **API → Clés API** (jusqu'à **25 clés actives** par utilisateur, mode lecture seule optionnel et durée d'expiration configurable).
+* Chaque clé commence par `cra_` et hérite des permissions de votre compte (une clé ne peut jamais gérer d'autres clés, changer le mot de passe ou modifier la 2FA).
+* Transmettez la clé dans l'un de ces en-têtes HTTP (ou lors de la connexion Socket.io) :
+  * `X-API-Key: cra_…`
+  * `Authorization: Bearer cra_…`
+
+### Documentation OpenAPI
+
+La spécification OpenAPI 3.1.0 complète est accessible sans authentification sur :
+
+```text
+GET /api/openapi.json
+```
+
+Une vue interactive par groupes avec recherche, schémas et exemples `curl` prêts à copier est également intégrée dans l'onglet **API → Documentation API** de l'interface.
+
+### Exemple `curl` : démarrer un serveur
+
+```bash
+curl -X POST \
+  -H "X-API-Key: cra_VOTRE_CLE_API" \
+  https://craftarr.example.com/api/servers/<ID_SERVEUR>/start
+```
+
+---
+
 ## Port unique et veille
 
 Craftarr intègre un routeur par sous-domaine (`itzg/mc-router`, profil Compose `router`) et une mise en veille automatique des serveurs vides :

@@ -1,6 +1,6 @@
 // Contrôle d'accès centralisé (rôles + permissions par serveur) et journalisation des actions.
 const { getDb } = require('../config/database');
-const { verifyUserToken } = require('../config/secrets');
+const { verifyUserToken, verifyApiKey } = require('../config/secrets');
 
 const ALL_PERMS = ['view', 'console', 'power', 'files', 'players', 'backups', 'manage'];
 const VALID_PERMS = new Set(ALL_PERMS);
@@ -72,6 +72,8 @@ function normalizeActionPath(apiPath) {
     segs[1] = ':id';
   } else if (segs[0] === 'backups' && segs[1] === 'orphans' && segs[2]) {
     segs[2] = ':id';
+  } else if (segs[0] === 'api-keys' && segs[1]) {
+    segs[1] = ':id';
   }
 
   for (let i = 0; i < segs.length; i++) {
@@ -118,12 +120,19 @@ const SIGNED_DOWNLOAD = (l) => (
 const PUBLIC_AUTH = new Set(['setup-needed', 'setup', 'login']);
 
 function isPublicOrSignedRoute(method, l, req) {
+  const isGet = method === 'GET' || method === 'HEAD';
   if (l.length === 1 && l[0] === 'health') return true;
+  if (isGet && l.length === 1 && l[0] === 'openapi.json') return true;
   if (l[0] === 'auth' && l.length === 2 && PUBLIC_AUTH.has(l[1])) return true;
   if (l[0] === 'auth' && l.length === 3 && l[1] === '2fa' && l[2] === 'verify') return true;
-  const isGet = method === 'GET' || method === 'HEAD';
   if (isGet && l.length === 3 && l[0] === 'servers' && l[2] === 'icon') return true;
   if (isGet && req.query?.token && SIGNED_DOWNLOAD(l)) return true;
+  return false;
+}
+
+function isSessionOnlyRoute(l) {
+  if (l[0] === 'api-keys') return true;
+  if (l[0] === 'auth' && (l[1] === 'password' || l[1] === '2fa')) return true;
   return false;
 }
 
@@ -176,8 +185,12 @@ function permissionsMiddleware(req, res, next) {
     return next();
   }
 
+  const rawApiKey = req.headers['x-api-key'];
+  const xApiKey = typeof rawApiKey === 'string' ? rawApiKey.trim() : '';
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const bearer = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+
+  if (!xApiKey && !bearer) {
     // Laisse les routes sans jeton (ex. download sans ?token=) gérer leur 401 si besoin
     if ((method === 'GET' || method === 'HEAD') && SIGNED_DOWNLOAD(lower)) {
       return next();
@@ -186,14 +199,22 @@ function permissionsMiddleware(req, res, next) {
   }
 
   let user;
+  let apiKey = null;
   try {
-    user = verifyUserToken(authHeader.slice(7));
+    if (xApiKey || bearer.startsWith('cra_')) {
+      const verified = verifyApiKey(xApiKey || bearer);
+      user = verified.user;
+      apiKey = verified.apiKey;
+    } else {
+      user = verifyUserToken(bearer);
+    }
   } catch (err) {
     const disabled = err?.message === 'compte désactivé';
     return res.status(401).json({ error: disabled ? 'Compte désactivé' : 'Token invalide ou expiré' });
   }
 
   req.user = user;
+  if (apiKey) req.apiKey = apiKey;
 
   // Journalisation de toute requête non-GET authentifiée (sans corps ni secret)
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
@@ -206,9 +227,18 @@ function permissionsMiddleware(req, res, next) {
         action: `${method} ${normalized}`,
         serverId,
         status: res.statusCode,
-        details: null,
+        details: apiKey ? { apiKeyId: apiKey.id } : null,
       });
     });
+  }
+
+  if (apiKey) {
+    if (isSessionOnlyRoute(lower)) {
+      return res.status(403).json({ error: 'Cette route exige une session utilisateur' });
+    }
+    if (apiKey.read_only && method !== 'GET' && method !== 'HEAD') {
+      return res.status(403).json({ error: 'Clé API en lecture seule' });
+    }
   }
 
   if (user.role === 'admin') {

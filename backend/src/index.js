@@ -107,6 +107,7 @@ for (const f of require('fs').readdirSync(path.join(__dirname, 'routes', 'featur
 }
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/openapi.json', (req, res) => res.json(require('./openapi').buildOpenApiSpec()));
 
 app.use(errorHandler);
 
@@ -115,13 +116,19 @@ const io = new Server(server, {
   transports: ['websocket', 'polling'],
 });
 
-// Authentification socket via JWT
+// Authentification socket via JWT ou clé API
 io.use((socket, next) => {
-  // Token uniquement via auth (pas en query string : il finirait dans les logs d'accès)
-  const token = socket.handshake.auth?.token;
-  if (!token) return next(new Error('Token manquant'));
+  // Token uniquement via auth ou en-têtes (pas en query string : il finirait dans les logs d'accès)
+  const rawApiKey = socket.handshake.headers?.['x-api-key'];
+  const xApiKey = typeof rawApiKey === 'string' ? rawApiKey.trim() : '';
+  const authHeader = socket.handshake.headers?.authorization;
+  const bearer = typeof authHeader === 'string' && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const credential = socket.handshake.auth?.token || xApiKey || bearer;
+  if (!credential) return next(new Error('Token manquant'));
   try {
-    socket.user = require('./config/secrets').verifyUserToken(token);
+    const { user, apiKey } = require('./config/secrets').verifyCredential(credential);
+    socket.user = user;
+    if (apiKey) socket.apiKey = apiKey;
     next();
   } catch {
     next(new Error('Token invalide'));
@@ -173,38 +180,44 @@ async function reconcileServerStates() {
   }
 }
 
-server.listen(PORT, async () => {
-  console.log(`[Craftarr] Backend démarré sur le port ${PORT}`);
-  initSetupToken();
-  await reconcileServerStates();
-  // Serveurs dont la mise à jour a été annulée au démarrage : on relance l'ancienne installation
-  for (const id of interruptedUpdates) {
-    updater.recreateAndStart(id)
-      .then(() => startLogStream(io, id))
-      .catch(err => {
-        console.error(`[Startup] Relance de ${id.slice(0, 8)} impossible :`, err.message);
-        getDb().prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(id);
-      });
-  }
-  metrics.startPolling();
-  pregen.start();
-  // Coupe-circuit des crashs en boucle (arrête un serveur qui redémarre sans fin)
-  const crashGuard = require('./services/crashGuard');
-  crashGuard.setIo(io);
-  crashGuard.start();
-  updater.scheduleUpdater();
-  // Extensions (planificateur, veille, journal…) : abonnements au bus et tâches de fond
-  require('./services/extensions').init({ events: require('./services/events'), io, app });
-  require('./services/backup').scheduleBackups();
-});
-
-// ─── Arrêt propre ───────────────────────────────────────────
-process.on('SIGTERM', () => {
-  console.log('[Craftarr] SIGTERM reçu, arrêt propre...');
-  metrics.stopPolling();
-  pregen.stop();
-  server.close(() => {
-    console.log('[Craftarr] Serveur arrêté.');
-    process.exit(0);
+if (require.main === module) {
+  server.listen(PORT, async () => {
+    console.log(`[Craftarr] Backend démarré sur le port ${PORT}`);
+    initSetupToken();
+    await reconcileServerStates();
+    // Serveurs dont la mise à jour a été annulée au démarrage : on relance l'ancienne installation
+    for (const id of interruptedUpdates) {
+      updater.recreateAndStart(id)
+        .then(() => startLogStream(io, id))
+        .catch(err => {
+          console.error(`[Startup] Relance de ${id.slice(0, 8)} impossible :`, err.message);
+          getDb().prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(id);
+        });
+    }
+    metrics.startPolling();
+    pregen.start();
+    // Coupe-circuit des crashs en boucle (arrête un serveur qui redémarre sans fin)
+    const crashGuard = require('./services/crashGuard');
+    crashGuard.setIo(io);
+    crashGuard.start();
+    updater.scheduleUpdater();
+    // Extensions (planificateur, veille, journal…) : abonnements au bus et tâches de fond
+    require('./services/extensions').init({ events: require('./services/events'), io, app });
+    require('./services/backup').scheduleBackups();
   });
-});
+
+  // ─── Arrêt propre ───────────────────────────────────────────
+  process.on('SIGTERM', () => {
+    console.log('[Craftarr] SIGTERM reçu, arrêt propre...');
+    metrics.stopPolling();
+    pregen.stop();
+    server.close(() => {
+      console.log('[Craftarr] Serveur arrêté.');
+      process.exit(0);
+    });
+  });
+}
+
+app.app = app;
+app.server = server;
+module.exports = app;

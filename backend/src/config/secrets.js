@@ -105,6 +105,105 @@ function verifyUserToken(token) {
 }
 
 /**
+ * Vérifie une clé API (`cra_...`) : validité, révocation, expiration et compte actif.
+ * Met à jour `last_used_at` au plus une fois par minute.
+ * @param {string} rawKey
+ * @returns {{ user: { id: string, username: string, role: string }, apiKey: { id: string, user_id: string, name: string, prefix: string, read_only: boolean, expires_at: string | null } }}
+ */
+function verifyApiKey(rawKey) {
+  if (typeof rawKey !== 'string' || !/^cra_[0-9A-Za-z]{40}$/.test(rawKey)) {
+    throw new Error('Clé API invalide');
+  }
+  const hash = hashApiKey(rawKey);
+  const { getDb } = require('./database');
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT k.id, k.user_id, k.name, k.prefix, k.read_only, k.last_used_at, k.expires_at, k.revoked,
+           u.id AS u_id, u.username AS u_username, u.role AS u_role, u.disabled AS u_disabled
+    FROM api_keys k
+    JOIN users u ON u.id = k.user_id
+    WHERE k.hash = ?
+  `).get(hash);
+
+  if (!row) throw new Error('Clé API invalide');
+  if (row.revoked) throw new Error('Clé API révoquée');
+  if (row.expires_at) {
+    const exp = parseSqliteUtc(row.expires_at);
+    if (!Number.isNaN(exp) && exp <= Date.now()) {
+      throw new Error('Clé API expirée');
+    }
+  }
+  if (row.u_disabled) throw new Error('compte désactivé');
+
+  const last = row.last_used_at ? parseSqliteUtc(row.last_used_at) : NaN;
+  if (Number.isNaN(last) || Date.now() - last >= 60_000) {
+    db.prepare("UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?").run(row.id);
+  }
+
+  return {
+    user: { id: row.u_id, username: row.u_username, role: row.u_role || 'admin' },
+    apiKey: {
+      id: row.id,
+      user_id: row.user_id,
+      name: row.name,
+      prefix: row.prefix,
+      read_only: !!row.read_only,
+      expires_at: row.expires_at || null,
+    },
+  };
+}
+
+const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+/**
+ * Génère une clé API au format `cra_` + 40 caractères base62 aléatoires.
+ * @returns {string}
+ */
+function generateApiKey() {
+  let out = 'cra_';
+  while (out.length < 44) {
+    const buf = crypto.randomBytes(64);
+    for (let i = 0; i < buf.length && out.length < 44; i++) {
+      // 248 = 62 * 4 : tirage uniforme sans biais modulo
+      if (buf[i] < 248) out += BASE62[buf[i] % 62];
+    }
+  }
+  return out;
+}
+
+/**
+ * Empreinte SHA-256 hexadécimale d'une clé API.
+ * @param {string} rawKey
+ * @returns {string}
+ */
+function hashApiKey(rawKey) {
+  return crypto.createHash('sha256').update(String(rawKey)).digest('hex');
+}
+
+/**
+ * Parse un horodatage SQLite UTC (`YYYY-MM-DD HH:MM:SS`) ou ISO en millisecondes.
+ * @param {string} raw
+ * @returns {number}
+ */
+function parseSqliteUtc(raw) {
+  if (!raw || typeof raw !== 'string') return NaN;
+  const iso = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw) ? raw : `${raw.replace(' ', 'T')}Z`;
+  return Date.parse(iso);
+}
+
+/**
+ * Vérifie un jeton JWT de session ou une clé API (`cra_...`).
+ * @param {string} token
+ * @returns {{ user: { id: string, username: string, role: string }, apiKey: { id: string, user_id: string, name: string, prefix: string, read_only: boolean, expires_at: string | null } | null }}
+ */
+function verifyCredential(token) {
+  if (typeof token === 'string' && token.startsWith('cra_')) {
+    return verifyApiKey(token);
+  }
+  return { user: verifyUserToken(token), apiKey: null };
+}
+
+/**
  * Jeton de session (7 jours) pour un utilisateur.
  * @param {{ id: string, username: string, token_version?: number }} user
  * @returns {string}
@@ -116,4 +215,8 @@ function signUserToken(user) {
 
 module.exports = {
   verifyUserToken,
+  verifyApiKey,
+  verifyCredential,
+  generateApiKey,
+  hashApiKey,
   signUserToken, loadOrCreateSecrets, getJwtSecret };

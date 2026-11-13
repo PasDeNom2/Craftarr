@@ -1,0 +1,95 @@
+{
+  "apiKeys": {
+    "nav": "API",
+    "title": "API & clés d'accès",
+    "subtitle": "Créez des clés d'API révocables et explorez la documentation OpenAPI 3.1.",
+    "tabs": {
+      "keys": "Clés API",
+      "docs": "Documentation API"
+    },
+    "createBtn": "Créer une clé",
+    "showAllToggle": "Afficher les clés de tous les utilisateurs",
+    "activeQuota": "{count} / {max} clés actives",
+    "securityHint": "Chaque clé hérite des permissions de votre compte. Par sécurité, une clé API ne peut ni gérer d'autres clés ni modifier le mot de passe ou la 2FA.",
+    "empty": "Aucune clé API créée pour le moment.",
+    "loadError": "Impossible de charger les clés API.",
+    "columns": {
+      "name": "Nom",
+      "prefix": "Préfixe",
+      "owner": "Utilisateur",
+      "mode": "Droits",
+      "status": "Statut",
+      "lastUsed": "Dernière utilisation",
+      "expires": "Expiration",
+      "created": "Créée le",
+      "actions": "Actions"
+    },
+    "mode": {
+      "readOnly": "Lecture seule",
+      "readWrite": "Lecture / Écriture"
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Révoquée",
+      "expired": "Expirée"
+    },
+    "neverUsed": "Jamais",
+    "neverExpires": "Sans expiration",
+    "revokeBtn": "Révoquer",
+    "revokeTitle": "Révoquer la clé API",
+    "revokeMessage": "La clé « {name} » cessera immédiatement de fonctionner. Cette action est irréversible.",
+    "revokedToast": "Clé API révoquée",
+    "createdToast": "Clé API créée",
+    "copiedToast": "Copié dans le presse-papiers",
+    "copyError": "Copie impossible dans ce navigateur",
+    "copyBtn": "Copier",
+    "copiedBtn": "Copié",
+    "createModal": {
+      "title": "Nouvelle clé API",
+      "nameLabel": "Nom de la clé",
+      "namePlaceholder": "Ex. Script de sauvegarde CI, Bot Discord…",
+      "nameRequired": "Veuillez saisir un nom pour la clé.",
+      "readOnlyLabel": "Lecture seule (GET / HEAD uniquement)",
+      "readOnlyHelp": "Recommandé pour la supervision : bloque toute création, modification ou suppression.",
+      "expiryLabel": "Expiration",
+      "expiryNever": "Aucune expiration",
+      "expiry7": "7 jours",
+      "expiry30": "30 jours",
+      "expiry90": "90 jours",
+      "expiry365": "1 an",
+      "expiryCustom": "Personnalisée (jours)",
+      "expiryDaysLabel": "Nombre de jours (1 à 3650)",
+      "submit": "Générer la clé",
+      "cancel": "Annuler"
+    },
+    "revealModal": {
+      "title": "Clé API générée",
+      "warning": "Copiez cette clé maintenant : le secret complet ne pourra plus jamais être affiché après fermeture.",
+      "usageHint": "Transmettez-la via l'en-tête X-API-Key: cra_… ou Authorization: Bearer cra_…",
+      "close": "J'ai enregistré la clé"
+    },
+    "docs": {
+      "loading": "Chargement de la spécification OpenAPI…",
+      "loadError": "Impossible de charger /api/openapi.json.",
+      "retry": "Réessayer",
+      "specLink": "OpenAPI JSON",
+      "searchPlaceholder": "Filtrer par chemin, méthode, tag ou résumé…",
+      "tagAll": "Tous les groupes",
+      "noResults": "Aucun endpoint ne correspond à ce filtre.",
+      "endpointsCount": "{count} endpoints",
+      "authPublic": "Public",
+      "authSession": "Session JWT requise",
+      "authAny": "JWT ou Clé API",
+      "parameters": "Paramètres",
+      "paramInPath": "chemin",
+      "paramInQuery": "query",
+      "paramRequired": "requis",
+      "requestBody": "Corps de requête",
+      "responses": "Réponses",
+      "schema": "Schéma",
+      "example": "Exemple",
+      "curlExample": "Exemple curl",
+      "copyCurl": "Copier curl"
+    }
+  }
+}

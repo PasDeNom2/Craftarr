@@ -1,0 +1,95 @@
+{
+  "apiKeys": {
+    "nav": "API",
+    "title": "API & Access Keys",
+    "subtitle": "Create revocable API keys and browse the interactive OpenAPI 3.1 documentation.",
+    "tabs": {
+      "keys": "API Keys",
+      "docs": "API Documentation"
+    },
+    "createBtn": "Create Key",
+    "showAllToggle": "Show keys from all users",
+    "activeQuota": "{count} / {max} active keys",
+    "securityHint": "Each key inherits your account permissions. For security reasons, an API key cannot manage other keys, change your password, or modify 2FA.",
+    "empty": "No API keys created yet.",
+    "loadError": "Failed to load API keys.",
+    "columns": {
+      "name": "Name",
+      "prefix": "Prefix",
+      "owner": "User",
+      "mode": "Scope",
+      "status": "Status",
+      "lastUsed": "Last Used",
+      "expires": "Expires",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "mode": {
+      "readOnly": "Read-only",
+      "readWrite": "Read / Write"
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "neverUsed": "Never",
+    "neverExpires": "Never",
+    "revokeBtn": "Revoke",
+    "revokeTitle": "Revoke API Key",
+    "revokeMessage": "The key \"{name}\" will immediately stop working. This action cannot be undone.",
+    "revokedToast": "API key revoked",
+    "createdToast": "API key created",
+    "copiedToast": "Copied to clipboard",
+    "copyError": "Could not copy in this browser",
+    "copyBtn": "Copy",
+    "copiedBtn": "Copied",
+    "createModal": {
+      "title": "New API Key",
+      "nameLabel": "Key Name",
+      "namePlaceholder": "e.g. CI Backup Script, Discord Bot…",
+      "nameRequired": "Please enter a name for the key.",
+      "readOnlyLabel": "Read-only (GET / HEAD only)",
+      "readOnlyHelp": "Recommended for monitoring: blocks all create, update, and delete requests.",
+      "expiryLabel": "Expiration",
+      "expiryNever": "No expiration",
+      "expiry7": "7 days",
+      "expiry30": "30 days",
+      "expiry90": "90 days",
+      "expiry365": "1 year",
+      "expiryCustom": "Custom (days)",
+      "expiryDaysLabel": "Number of days (1 to 3650)",
+      "submit": "Generate Key",
+      "cancel": "Cancel"
+    },
+    "revealModal": {
+      "title": "API Key Generated",
+      "warning": "Copy this key now: the full secret will never be shown again once closed.",
+      "usageHint": "Send it in X-API-Key: cra_… or Authorization: Bearer cra_…",
+      "close": "I saved the key"
+    },
+    "docs": {
+      "loading": "Loading OpenAPI specification…",
+      "loadError": "Failed to load /api/openapi.json.",
+      "retry": "Retry",
+      "specLink": "OpenAPI JSON",
+      "searchPlaceholder": "Filter by path, method, tag or summary…",
+      "tagAll": "All groups",
+      "noResults": "No endpoint matches this filter.",
+      "endpointsCount": "{count} endpoints",
+      "authPublic": "Public",
+      "authSession": "JWT Session Only",
+      "authAny": "JWT or API Key",
+      "parameters": "Parameters",
+      "paramInPath": "path",
+      "paramInQuery": "query",
+      "paramRequired": "required",
+      "requestBody": "Request Body",
+      "responses": "Responses",
+      "schema": "Schema",
+      "example": "Example",
+      "curlExample": "curl Example",
+      "copyCurl": "Copy curl"
+    }
+  }
+}
