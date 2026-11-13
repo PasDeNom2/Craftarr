@@ -5,82 +5,108 @@ const rcon = require('./rcon');
 let io;
 function setIo(ioInstance) { io = ioInstance; }
 
-// Docker stats polled every 2s, RCON polled every 15s
+// Intervalles par défaut : stats Docker toutes les 2 s, RCON toutes les 15 s
 const DOCKER_INTERVAL = 2000;
 const RCON_INTERVAL = 15000;
+const RCON_INITIAL_DELAY = 5000;
+const ACTIVE_DOCKER_STATUSES = new Set(['running', 'starting']);
 
+let polling = false;
+let pollEpoch = 0;
 let dockerTimer = null;
 let rconTimer = null;
+let dockerInFlight = false;
+let rconInFlight = false;
 
-// In-memory cache of last RCON results per server
+// Cache en mémoire des derniers résultats RCON par serveur
 const rconCache = {}; // { [serverId]: { players, tps } }
 
-async function pollDockerStats() {
-  if (!io) return;
-  const db = getDb();
-  const servers = db.prepare('SELECT * FROM servers WHERE status IN (?, ?, ?)').all('running', 'stopped', 'starting');
+/**
+ * Construit l'objet métriques d'un serveur.
+ * Les stats Docker ne sont demandées que pour les serveurs running ou starting.
+ */
+async function collectServerMetrics(server) {
+  const cached = rconCache[server.id];
+  const metrics = {
+    serverId: server.id,
+    timestamp: Date.now(),
+    cpu: 0,
+    memUsed: 0,
+    memLimit: 0,
+    memPercent: 0,
+    players: cached?.players || { online: 0, max: server.max_players },
+    tps: cached?.tps || null,
+    uptime: null,
+  };
 
-  for (const server of servers) {
-    const room = `server:${server.id}`;
-    const sockets = await io.in(room).fetchSockets();
-    if (sockets.length === 0) continue;
-
+  if (server.container_id && ACTIVE_DOCKER_STATUSES.has(server.status)) {
     try {
-      const metrics = {
-        serverId: server.id,
-        timestamp: Date.now(),
-        cpu: 0,
-        memUsed: 0,
-        memLimit: 0,
-        memPercent: 0,
-        players: rconCache[server.id]?.players || { online: 0, max: server.max_players },
-        tps: rconCache[server.id]?.tps || null,
-        uptime: null,
-      };
+      const stats = await dockerService.getContainerStats(server.container_id);
+      if (stats) Object.assign(metrics, stats);
+    } catch {}
+  }
 
-      if (server.container_id) {
-        try {
-          const stats = await dockerService.getContainerStats(server.container_id);
-          if (stats) Object.assign(metrics, stats);
-        } catch {}
+  // Restaure les valeurs RCON en cache (potentiellement mises à jour pendant l'appel Docker)
+  metrics.players = rconCache[server.id]?.players || metrics.players;
+  metrics.tps = rconCache[server.id]?.tps || metrics.tps;
+
+  return metrics;
+}
+
+async function pollDockerStats() {
+  if (!io || dockerInFlight) return;
+  dockerInFlight = true;
+  try {
+    const db = getDb();
+    const servers = db.prepare('SELECT * FROM servers WHERE status IN (?, ?, ?)').all('running', 'stopped', 'starting');
+
+    await Promise.allSettled(servers.map(async (server) => {
+      const room = `server:${server.id}`;
+      const sockets = await io.in(room).fetchSockets();
+      if (sockets.length === 0) return;
+
+      try {
+        const metrics = await collectServerMetrics(server);
+        io.to(room).emit('metrics', metrics);
+
+        if (server.status === 'running') {
+          db.prepare('UPDATE servers SET last_seen = ? WHERE id = ?')
+            .run(new Date().toISOString(), server.id);
+        }
+      } catch (err) {
+        console.error(`[Metrics] Erreur Docker serveur ${server.id}:`, err.message);
       }
-
-      // Restore cached RCON values that may have been overwritten by docker stats
-      metrics.players = rconCache[server.id]?.players || metrics.players;
-      metrics.tps = rconCache[server.id]?.tps || metrics.tps;
-
-      io.to(room).emit('metrics', metrics);
-
-      if (server.status === 'running') {
-        db.prepare('UPDATE servers SET last_seen = ? WHERE id = ?')
-          .run(new Date().toISOString(), server.id);
-      }
-    } catch (err) {
-      console.error(`[Metrics] Erreur Docker serveur ${server.id}:`, err.message);
-    }
+    }));
+  } finally {
+    dockerInFlight = false;
   }
 }
 
 async function pollRconStats() {
-  if (!io) return;
-  const db = getDb();
-  const servers = db.prepare('SELECT * FROM servers WHERE status IN (?, ?)').all('running', 'starting');
+  if (!io || rconInFlight) return;
+  rconInFlight = true;
+  try {
+    const db = getDb();
+    const servers = db.prepare('SELECT * FROM servers WHERE status IN (?, ?)').all('running', 'starting');
 
-  for (const server of servers) {
-    const room = `server:${server.id}`;
-    const sockets = await io.in(room).fetchSockets();
-    if (sockets.length === 0) {
-      // Clean cache for servers nobody is watching
-      delete rconCache[server.id];
-      continue;
-    }
+    await Promise.allSettled(servers.map(async (server) => {
+      const room = `server:${server.id}`;
+      const sockets = await io.in(room).fetchSockets();
+      if (sockets.length === 0) {
+        // Nettoie le cache des serveurs que personne ne regarde
+        delete rconCache[server.id];
+        return;
+      }
 
-    try {
-      const { players, tps } = await rcon.getServerStats(server);
-      rconCache[server.id] = { players, tps };
-    } catch {
-      // RCON unavailable — keep last known values, don't log (server may be starting)
-    }
+      try {
+        const { players, tps } = await rcon.getServerStats(server);
+        rconCache[server.id] = { players, tps };
+      } catch {
+        // RCON indisponible — garde les dernières valeurs connues, sans log (le serveur démarre peut-être)
+      }
+    }));
+  } finally {
+    rconInFlight = false;
   }
 }
 
@@ -93,36 +119,60 @@ async function pushImmediate(socket, serverId) {
   const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(serverId);
   if (!server) return;
   try {
-    const metrics = {
-      serverId,
-      timestamp: Date.now(),
-      cpu: 0, memUsed: 0, memLimit: 0, memPercent: 0,
-      players: rconCache[serverId]?.players || { online: 0, max: server.max_players },
-      tps: rconCache[serverId]?.tps || null,
-      uptime: null,
-    };
-    if (server.container_id) {
-      const stats = await dockerService.getContainerStats(server.container_id);
-      if (stats) Object.assign(metrics, stats);
-    }
-    metrics.players = rconCache[serverId]?.players || metrics.players;
-    metrics.tps = rconCache[serverId]?.tps || metrics.tps;
+    const metrics = await collectServerMetrics(server);
     socket.emit('metrics', metrics);
   } catch {}
 }
 
-function startPolling() {
-  if (dockerTimer) return;
-  dockerTimer = setInterval(pollDockerStats, DOCKER_INTERVAL);
-  rconTimer = setInterval(pollRconStats, RCON_INTERVAL);
-  // Run RCON once after 5s to populate cache quickly on startup
-  setTimeout(pollRconStats, 5000);
-  console.log('[Metrics] Polling démarré (Docker: 2s, RCON: 15s)');
+/**
+ * Planifie une boucle auto-réarmée : attend la fin de chaque tour avant de programmer le suivant.
+ */
+function scheduleLoop(pollFn, intervalMs, setTimer, epoch, initialDelayMs = intervalMs) {
+  const scheduleNext = (delayMs) => {
+    if (!polling || epoch !== pollEpoch) return;
+    const timer = setTimeout(async () => {
+      setTimer(null);
+      if (!polling || epoch !== pollEpoch) return;
+      try {
+        await pollFn();
+      } catch (err) {
+        console.error('[Metrics] Erreur boucle de polling :', err.message);
+      }
+      scheduleNext(intervalMs);
+    }, delayMs);
+    setTimer(timer);
+  };
+  scheduleNext(initialDelayMs);
+}
+
+function startPolling(opts = {}) {
+  if (polling) return;
+  const dockerMs = opts?.dockerMs ?? DOCKER_INTERVAL;
+  const rconMs = opts?.rconMs ?? RCON_INTERVAL;
+  const rconFirstDelay = Math.min(RCON_INITIAL_DELAY, rconMs);
+
+  polling = true;
+  const epoch = ++pollEpoch;
+
+  scheduleLoop(pollDockerStats, dockerMs, t => { dockerTimer = t; }, epoch);
+  // Premier tour RCON plus tôt au démarrage pour alimenter le cache rapidement
+  scheduleLoop(pollRconStats, rconMs, t => { rconTimer = t; }, epoch, rconFirstDelay);
+
+  console.log(`[Metrics] Polling démarré (Docker: ${dockerMs}ms, RCON: ${rconMs}ms)`);
 }
 
 function stopPolling() {
-  if (dockerTimer) { clearInterval(dockerTimer); dockerTimer = null; }
-  if (rconTimer) { clearInterval(rconTimer); rconTimer = null; }
+  polling = false;
+  pollEpoch++;
+  if (dockerTimer) { clearTimeout(dockerTimer); dockerTimer = null; }
+  if (rconTimer) { clearTimeout(rconTimer); rconTimer = null; }
 }
 
-module.exports = { setIo, startPolling, stopPolling, pushImmediate };
+module.exports = {
+  setIo,
+  startPolling,
+  stopPolling,
+  pushImmediate,
+  // Exposé pour les tests uniquement
+  _internals: { pollDockerStats, pollRconStats },
+};
