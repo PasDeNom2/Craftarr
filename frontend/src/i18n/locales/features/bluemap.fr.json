@@ -1,0 +1,15 @@
+{
+  "bluemap": {
+    "title": "Carte 3D (BlueMap)",
+    "enable": "Activer la carte web BlueMap",
+    "enableHint": "Installe BlueMap et expose une carte 3D interactive du monde dans votre navigateur.",
+    "vanillaUnsupported": "Non disponible sur un serveur vanilla (nécessite Fabric, Forge, NeoForge, Quilt ou Paper/Purpur).",
+    "port": "Port de la carte",
+    "openMap": "Ouvrir la carte",
+    "firewallWarning": "Le port TCP {port} doit être ouvert sur votre pare-feu / routeur pour accéder à la carte depuis l'extérieur.",
+    "renderNotice": "Le rendu initial peut être long sur un grand monde. Il est conseillé d'activer la pré-génération du monde pour des performances optimales.",
+    "recreateRequired": "Recréez ou redémarrez le serveur pour appliquer l'ouverture du port et le mod BlueMap.",
+    "enabledToast": "BlueMap activé — redémarrez le serveur pour appliquer le nouveau port",
+    "disabledToast": "BlueMap désactivé — redémarrez le serveur pour fermer le port"
+  }
+}

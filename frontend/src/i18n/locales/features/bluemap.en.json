@@ -1,0 +1,15 @@
+{
+  "bluemap": {
+    "title": "3D Map (BlueMap)",
+    "enable": "Enable BlueMap web map",
+    "enableHint": "Installs BlueMap and exposes an interactive 3D world map in your browser.",
+    "vanillaUnsupported": "Not available on a vanilla server (requires Fabric, Forge, NeoForge, Quilt or Paper/Purpur).",
+    "port": "Map port",
+    "openMap": "Open map",
+    "firewallWarning": "TCP port {port} must be open in your firewall / router to access the map externally.",
+    "renderNotice": "Initial rendering can take a long time on a large world. Using BlueMap together with world pre-generation is recommended.",
+    "recreateRequired": "Recreate or restart the server to apply the port mapping and BlueMap mod.",
+    "enabledToast": "BlueMap enabled — restart the server to apply the new port",
+    "disabledToast": "BlueMap disabled — restart the server to close the port"
+  }
+}
