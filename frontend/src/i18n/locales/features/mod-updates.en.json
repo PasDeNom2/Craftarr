@@ -1,0 +1,24 @@
+{
+  "modUpdates": {
+    "checkBtn": "Check for updates",
+    "checking": "Checking…",
+    "updateAllBtn": "Update all ({count})",
+    "updateOne": "Update this mod",
+    "badge": "Update",
+    "badgeTitle": "Update available: {from} → {to}",
+    "untracked": "untracked",
+    "upToDate": "up to date",
+    "foundCount": "{count} update(s) available",
+    "noneFound": "All tracked mods are up to date",
+    "confirmAllTitle": "Update all ({count})",
+    "confirmAllBody": "Update these {count} mod(s) to their latest compatible version? Old files will be moved to the trash.",
+    "updatedOne": "{name} updated ({version})",
+    "updateAllSuccess": "{count} mod(s) updated",
+    "updateAllPartial": "{updated} updated, {failed} failed",
+    "reportTitle": "Update report",
+    "reportDismiss": "Dismiss",
+    "statusUpdated": "Updated ({from} → {to})",
+    "statusSkipped": "Skipped",
+    "statusError": "Failed: {error}"
+  }
+}

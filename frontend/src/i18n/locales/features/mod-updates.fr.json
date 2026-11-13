@@ -1,0 +1,24 @@
+{
+  "modUpdates": {
+    "checkBtn": "Vérifier les mises à jour",
+    "checking": "Vérification…",
+    "updateAllBtn": "Tout mettre à jour ({count})",
+    "updateOne": "Mettre à jour ce mod",
+    "badge": "Mise à jour",
+    "badgeTitle": "Mise à jour disponible : {from} → {to}",
+    "untracked": "non suivi",
+    "upToDate": "à jour",
+    "foundCount": "{count} mise(s) à jour disponible(s)",
+    "noneFound": "Tous les mods suivis sont à jour",
+    "confirmAllTitle": "Tout mettre à jour ({count})",
+    "confirmAllBody": "Mettre à jour ces {count} mod(s) vers leur dernière version compatible ? Les anciens fichiers seront déplacés dans la corbeille.",
+    "updatedOne": "{name} mis à jour ({version})",
+    "updateAllSuccess": "{count} mod(s) mis à jour",
+    "updateAllPartial": "{updated} mis à jour, {failed} en erreur",
+    "reportTitle": "Rapport de mise à jour",
+    "reportDismiss": "Fermer",
+    "statusUpdated": "Mis à jour ({from} → {to})",
+    "statusSkipped": "Ignoré",
+    "statusError": "Échec : {error}"
+  }
+}

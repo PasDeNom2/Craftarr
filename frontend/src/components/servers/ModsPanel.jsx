@@ -4,13 +4,16 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import {
   Search, Plus, Upload, Trash2, AlertTriangle, Download, RotateCcw, Loader2, Package, Wrench, ExternalLink,
+  RefreshCw, ArrowUpCircle, CheckCircle2, X,
 } from 'lucide-react';
 import {
   getMods, setModEnabled, trashMods, searchMods, installMod, fixModDependencies, uploadMods, restartServer,
 } from '../../services/api';
+import { getModUpdates, updateServerMods } from '../../services/features/mod-updates';
 import { useI18n } from '../../i18n';
 import Switch from '../ui/Switch';
 import Modal from '../ui/Modal';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import Segmented from '../ui/Segmented';
 import SourceBadge from '../ui/SourceBadge';
 import { LOADER_LABEL } from '../../utils/loaders';
@@ -151,16 +154,38 @@ export default function ModsPanel({ server }) {
   const [needsRestart, setNeedsRestart] = useState(false);
   const [fixing, setFixing] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [confirmUpdateAll, setConfirmUpdateAll] = useState(false);
+  const [updatingAll, setUpdatingAll] = useState(false);
+  const [updateReport, setUpdateReport] = useState(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['mods', server.id],
     queryFn: () => getMods(server.id),
     staleTime: 10000,
   });
+  const { data: updatesData } = useQuery({
+    queryKey: ['mod-updates', server.id],
+    queryFn: () => getModUpdates(server.id),
+    enabled: Boolean(server?.id && server.loader_type !== 'vanilla'),
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+  });
   const mods = useMemo(() => data?.mods || [], [data]);
   const problems = data?.problems || [];
   const running = ['running', 'starting'].includes(server.status);
   const busy = ['installing', 'updating'].includes(server.status);
+
+  const updateByFile = useMemo(() => {
+    const map = new Map();
+    for (const item of updatesData?.mods || []) map.set(item.file, item);
+    return map;
+  }, [updatesData]);
+
+  const updatableMods = useMemo(
+    () => (updatesData?.mods || []).filter(m => m.status === 'update_available'),
+    [updatesData],
+  );
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -172,6 +197,60 @@ export default function ModsPanel({ server }) {
   function changed(result) {
     if (result?.restartRequired) setNeedsRestart(true);
     qc.invalidateQueries({ queryKey: ['mods', server.id] });
+    qc.invalidateQueries({ queryKey: ['mod-updates', server.id] });
+  }
+
+  async function checkForUpdates() {
+    setCheckingUpdates(true);
+    try {
+      const fresh = await getModUpdates(server.id, { refresh: true });
+      qc.setQueryData(['mod-updates', server.id], fresh);
+      if (fresh.updatesCount > 0) toast.success(t('modUpdates.foundCount', { count: fresh.updatesCount }));
+      else toast(t('modUpdates.noneFound'));
+    } catch (err) {
+      toast.error(errMsg(err, t('common.error')));
+    } finally {
+      setCheckingUpdates(false);
+    }
+  }
+
+  async function updateOne(mod) {
+    setBusyFile(mod.file);
+    try {
+      const r = await updateServerMods(server.id, [mod.file]);
+      const entry = r.results?.[0];
+      if (entry?.status === 'updated') {
+        toast.success(t('modUpdates.updatedOne', { name: mod.name, version: entry.toVersion || '' }));
+      } else if (entry?.status === 'error') {
+        toast.error(entry.error || t('common.error'));
+      }
+      changed(r);
+    } catch (err) {
+      toast.error(errMsg(err, t('common.error')));
+    } finally {
+      setBusyFile(null);
+    }
+  }
+
+  async function updateAll() {
+    setUpdatingAll(true);
+    try {
+      const r = await updateServerMods(server.id, 'all');
+      setConfirmUpdateAll(false);
+      setUpdateReport(r.results || []);
+      if (r.failedCount > 0) {
+        toast.error(t('modUpdates.updateAllPartial', { updated: r.updatedCount, failed: r.failedCount }));
+      } else if (r.updatedCount > 0) {
+        toast.success(t('modUpdates.updateAllSuccess', { count: r.updatedCount }));
+      } else {
+        toast(t('modUpdates.noneFound'));
+      }
+      changed(r);
+    } catch (err) {
+      toast.error(errMsg(err, t('common.error')));
+    } finally {
+      setUpdatingAll(false);
+    }
   }
 
   async function toggle(mod) {
@@ -245,6 +324,25 @@ export default function ModsPanel({ server }) {
           {t('mods.count', { count: mods.length })}{disabledCount > 0 && ` · ${t('mods.disabledCount', { count: disabledCount })}`}
         </p>
         <input ref={fileRef} type="file" accept=".jar" multiple className="hidden" onChange={e => { upload(e.target.files); e.target.value = ''; }} />
+        <button
+          className="btn-secondary"
+          onClick={checkForUpdates}
+          disabled={busy || checkingUpdates || updatingAll || server.loader_type === 'vanilla'}
+        >
+          <RefreshCw size={14} strokeWidth={1.75} className={checkingUpdates ? 'animate-spin' : ''} />
+          {checkingUpdates ? t('modUpdates.checking') : t('modUpdates.checkBtn')}
+        </button>
+        {updatableMods.length > 0 && (
+          <button
+            className="btn-secondary"
+            style={{ borderColor: 'rgba(var(--info-rgb), 0.4)', color: 'var(--info)' }}
+            onClick={() => setConfirmUpdateAll(true)}
+            disabled={busy || updatingAll}
+          >
+            {updatingAll ? <Loader2 size={14} className="animate-spin" /> : <ArrowUpCircle size={14} strokeWidth={1.75} />}
+            {t('modUpdates.updateAllBtn', { count: updatableMods.length })}
+          </button>
+        )}
         <button className="btn-secondary" onClick={() => fileRef.current?.click()} disabled={busy || uploadPct !== null}>
           {uploadPct !== null ? <><Loader2 size={14} className="animate-spin" /> {uploadPct}%</> : <><Upload size={14} strokeWidth={1.75} /> {t('mods.upload')}</>}
         </button>
@@ -268,6 +366,44 @@ export default function ModsPanel({ server }) {
           <button className="btn-primary !h-8" onClick={restart} disabled={restarting}>
             {restarting ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} {t('server.actions.restart')}
           </button>
+        </div>
+      )}
+
+      {/* Rapport de mise à jour groupée */}
+      {updateReport && updateReport.length > 0 && (
+        <div className="card !py-3.5 space-y-2 fade-in">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[13px] font-medium text-fg">{t('modUpdates.reportTitle')}</p>
+            <button
+              className="icon-btn"
+              onClick={() => setUpdateReport(null)}
+              aria-label={t('modUpdates.reportDismiss')}
+              title={t('modUpdates.reportDismiss')}
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <ul className="space-y-1 max-h-44 overflow-y-auto">
+            {updateReport.map(r => (
+              <li key={r.file} className="flex items-center justify-between gap-2 text-[12px]">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  {r.status === 'updated'
+                    ? <CheckCircle2 size={13} className="shrink-0" style={{ color: 'var(--success)' }} />
+                    : r.status === 'error'
+                      ? <AlertTriangle size={13} className="shrink-0" style={{ color: 'var(--danger)' }} />
+                      : <span className="w-3.5 text-center text-fg-3 shrink-0">·</span>}
+                  <span className="truncate text-fg">{r.name || r.file}</span>
+                </span>
+                <span className="text-fg-2 font-mono text-[11.5px] shrink-0">
+                  {r.status === 'updated'
+                    ? t('modUpdates.statusUpdated', { from: r.fromVersion || '?', to: r.toVersion || '?' })
+                    : r.status === 'error'
+                      ? t('modUpdates.statusError', { error: r.error || t('common.error') })
+                      : t('modUpdates.statusSkipped')}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -309,29 +445,60 @@ export default function ModsPanel({ server }) {
           </div>
         ) : (
           <>
-            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_160px_96px_72px] gap-4 px-4 h-9 items-center border-b border-line text-[12px] text-fg-3 font-medium">
+            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_160px_96px_104px] gap-4 px-4 h-9 items-center border-b border-line text-[12px] text-fg-3 font-medium">
               <span>{t('mods.colMod')}</span><span>{t('mods.colVersion')}</span><span>{t('mods.colLoader')}</span><span />
             </div>
             <ul className="divide-y divide-line">
-              {shown.map(mod => (
-                <li key={mod.file} className={clsx('grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_160px_96px_72px] gap-4 px-4 py-2.5 items-center row-hover', !mod.enabled && 'opacity-55')}>
-                  <div className="min-w-0">
-                    <p className="text-[13.5px] text-fg truncate">{mod.name}</p>
-                    <p className="text-[11.5px] text-fg-3 font-mono truncate">{mod.file}</p>
-                  </div>
-                  <p className="hidden md:block text-[12.5px] text-fg-2 font-mono truncate" title={mod.version || ''}>{mod.version || '—'}</p>
-                  <p className="hidden md:flex text-[12px] text-fg-2 items-center gap-1.5">
-                    {LOADER_LABEL[mod.loader] || '—'}
-                    {mod.clientOnly && <span className="text-[10.5px] px-1.5 rounded border border-line-strong text-fg-3">client</span>}
-                  </p>
-                  <div className="flex items-center justify-end gap-1">
-                    <Switch checked={mod.enabled} onChange={() => toggle(mod)} disabled={busyFile === mod.file || busy} label={t('mods.toggle')} />
-                    <button className="icon-btn" onClick={() => remove(mod)} disabled={busyFile === mod.file || busy} title={t('mods.remove')} aria-label={t('mods.remove')}>
-                      <Trash2 size={14} strokeWidth={1.75} />
-                    </button>
-                  </div>
-                </li>
-              ))}
+              {shown.map(mod => {
+                const upd = mod.enabled ? updateByFile.get(mod.file) : null;
+                return (
+                  <li key={mod.file} className={clsx('grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_160px_96px_104px] gap-4 px-4 py-2.5 items-center row-hover', !mod.enabled && 'opacity-55')}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <p className="text-[13.5px] text-fg truncate">{mod.name}</p>
+                        {upd?.status === 'update_available' && (
+                          <span
+                            className="badge gap-1 text-[11px] font-mono shrink-0"
+                            style={{ background: 'rgba(var(--info-rgb), 0.12)', color: 'var(--info)', border: '1px solid rgba(var(--info-rgb), 0.28)' }}
+                            title={t('modUpdates.badgeTitle', { from: upd.currentVersion || mod.version || '?', to: upd.latestVersion || '?' })}
+                          >
+                            {t('modUpdates.badge')} · {upd.currentVersion || mod.version || '?'} → {upd.latestVersion}
+                          </span>
+                        )}
+                        {upd?.status === 'untracked' && (
+                          <span className="badge text-[10.5px] border border-line-strong text-fg-3 shrink-0">
+                            {t('modUpdates.untracked')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11.5px] text-fg-3 font-mono truncate">{mod.file}</p>
+                    </div>
+                    <p className="hidden md:block text-[12.5px] text-fg-2 font-mono truncate" title={mod.version || ''}>{mod.version || '—'}</p>
+                    <p className="hidden md:flex text-[12px] text-fg-2 items-center gap-1.5">
+                      {LOADER_LABEL[mod.loader] || '—'}
+                      {mod.clientOnly && <span className="text-[10.5px] px-1.5 rounded border border-line-strong text-fg-3">client</span>}
+                    </p>
+                    <div className="flex items-center justify-end gap-1">
+                      {upd?.status === 'update_available' && (
+                        <button
+                          className="icon-btn"
+                          style={{ color: 'var(--info)' }}
+                          onClick={() => updateOne(mod)}
+                          disabled={busyFile === mod.file || busy || updatingAll}
+                          title={t('modUpdates.updateOne')}
+                          aria-label={t('modUpdates.updateOne')}
+                        >
+                          {busyFile === mod.file ? <Loader2 size={14} className="animate-spin" /> : <ArrowUpCircle size={14} strokeWidth={1.75} />}
+                        </button>
+                      )}
+                      <Switch checked={mod.enabled} onChange={() => toggle(mod)} disabled={busyFile === mod.file || busy || updatingAll} label={t('mods.toggle')} />
+                      <button className="icon-btn" onClick={() => remove(mod)} disabled={busyFile === mod.file || busy || updatingAll} title={t('mods.remove')} aria-label={t('mods.remove')}>
+                        <Trash2 size={14} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
               {!shown.length && <li className="py-8 text-center text-[13px] text-fg-3">{t('mods.noMatch')}</li>}
             </ul>
           </>
@@ -353,6 +520,28 @@ export default function ModsPanel({ server }) {
           onInstalled={changed}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmUpdateAll}
+        onClose={() => !updatingAll && setConfirmUpdateAll(false)}
+        onConfirm={updateAll}
+        title={t('modUpdates.confirmAllTitle', { count: updatableMods.length })}
+        message={t('modUpdates.confirmAllBody', { count: updatableMods.length })}
+        confirmLabel={t('modUpdates.updateAllBtn', { count: updatableMods.length })}
+        busy={updatingAll}
+        tone="default"
+      >
+        <ul className="max-h-40 overflow-y-auto space-y-1 text-[12px] text-fg-2 border-t border-b border-line py-2">
+          {updatableMods.map(m => (
+            <li key={m.file} className="flex items-center justify-between gap-2">
+              <span className="truncate font-medium text-fg">{m.name}</span>
+              <span className="font-mono text-[11px] text-fg-3 shrink-0">
+                {m.currentVersion || '?'} → {m.latestVersion}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </ConfirmDialog>
     </div>
   );
 }
