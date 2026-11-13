@@ -44,8 +44,28 @@ function parsePlayerEvent(serverId, line) {
   try {
     const db = getDb();
 
-    // UUID mapping: "UUID of player Steve is 069a79f4-..."
-    const uuidMatch = line.match(/UUID of player (\S+) is ([0-9a-f-]{36})/i);
+    // Extraction du message après l'en-tête de log (vanilla/Fabric, Forge/NeoForge, Paper)
+    const headerMatch = line.match(/^\[[^\]]*\](?: \[[^\]]*\])*: (.*)$/);
+    if (!headerMatch) {
+      // Ligne hors format standard : on conserve uniquement la détection d'UUID
+      const uuidMatch = line.match(/UUID of player (\S+) is ([0-9a-f-]{36})/i);
+      if (uuidMatch) {
+        if (!uuidCache[serverId]) uuidCache[serverId] = {};
+        uuidCache[serverId][uuidMatch[1]] = uuidMatch[2];
+      }
+      return;
+    }
+    const msg = headerMatch[1];
+
+    // Chat testé en premier pour empêcher toute injection via un message joueur
+    const chatMatch = msg.match(/^(?:\[Not Secure\] )?<([^>]+)> (.+)$/);
+    if (chatMatch) {
+      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'chat', ?)`).run(serverId, chatMatch[1], chatMatch[2]);
+      return;
+    }
+
+    // Correspondance UUID : "UUID of player Steve is 069a79f4-..."
+    const uuidMatch = msg.match(/^UUID of player (\S+) is ([0-9a-f-]{36})/i);
     if (uuidMatch) {
       if (!uuidCache[serverId]) uuidCache[serverId] = {};
       uuidCache[serverId][uuidMatch[1]] = uuidMatch[2];
@@ -53,7 +73,7 @@ function parsePlayerEvent(serverId, line) {
     }
 
     // « Steve[/1.2.3.4:5678] logged in with entity id 123 at (x, y, z) »
-    const loginMatch = line.match(/\]: (\w{2,16})\[\/([^\]:]+(?::\d+)?)\] logged in with entity id/);
+    const loginMatch = msg.match(/^(\w{2,16})\[\/([^\]]+)\] logged in with entity id/);
     if (loginMatch) {
       const ip = loginMatch[2].replace(/:\d+$/, '');
       db.prepare('UPDATE players SET last_ip = ? WHERE server_id = ? AND username = ?').run(ip, serverId, loginMatch[1]);
@@ -62,21 +82,21 @@ function parsePlayerEvent(serverId, line) {
     }
 
     // « Steve lost connection: Timed out »
-    const lostMatch = line.match(/\]: (\w{2,16}) lost connection: (.+)$/);
+    const lostMatch = msg.match(/^(\w{2,16}) lost connection: (.+)$/);
     if (lostMatch) {
       (pendingReason[serverId] ||= {})[lostMatch[1]] = lostMatch[2].trim().slice(0, 200);
       return;
     }
 
     // Succès : « Steve has made the advancement [Stone Age] »
-    const advMatch = line.match(/\]: (\w{2,16}) has (?:made the advancement|completed the challenge|reached the goal) \[(.+)\]/);
+    const advMatch = msg.match(/^(\w{2,16}) has (?:made the advancement|completed the challenge|reached the goal) \[(.+)\]$/);
     if (advMatch) {
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'advancement', ?)`).run(serverId, advMatch[1], advMatch[2]);
       return;
     }
 
-    // Join event
-    const joinMatch = line.match(/\]: (\S+) joined the game/);
+    // Connexion
+    const joinMatch = msg.match(/^(\w{2,16}) joined the game$/);
     if (joinMatch) {
       const username = joinMatch[1];
       const uuid = uuidCache[serverId]?.[username] || null;
@@ -93,8 +113,8 @@ function parsePlayerEvent(serverId, line) {
       return;
     }
 
-    // Leave event
-    const leaveMatch = line.match(/\]: (\S+) left the game/);
+    // Déconnexion
+    const leaveMatch = msg.match(/^(\w{2,16}) left the game$/);
     if (leaveMatch) {
       const username = leaveMatch[1];
       const reason = pendingReason[serverId]?.[username] || null;
@@ -106,41 +126,33 @@ function parsePlayerEvent(serverId, line) {
       return;
     }
 
-    // Chat message: [Server thread/INFO]: <PlayerName> message
-    const chatMatch = line.match(/\]: (?:\[Not Secure\] )?<(\S+)> (.+)/);
-    if (chatMatch) {
-      db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'chat', ?)`).run(serverId, chatMatch[1], chatMatch[2]);
-      return;
-    }
-
-    // Command: "PlayerName issued server command: /cmd"
-    const cmdMatch = line.match(/\]: (\S+) issued server command: (.+)/);
+    // Commande : « Steve issued server command: /cmd »
+    const cmdMatch = msg.match(/^(\w{2,16}) issued server command: (.+)$/);
     if (cmdMatch) {
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'command', ?)`).run(serverId, cmdMatch[1], cmdMatch[2]);
       return;
     }
 
-    // Death events (many patterns — catch generic "PlayerName <verb>")
+    // Morts (ancrées au début du message pour éviter les faux positifs)
     const deathPatterns = [
-      /\]: (\S+) was (.+)/,
-      /\]: (\S+) died (.+)?/,
-      /\]: (\S+) fell (.+)/,
-      /\]: (\S+) drowned/,
-      /\]: (\S+) burned/,
-      /\]: (\S+) blew up/,
-      /\]: (\S+) hit the ground/,
-      /\]: (\S+) suffocated/,
-      /\]: (\S+) went up in flames/,
-      /\]: (\S+) starved/,
+      /^(\w{2,16}) was (.+)$/,
+      /^(\w{2,16}) died(?: (.+))?$/,
+      /^(\w{2,16}) fell (.+)$/,
+      /^(\w{2,16}) drowned(?: .+)?$/,
+      /^(\w{2,16}) burned(?: .+)?$/,
+      /^(\w{2,16}) blew up(?: .+)?$/,
+      /^(\w{2,16}) hit the ground(?: .+)?$/,
+      /^(\w{2,16}) suffocated(?: .+)?$/,
+      /^(\w{2,16}) went up in flames(?: .+)?$/,
+      /^(\w{2,16}) starved(?: .+)?$/,
     ];
     for (const pat of deathPatterns) {
-      const m = line.match(pat);
+      const m = msg.match(pat);
       if (m) {
-        // Only treat as death if player exists in our DB
+        // Considéré comme une mort uniquement si le joueur existe en base
         const player = db.prepare('SELECT id FROM players WHERE server_id = ? AND username = ?').get(serverId, m[1]);
         if (player) {
-          const detail = line.replace(/.*\]: /, '');
-          db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'death', ?)`).run(serverId, m[1], detail);
+          db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'death', ?)`).run(serverId, m[1], msg);
           return;
         }
       }

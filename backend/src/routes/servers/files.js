@@ -2,7 +2,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const { getDb } = require('../../config/database');
 const authMiddleware = require('../../middleware/auth');
 const { DATA_PATH } = require('./common');
@@ -31,15 +31,27 @@ function serverDirOf(req) {
  * (« .. », chemins absolus, liens symboliques qui pointent ailleurs).
  */
 function resolveSafe(root, rel) {
+  const absRoot = path.resolve(root);
   const clean = String(rel || '').replace(/\\/g, '/').replace(/^\/+/, '');
-  const target = path.resolve(root, clean);
-  if (target !== root && !target.startsWith(root + path.sep)) throw httpError(403, 'Accès refusé');
-  if (fs.existsSync(target)) {
-    const realRoot = fs.realpathSync(root);
-    const real = fs.realpathSync(target);
+  const target = path.resolve(absRoot, clean);
+  if (target !== absRoot && !target.startsWith(absRoot + path.sep)) throw httpError(403, 'Accès refusé');
+  // Remonte au plus proche ancêtre existant pour bloquer toute évasion par lien symbolique
+  let probe = target;
+  while (probe !== absRoot && !fs.existsSync(probe)) {
+    probe = path.dirname(probe);
+  }
+  if (fs.existsSync(probe)) {
+    const realRoot = fs.realpathSync(absRoot);
+    const real = fs.realpathSync(probe);
     if (real !== realRoot && !real.startsWith(realRoot + path.sep)) throw httpError(403, 'Accès refusé');
   }
   return target;
+}
+
+function assertNotSymlink(file) {
+  let lst = null;
+  try { lst = fs.lstatSync(file); } catch { /* absent */ }
+  if (lst?.isSymbolicLink()) throw httpError(403, 'Accès refusé');
 }
 
 const relOf = (root, abs) => path.relative(root, abs).split(path.sep).join('/');
@@ -102,6 +114,7 @@ router.put('/:id/files/content', authMiddleware, wrap((req, res) => {
   const { root } = serverDirOf(req);
   const file = resolveSafe(root, rel);
   if (file === root) throw httpError(400, 'Chemin invalide');
+  assertNotSymlink(file);
   if (fs.existsSync(file)) {
     const st = fs.statSync(file);
     if (!st.isFile()) throw httpError(400, 'Ce chemin n\'est pas un fichier');
@@ -137,6 +150,7 @@ router.put('/:id/files/nbt', authMiddleware, wrap((req, res) => {
   if (!rel || typeof content !== 'string') throw httpError(400, 'path et content requis');
   const { root } = serverDirOf(req);
   const file = resolveSafe(root, rel);
+  assertNotSymlink(file);
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw httpError(404, 'Fichier introuvable');
   const st = fs.statSync(file);
   if (baseMtime && !force && Math.abs(st.mtimeMs - baseMtime) > 1) {
