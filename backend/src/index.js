@@ -56,6 +56,9 @@ app.use(helmet({ contentSecurityPolicy: false }));
 // Pas de CORS : l'UI est servie sur la même origine (nginx en prod, proxy Vite en dev).
 // L'ancien cors({ origin: '*' }) permettait à n'importe quel site d'appeler l'API.
 app.use(express.json({ limit: '10mb' }));
+// Express 5 : req.body vaut undefined sans corps JSON (Express 4 donnait {}) — les routes
+// déstructurent req.body, on garde l'ancien comportement.
+app.use((req, res, next) => { if (req.body === undefined) req.body = {}; next(); });
 app.use(morgan('tiny'));
 
 // Le backend n'est joignable que via nginx (1 proxy) : req.ip = vraie IP du client (X-Forwarded-For)
