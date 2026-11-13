@@ -1,8 +1,36 @@
+// @ts-check
 const { getDb } = require('../config/database');
 const dockerService = require('./docker');
 const rcon = require('./rcon');
 
+/** @typedef {import('../types').ServerRow} ServerRow */
+
+/**
+ * @typedef {Object} ServerMetrics
+ * @property {string} serverId
+ * @property {number} timestamp
+ * @property {number} cpu
+ * @property {number} memUsed
+ * @property {number} memLimit
+ * @property {number} memPercent
+ * @property {{ online: number, max: number }} players
+ * @property {{ tps1: number, tps5: number | null, tps15: number | null } | null} tps
+ * @property {number | null} uptime
+ */
+
+/**
+ * @typedef {Object} RconCacheEntry
+ * @property {{ online: number, max: number }} players
+ * @property {{ tps1: number, tps5: number | null, tps15: number | null } | null} tps
+ */
+
+/** @type {import('socket.io').Server | undefined} */
 let io;
+/**
+ * Enregistre l'instance Socket.IO utilisée pour diffuser les métriques.
+ * @param {import('socket.io').Server} ioInstance
+ * @returns {void}
+ */
 function setIo(ioInstance) { io = ioInstance; }
 
 // Intervalles par défaut : stats Docker toutes les 2 s, RCON toutes les 15 s
@@ -13,20 +41,26 @@ const ACTIVE_DOCKER_STATUSES = new Set(['running', 'starting']);
 
 let polling = false;
 let pollEpoch = 0;
+/** @type {ReturnType<typeof setTimeout> | null} */
 let dockerTimer = null;
+/** @type {ReturnType<typeof setTimeout> | null} */
 let rconTimer = null;
 let dockerInFlight = false;
 let rconInFlight = false;
 
 // Cache en mémoire des derniers résultats RCON par serveur
+/** @type {Record<string, RconCacheEntry>} */
 const rconCache = {}; // { [serverId]: { players, tps } }
 
 /**
  * Construit l'objet métriques d'un serveur.
  * Les stats Docker ne sont demandées que pour les serveurs running ou starting.
+ * @param {ServerRow} server
+ * @returns {Promise<ServerMetrics>}
  */
 async function collectServerMetrics(server) {
   const cached = rconCache[server.id];
+  /** @type {ServerMetrics} */
   const metrics = {
     serverId: server.id,
     timestamp: Date.now(),
@@ -53,6 +87,9 @@ async function collectServerMetrics(server) {
   return metrics;
 }
 
+/**
+ * @returns {Promise<void>}
+ */
 async function pollDockerStats() {
   if (!io || dockerInFlight) return;
   dockerInFlight = true;
@@ -82,6 +119,9 @@ async function pollDockerStats() {
   }
 }
 
+/**
+ * @returns {Promise<void>}
+ */
 async function pollRconStats() {
   if (!io || rconInFlight) return;
   rconInFlight = true;
@@ -113,6 +153,9 @@ async function pollRconStats() {
 /**
  * Push immédiat des métriques pour un serveur donné vers un socket spécifique.
  * Appelé dès qu'un client souscrit à un serveur pour éviter d'attendre le prochain tick.
+ * @param {import('socket.io').Socket} socket
+ * @param {string} serverId
+ * @returns {Promise<void>}
  */
 async function pushImmediate(socket, serverId) {
   const db = getDb();
@@ -126,6 +169,12 @@ async function pushImmediate(socket, serverId) {
 
 /**
  * Planifie une boucle auto-réarmée : attend la fin de chaque tour avant de programmer le suivant.
+ * @param {() => Promise<void>} pollFn
+ * @param {number} intervalMs
+ * @param {(timer: ReturnType<typeof setTimeout> | null) => void} setTimer
+ * @param {number} epoch
+ * @param {number} [initialDelayMs]
+ * @returns {void}
  */
 function scheduleLoop(pollFn, intervalMs, setTimer, epoch, initialDelayMs = intervalMs) {
   const scheduleNext = (delayMs) => {
@@ -145,6 +194,11 @@ function scheduleLoop(pollFn, intervalMs, setTimer, epoch, initialDelayMs = inte
   scheduleNext(initialDelayMs);
 }
 
+/**
+ * Démarre les boucles de polling Docker et RCON.
+ * @param {{ dockerMs?: number, rconMs?: number }} [opts]
+ * @returns {void}
+ */
 function startPolling(opts = {}) {
   if (polling) return;
   const dockerMs = opts?.dockerMs ?? DOCKER_INTERVAL;
@@ -161,6 +215,10 @@ function startPolling(opts = {}) {
   console.log(`[Metrics] Polling démarré (Docker: ${dockerMs}ms, RCON: ${rconMs}ms)`);
 }
 
+/**
+ * Arrête les boucles de polling et annule les timers en attente.
+ * @returns {void}
+ */
 function stopPolling() {
   polling = false;
   pollEpoch++;

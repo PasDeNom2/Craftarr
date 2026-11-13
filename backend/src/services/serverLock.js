@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Verrou par serveur : une seule opération lourde à la fois (installation, mise à jour,
  * restauration, recréation, démarrage/arrêt…). Sans lui, un clic au mauvais moment pouvait
@@ -9,16 +10,35 @@
  */
 const { getDb } = require('../config/database');
 
+/** @typedef {import('../types').ServerRow} ServerRow */
+
+/**
+ * @typedef {Object} ServerLockEntry
+ * @property {string} op
+ * @property {number} since
+ */
+
+/** @type {Map<string, ServerLockEntry>} */
 const locks = new Map(); // serverId → { op, since }
 
 // États pendant lesquels le serveur appartient à une opération de fond
 const BUSY_STATUSES = new Set(['installing', 'updating']);
 
+/**
+ * Retourne le verrou actif pour un serveur, ou null s'il est libre.
+ * @param {string} serverId
+ * @returns {ServerLockEntry | null}
+ */
 function current(serverId) {
   return locks.get(serverId) || null;
 }
 
-/** Prend le verrou ; lève une erreur 409 si une opération est déjà en cours. */
+/**
+ * Prend le verrou ; lève une erreur 409 si une opération est déjà en cours.
+ * @param {string} serverId
+ * @param {string} op
+ * @returns {() => void}
+ */
 function acquire(serverId, op) {
   const held = locks.get(serverId);
   if (held) {
@@ -33,7 +53,14 @@ function acquire(serverId, op) {
   };
 }
 
-/** Exécute fn sous verrou (libéré même en cas d'erreur). */
+/**
+ * Exécute fn sous verrou (libéré même en cas d'erreur).
+ * @template T
+ * @param {string} serverId
+ * @param {string} op
+ * @param {() => Promise<T> | T} fn
+ * @returns {Promise<Awaited<T>>}
+ */
 async function withLock(serverId, op, fn) {
   const release = acquire(serverId, op);
   try {
@@ -46,6 +73,8 @@ async function withLock(serverId, op, fn) {
 /**
  * Vérifie que le serveur est libre (ni verrou, ni installation/mise à jour en cours).
  * Retourne le message d'erreur, ou null si le serveur est disponible.
+ * @param {Pick<ServerRow, 'id' | 'status'>} server
+ * @returns {string | null}
  */
 function busyReason(server) {
   const held = locks.get(server.id);
@@ -54,13 +83,19 @@ function busyReason(server) {
   return null;
 }
 
-/** Middleware Express : 409 si le serveur (req.params.id ou :serverId) est occupé. */
+/**
+ * Middleware Express : 409 si le serveur (req.params.id ou :serverId) est occupé.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ * @returns {void}
+ */
 function requireIdle(req, res, next) {
   const id = req.params.id || req.params.serverId;
   const server = getDb().prepare('SELECT id, status FROM servers WHERE id = ?').get(id);
   if (!server) return next();
   const reason = busyReason(server);
-  if (reason) return res.status(409).json({ error: reason });
+  if (reason) { res.status(409).json({ error: reason }); return; }
   next();
 }
 

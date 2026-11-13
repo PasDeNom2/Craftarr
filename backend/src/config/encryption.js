@@ -1,8 +1,12 @@
+// @ts-check
 const crypto = require('crypto');
 
 const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 
+/**
+ * @returns {Buffer}
+ */
 function getKey() {
   const raw = process.env.ENCRYPTION_KEY || '';
   if (raw.length < KEY_LENGTH) {
@@ -11,6 +15,11 @@ function getKey() {
   return Buffer.from(raw.slice(0, KEY_LENGTH));
 }
 
+/**
+ * Chiffre une chaîne UTF-8 avec AES-256-GCM (encodée en base64).
+ * @param {string | null | undefined} plaintext
+ * @returns {string | null}
+ */
 function encrypt(plaintext) {
   if (!plaintext) return null;
   const iv = crypto.randomBytes(12);
@@ -20,6 +29,11 @@ function encrypt(plaintext) {
   return Buffer.concat([iv, tag, encrypted]).toString('base64');
 }
 
+/**
+ * Déchiffre une chaîne produite par encrypt(), ou retourne null en cas d'échec.
+ * @param {string | null | undefined} ciphertext
+ * @returns {string | null}
+ */
 function decrypt(ciphertext) {
   if (!ciphertext) return null;
   const key = getKey();
@@ -30,7 +44,7 @@ function decrypt(ciphertext) {
     const encrypted = buf.slice(28);
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(tag);
-    return decipher.update(encrypted) + decipher.final('utf8');
+    return decipher.update(encrypted).toString('utf8') + decipher.final('utf8');
   } catch {
     return null;
   }

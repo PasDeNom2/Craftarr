@@ -1,3 +1,4 @@
+// @ts-check
 // Explorateur de fichiers du dossier serveur.
 const express = require('express');
 const fs = require('fs');
@@ -8,18 +9,33 @@ const authMiddleware = require('../../middleware/auth');
 const { DATA_PATH } = require('./common');
 const nbt = require('../../services/nbt');
 
+/** @typedef {import('../../types').ServerRow} ServerRow */
+/** @typedef {import('../../types').HttpError} HttpError */
+
+/** @type {import('express').Router} */
 const router = express.Router();
 
 const MAX_TEXT = 5 * 1024 * 1024;      // édition dans le navigateur
 const MAX_RAW = 20 * 1024 * 1024;      // aperçu (images)
 const MAX_UPLOAD = 1024 * 1024 * 1024; // 1 Go par fichier
 
+/**
+ * Construit une HttpError avec un code de statut HTTP.
+ * @param {number} status
+ * @param {string} message
+ * @returns {HttpError}
+ */
 function httpError(status, message) {
+  /** @type {HttpError} */
   const err = new Error(message);
   err.status = status;
   return err;
 }
 
+/**
+ * @param {import('express').Request} req
+ * @returns {{ server: ServerRow, root: string }}
+ */
 function serverDirOf(req) {
   const server = getDb().prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
   if (!server) throw httpError(404, 'Serveur introuvable');
@@ -29,6 +45,9 @@ function serverDirOf(req) {
 /**
  * Résout un chemin relatif au dossier serveur. Refuse tout ce qui en sort
  * (« .. », chemins absolus, liens symboliques qui pointent ailleurs).
+ * @param {string} root
+ * @param {unknown} rel
+ * @returns {string}
  */
 function resolveSafe(root, rel) {
   const absRoot = path.resolve(root);
@@ -67,9 +86,14 @@ function isBinary(buf) {
   return false;
 }
 
+/**
+ * Enveloppe un handler Express pour convertir les HttpError en réponses JSON.
+ * @param {(req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => any} fn
+ * @returns {import('express').RequestHandler}
+ */
 const wrap = fn => async (req, res, next) => {
   try { await fn(req, res, next); } catch (err) {
-    if (err.status) return res.status(err.status).json({ error: err.message });
+    if (err.status) { res.status(err.status).json({ error: err.message }); return; }
     next(err);
   }
 };
@@ -218,12 +242,13 @@ router.post('/:id/files/upload', authMiddleware, wrap(async (req, res) => {
   const dir = resolveSafe(root, req.query.path);
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) throw httpError(404, 'Dossier introuvable');
   const multer = require('multer');
-  const tmpDir = path.join(DATA_PATH, 'servers', req.params.id, 'uploads');
+  const tmpDir = path.join(DATA_PATH, 'servers', String(req.params.id), 'uploads');
   fs.mkdirSync(tmpDir, { recursive: true });
   const upload = multer({ dest: tmpDir, limits: { fileSize: MAX_UPLOAD, files: 200 } }).array('files');
   await new Promise((resolve, reject) => upload(req, res, err => (err ? reject(httpError(400, err.message)) : resolve())));
 
-  const files = req.files || [];
+  /** @type {Array<{ originalname: string, path: string }>} */
+  const files = /** @type {import('express').Request & { files?: Array<{ originalname: string, path: string }> }} */ (req).files || [];
   const overwrite = req.query.overwrite === '1';
   const saved = [];
   const skipped = [];
@@ -255,6 +280,7 @@ router.get('/:id/files/raw', authMiddleware, wrap((req, res) => {
 
 // Téléchargement natif via lien signé à usage unique (même principe que le monde) :
 // fichier → envoyé tel quel ; dossier ou sélection multiple → zip streamé.
+/** @type {Map<string, number>} */
 const usedTokens = new Map();
 
 router.post('/:id/files/download-token', authMiddleware, wrap((req, res) => {
@@ -287,13 +313,15 @@ router.get('/:id/files/download', async (req, res, next) => {
 
     const single = targets.length === 1 ? targets[0] : null;
     if (single && fs.statSync(single).isFile()) {
-      return res.download(single, path.basename(single), { dotfiles: 'allow' });
+      res.download(single, path.basename(single), { dotfiles: 'allow' });
+      return;
     }
 
     const base = single && single !== root ? path.basename(single) : server.name.replace(/[^a-z0-9_-]/gi, '_');
     res.set('Content-Type', 'application/zip');
     res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(base)}.zip"`);
-    const archiver = require('archiver');
+    // archiver n'a pas de types publiés : l'inférence sur son JS interne est fausse
+    const archiver = /** @type {any} */ (require('archiver'));
     const archive = archiver('zip', { zlib: { level: 5 } });
     req.on('close', () => { if (!res.writableFinished) archive.abort(); });
     archive.on('error', err => { console.error('[files-download]', err.message); res.destroy(); });
@@ -304,11 +332,10 @@ router.get('/:id/files/download', async (req, res, next) => {
     }
     archive.finalize();
   } catch (err) {
-    if (err.status && !res.headersSent) return res.status(err.status).json({ error: err.message });
+    if (err.status && !res.headersSent) { res.status(err.status).json({ error: err.message }); return; }
     if (res.headersSent) { res.destroy(); return; }
     next(err);
   }
 });
 
-module.exports = router;
-module.exports.resolveSafe = resolveSafe;
+module.exports = Object.assign(router, { resolveSafe });

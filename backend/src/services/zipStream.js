@@ -1,3 +1,4 @@
+// @ts-check
 const fs = require('fs');
 const path = require('path');
 const { Transform } = require('stream');
@@ -5,16 +6,20 @@ const { pipeline } = require('stream/promises');
 const yauzl = require('yauzl');
 
 // Plafond par défaut pour l'extraction d'archives (20 Gio)
+/** @type {number} */
 const DEFAULT_MAX_TOTAL_BYTES = 20 * 1024 * 1024 * 1024;
 
 /**
  * Liste les noms d'entrées d'une archive zip en lecture séquentielle (sans tout charger en RAM).
  * Remplace les séparateurs Windows '\' par '/'.
+ * @param {string} zipPath
+ * @returns {Promise<string[]>}
  */
 function listEntries(zipPath) {
   return new Promise((resolve, reject) => {
     yauzl.open(zipPath, { lazyEntries: true }, (openErr, zipfile) => {
       if (openErr) return reject(openErr);
+      /** @type {string[]} */
       const entries = [];
       let settled = false;
 
@@ -44,6 +49,9 @@ function listEntries(zipPath) {
 /**
  * Valide un nom d'entrée zip et calcule le chemin cible sûr à l'intérieur de resolvedDest.
  * Refuse chemins absolus, lecteurs Windows, octets nuls et traversées '..'.
+ * @param {string} resolvedDest
+ * @param {string} rawName
+ * @returns {{ parts: string[], targetPath: string, isDir: boolean }}
  */
 function resolveSafeTarget(resolvedDest, rawName) {
   const normalized = rawName.replace(/\\/g, '/');
@@ -68,6 +76,9 @@ function resolveSafeTarget(resolvedDest, rawName) {
 /**
  * Crée récursivement les sous-dossiers sous resolvedDest avec le mode 0o755,
  * sans jamais suivre un lien symbolique existant.
+ * @param {string} resolvedDest
+ * @param {string[]} dirParts
+ * @returns {void}
  */
 function ensureDirSafe(resolvedDest, dirParts) {
   let current = resolvedDest;
@@ -94,6 +105,10 @@ function ensureDirSafe(resolvedDest, dirParts) {
  * - Refuse tout dépassement de maxTotalBytes en octets réellement écrits pendant le flux.
  * - Ne suit jamais un lien symbolique dans la destination.
  * - Crée les dossiers en 0o755 et les fichiers en 0o644 (sans SUID/SGID).
+ * @param {string} zipPath
+ * @param {string} destDir
+ * @param {{ maxTotalBytes?: number }} [opts]
+ * @returns {Promise<void>}
  */
 function extractAll(zipPath, destDir, { maxTotalBytes = DEFAULT_MAX_TOTAL_BYTES } = {}) {
   return new Promise((resolve, reject) => {
@@ -154,7 +169,7 @@ function extractAll(zipPath, destDir, { maxTotalBytes = DEFAULT_MAX_TOTAL_BYTES 
           | fs.constants.O_CREAT
           | fs.constants.O_TRUNC
           | (fs.constants.O_NOFOLLOW || 0);
-        const writeStream = fs.createWriteStream(targetPath, { flags, mode: 0o644 });
+        const writeStream = fs.createWriteStream(targetPath, { flags: /** @type {any} */ (flags), mode: 0o644 });
 
         // Compte les octets réellement décompressés pendant le flux (et non la taille déclarée)
         const byteLimiter = new Transform({

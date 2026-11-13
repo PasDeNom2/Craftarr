@@ -1,11 +1,22 @@
+// @ts-check
 // Helpers de validation sans dépendance pour les routes API.
 
+/** @typedef {import('../types').HttpError} HttpError */
+
+/**
+ * Construit une HttpError 400.
+ * @param {string} message
+ * @returns {HttpError}
+ */
 function badRequest(message) {
   return Object.assign(new Error(message), { status: 400 });
 }
 
 /**
  * Valide et normalise un entier (Number ou chaîne de chiffres) dans [min, max].
+ * @param {unknown} value
+ * @param {{ min?: number, max?: number, field?: string }} [opts]
+ * @returns {number}
  */
 function int(value, { min, max, field = 'valeur' } = {}) {
   let n;
@@ -36,6 +47,9 @@ function int(value, { min, max, field = 'valeur' } = {}) {
 
 /**
  * Valide et normalise un booléen (true/false, 1/0, 'true'/'false', '1'/'0').
+ * @param {unknown} value
+ * @param {string} [field]
+ * @returns {boolean}
  */
 function bool(value, field) {
   if (typeof value === 'boolean') return value;
@@ -51,6 +65,9 @@ function bool(value, field) {
 
 /**
  * Valide et nettoie une chaîne de caractères.
+ * @param {unknown} value
+ * @param {{ max?: number, field?: string, allowEmpty?: boolean, noNewlines?: boolean }} [opts]
+ * @returns {string}
  */
 function str(value, { max, field = 'valeur', allowEmpty = false, noNewlines = false } = {}) {
   if (typeof value !== 'string') {
@@ -71,12 +88,17 @@ function str(value, { max, field = 'valeur', allowEmpty = false, noNewlines = fa
 
 /**
  * Vérifie que la valeur appartient à une liste autorisée.
+ * @template T
+ * @param {unknown} value
+ * @param {readonly T[]} list
+ * @param {string} [field='valeur']
+ * @returns {T}
  */
 function oneOf(value, list, field = 'valeur') {
-  if (!list.includes(value)) {
+  if (!list.includes(/** @type {T} */ (value))) {
     throw badRequest(`«${field}» doit être parmi : ${list.join(', ')}`);
   }
-  return value;
+  return /** @type {T} */ (value);
 }
 
 module.exports = { int, bool, str, oneOf };

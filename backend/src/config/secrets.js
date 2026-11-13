@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Gestion des secrets persistants.
  * Si les variables d'env ne sont pas définies, génère des secrets
@@ -12,11 +13,22 @@ const crypto = require('crypto');
 const DATA_PATH = process.env.DATA_PATH || '/data';
 const SECRETS_FILE = path.join(DATA_PATH, 'secrets.json');
 
+/**
+ * @typedef {Object} StoredSecrets
+ * @property {string} [jwt_secret]
+ * @property {string} [encryption_key]
+ */
+
+/**
+ * Charge ou génère les secrets persistants (JWT_SECRET, ENCRYPTION_KEY) dans secrets.json.
+ * @returns {StoredSecrets}
+ */
 function loadOrCreateSecrets() {
   const dataPath = process.env.DATA_PATH || DATA_PATH;
   const secretsFile = path.join(dataPath, 'secrets.json');
   fs.mkdirSync(dataPath, { recursive: true });
 
+  /** @type {StoredSecrets} */
   let stored = {};
   if (fs.existsSync(secretsFile)) {
     try {
@@ -62,6 +74,7 @@ function loadOrCreateSecrets() {
 /**
  * Secret JWT unique pour tout le backend. Jamais de valeur par défaut : un secret connu
  * ("change-me") permettrait de forger un token admin. loadOrCreateSecrets() le garantit au démarrage.
+ * @returns {string}
  */
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -76,6 +89,8 @@ function getJwtSecret() {
  * Refuse les jetons à usage unique (liens de téléchargement, signés avec le même secret) :
  * avant, un lien vu dans les logs du proxy ouvrait toute l'API pendant 5 minutes.
  * Refuse aussi les sessions d'avant un changement de mot de passe (token_version).
+ * @param {string} token
+ * @returns {{ id: string, username: string }}
  */
 function verifyUserToken(token) {
   const jwt = require('jsonwebtoken');
@@ -88,7 +103,11 @@ function verifyUserToken(token) {
   return { id: user.id, username: user.username };
 }
 
-/** Jeton de session (7 jours) pour un utilisateur. */
+/**
+ * Jeton de session (7 jours) pour un utilisateur.
+ * @param {{ id: string, username: string, token_version?: number }} user
+ * @returns {string}
+ */
 function signUserToken(user) {
   const jwt = require('jsonwebtoken');
   return jwt.sign({ id: user.id, username: user.username, tv: user.token_version || 0 }, getJwtSecret(), { expiresIn: '7d' });

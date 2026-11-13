@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "typecheck": "tsc -p jsconfig.json",
     "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "dependencies": {
@@ -27,7 +28,10 @@
     "yauzl": "^3.2.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3"
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.0",
+    "nodemon": "^3.0.3",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=22"
