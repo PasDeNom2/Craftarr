@@ -306,8 +306,9 @@ test('extension : fields offsite_enabled et decorate', () => {
   assert.ok(fields.offsite_enabled);
   assert.strictEqual(fields.offsite_enabled.parse(true), 1);
   assert.strictEqual(fields.offsite_enabled.parse(false), 0);
-  assert.deepStrictEqual(extensions.decorate({ offsite_enabled: 1 }), { offsite_enabled: true });
-  assert.deepStrictEqual(extensions.decorate({ offsite_enabled: 0 }), { offsite_enabled: false });
+  // D'autres extensions décorent aussi la réponse : seul le champ offsite_enabled est vérifié
+  assert.strictEqual(extensions.decorate({ offsite_enabled: 1 }).offsite_enabled, true);
+  assert.strictEqual(extensions.decorate({ offsite_enabled: 0 }).offsite_enabled, false);
 });
 
 test('restore : snapshotId invalide → 400 ; snapshotId valide restaure via staging et redémarre', async () => {
