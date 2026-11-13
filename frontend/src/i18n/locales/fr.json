@@ -838,5 +838,10 @@
   },
   "toast": {
     "updateAvailable": "Mise à jour disponible pour {name} → {version}"
+  },
+  "modal": {
+    "discardConfirm": "Abandonner les modifications ?",
+    "keepEditing": "Continuer l'édition",
+    "discard": "Abandonner"
   }
 }

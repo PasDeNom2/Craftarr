@@ -838,5 +838,10 @@
   },
   "toast": {
     "updateAvailable": "Update available for {name} → {version}"
+  },
+  "modal": {
+    "discardConfirm": "Discard unsaved changes?",
+    "keepEditing": "Continue editing",
+    "discard": "Discard"
   }
 }

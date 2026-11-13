@@ -109,12 +109,12 @@ function ServerRow({ server }) {
         {BUSY.has(server.status) ? (
           <Loader2 size={15} className="animate-spin text-fg-3" />
         ) : canStop ? (
-          <button className="btn-secondary !h-8 !px-2.5" onClick={e => act(e, 'stop')} disabled={pending} title={t('server.actions.stop')}>
+          <button className="btn-secondary !h-8 !px-2.5" onClick={e => act(e, 'stop')} disabled={pending} title={t('server.actions.stop')} aria-label={t('server.actions.stop')}>
             <Square size={12} strokeWidth={2} fill="currentColor" />
             <span className="hidden lg:inline">{t('server.actions.stop')}</span>
           </button>
         ) : canStart ? (
-          <button className="btn-secondary !h-8 !px-2.5" onClick={e => act(e, 'start')} disabled={pending} title={t('server.actions.start')}>
+          <button className="btn-secondary !h-8 !px-2.5" onClick={e => act(e, 'start')} disabled={pending} title={t('server.actions.start')} aria-label={t('server.actions.start')}>
             <Play size={12} strokeWidth={2} fill="currentColor" />
             <span className="hidden lg:inline">{t('server.actions.start')}</span>
           </button>

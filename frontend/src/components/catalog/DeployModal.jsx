@@ -19,7 +19,7 @@ export default function DeployModal({ modpack, onClose }) {
   const { t } = useI18n();
   // Port par défaut = premier port libre (25565 est souvent déjà pris par un autre serveur)
   const allServers = useServerStore(s => s.servers);
-  const [form, setForm] = useState({
+  const [baseForm, setBaseForm] = useState(() => ({
     name: modpack ? `${modpack.name.slice(0, 30)} Server` : '',
     port: nextFreePort(allServers),
     ram_mb: 4096,
@@ -31,7 +31,8 @@ export default function DeployModal({ modpack, onClose }) {
     pregen_enabled: false,
     pregen_radius: 3000,
     pregen_worlds: ['minecraft:overworld'],
-  });
+  }));
+  const [form, setForm] = useState(baseForm);
   const [worldFile, setWorldFile] = useState(null);
   const [iconFile, setIconFile] = useState(null);
   const [deploying, setDeploying] = useState(false);
@@ -46,9 +47,13 @@ export default function DeployModal({ modpack, onClose }) {
 
   useEffect(() => {
     if (versions.length > 0 && !form.version_id) {
-      setForm(f => ({ ...f, version_id: String(versions[0].id) }));
+      const defaultVersionId = String(versions[0].id);
+      setForm(f => ({ ...f, version_id: defaultVersionId }));
+      setBaseForm(b => (b.version_id ? b : { ...b, version_id: defaultVersionId }));
     }
   }, [versions]); // eslint-disable-line react-hooks/exhaustive-deps -- sélection initiale uniquement à l'arrivée des versions
+
+  const dirty = !!iconFile || !!worldFile || JSON.stringify(form) !== JSON.stringify(baseForm);
 
   const selectedVersion = versions.find(v => String(v.id) === form.version_id);
   const detectedLoaders = selectedVersion?.loaders || [];
@@ -95,7 +100,7 @@ export default function DeployModal({ modpack, onClose }) {
   const portConflict = portTakenBy(allServers, form.port);
 
   return (
-    <Modal open={!!modpack} onClose={onClose} title={`${t('deploy.title')} : ${modpack?.name}`} size="lg">
+    <Modal open={!!modpack} onClose={onClose} dirty={dirty} title={`${t('deploy.title')} : ${modpack?.name}`} size="lg">
       <div className="p-6">
         <form onSubmit={handleDeploy} className="space-y-5">
 

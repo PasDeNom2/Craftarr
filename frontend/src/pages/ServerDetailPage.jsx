@@ -1,39 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../i18n';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSocket } from '../hooks/useSocket';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getServer, startServer, stopServer, restartServer, deleteServer,
-  updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods, restartPregen,
-  reinstallServer, uploadServerIcon, getServerIconUrl, downloadWorld,
+  patchServer, installMods, reinstallServer, uploadServerIcon,
 } from '../services/api';
 import { useServerStore, useIconStore, useMetricsStore } from '../store';
-import StatusBadge from '../components/ui/StatusBadge';
 import Console from '../components/servers/Console';
 import MetricsPanel from '../components/servers/MetricsPanel';
 import BackupList from '../components/servers/BackupList';
 import FileExplorer from '../components/servers/FileExplorer';
-import Modal from '../components/ui/Modal';
-import Segmented from '../components/ui/Segmented';
-import Switch from '../components/ui/Switch';
-import PregenStatus from '../components/servers/PregenStatus';
-import { PregenWorlds } from '../components/catalog/PregenOption';
-import ServerAvatar from '../components/ui/ServerAvatar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import PlayersPanel from '../components/servers/PlayersPanel';
+import ModsPanel from '../components/servers/ModsPanel';
+import WhitelistPanel from '../components/servers/WhitelistPanel';
+import UpdateModal from '../components/servers/detail/UpdateModal';
+import WorldImportModal from '../components/servers/detail/WorldImportModal';
+import EditTab, { resizeTo64 } from '../components/servers/detail/EditTab';
+import ServerHeader from '../components/servers/detail/ServerHeader';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import {
   Terminal, Activity, HardDrive, FolderOpen, Settings as SettingsIcon,
-  Play, Square, RotateCcw, Upload, Trash2, ArrowUp, Package, Globe,
-  AlertTriangle, Save, Users, Pencil, Download, Copy, Gamepad2, Layers3, MemoryStick, ChevronRight,
+  Package, Users, Shield,
 } from 'lucide-react';
-import PlayersPanel from '../components/servers/PlayersPanel';
-import ModsPanel from '../components/servers/ModsPanel';
-import { loaderLabel } from '../utils/loaders';
-import WhitelistPanel from '../components/servers/WhitelistPanel';
-import { Shield } from 'lucide-react';
 
 // Stable English IDs — never change, only labelKey is translated
 const TABS = [
@@ -47,525 +40,8 @@ const TABS = [
   { id: 'settings',  Icon: SettingsIcon, labelKey: 'server.tabs.settings'  },
 ];
 
-const RELEASE_TYPE_LABEL = { 1: 'Release', 2: 'Beta', 3: 'Alpha' };
-const CONTAINER_ENV_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);
+const TRANSIENT_STATUSES = ['installing', 'starting', 'updating'];
 
-// ─── UpdateModal ──────────────────────────────────────────────────────────────
-function UpdateModal({ server, onClose }) {
-  const { t } = useI18n();
-  const [selectedVersionId, setSelectedVersionId] = useState('');
-  const qc = useQueryClient();
-  const { updateServer: patchStore } = useServerStore();
-
-  const { data: versions = [], isLoading } = useQuery({
-    queryKey: ['modpack-versions', server.modpack_source, server.modpack_id],
-    queryFn: () => getModpackVersions(server.modpack_source, server.modpack_id),
-    staleTime: 60000,
-  });
-
-  const doUpdate = useMutation({
-    mutationFn: () => updateServer(server.id, selectedVersionId || undefined),
-    onSuccess: (data) => {
-      if (data.upToDate) toast.success(t('update.upToDate'));
-      else {
-        toast.success(t('update.successVersion', { version: data.version }));
-        patchStore(server.id, { status: 'updating' });
-      }
-      qc.invalidateQueries({ queryKey: ['server', server.id] });
-      onClose();
-    },
-    onError: (err) => toast.error(err.response?.data?.error || t('update.error')),
-  });
-
-  return (
-    <Modal open onClose={onClose} title={t('update.title')} size="md">
-      <div className="p-6 space-y-5">
-        <div className="card space-y-1 text-sm">
-          <p className="text-fg-2 text-xs uppercase tracking-[0.08em]">{t('update.currentVersion')}</p>
-          <p className="font-medium text-fg">{server.modpack_version || t('serverSettings.unknown')}</p>
-        </div>
-        <div>
-          <label className="label">{t('update.targetVersion')}</label>
-          {isLoading ? (
-            <div className="input text-fg-3 text-sm animate-pulse">{t('update.loadingVersions')}</div>
-          ) : (
-            <select className="input" value={selectedVersionId} onChange={e => setSelectedVersionId(e.target.value)}>
-              <option value="">{t('update.latestAvailable')}</option>
-              {versions.map((v) => {
-                const label = v.displayName || v.name || v.versionNumber || v.id;
-                const type = RELEASE_TYPE_LABEL[v.releaseType] || '';
-                const mcVer = (v.mcVersions || v.game_versions || []).filter(x => /^(1|2[6-9])\.\d+/.test(x)).slice(0, 2).join(', ');
-                const isCurrent = String(v.id) === String(server.modpack_version_id);
-                return (
-                  <option key={v.id} value={String(v.id)}>
-                    {isCurrent ? '> ' : ''}{label}{type ? ` [${type}]` : ''}{mcVer ? ` — MC ${mcVer}` : ''}{isCurrent ? ` ${t('update.currentLabel')}` : ''}
-                  </option>
-                );
-              })}
-            </select>
-          )}
-          <p className="text-xs text-fg-2 mt-1">{t('update.backupNote')}</p>
-        </div>
-        <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid rgba(var(--tint-rgb),0.06)' }}>
-          <button className="btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
-          <button className="btn-primary ml-auto gap-2" onClick={() => doUpdate.mutate()} disabled={doUpdate.isPending}>
-            <RotateCcw size={13} strokeWidth={1.5} />
-            {doUpdate.isPending ? t('update.loading') : t('update.submit')}
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-// ─── WorldImportModal ─────────────────────────────────────────────────────────
-function WorldImportModal({ server, onClose }) {
-  const { t } = useI18n();
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const qc = useQueryClient();
-
-  async function handleImport() {
-    if (!file) return;
-    setUploading(true);
-    try {
-      await importWorld(server.id, file);
-      toast.success(t('worldImport.success'));
-      qc.invalidateQueries({ queryKey: ['server', server.id] });
-      onClose();
-    } catch (err) {
-      toast.error(err.response?.data?.error || t('worldImport.error'));
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <Modal open onClose={onClose} title={t('worldImport.title')} size="sm">
-      <div className="p-6 space-y-4">
-        <p className="text-sm text-fg-2">{t('worldImport.description')}</p>
-        <div
-          className="rounded-xl p-6 text-center cursor-pointer transition-all duration-200"
-          style={{
-            border: `2px dashed ${file ? 'rgba(var(--accent-rgb),0.4)' : 'rgba(var(--tint-rgb),0.1)'}`,
-            background: file ? 'rgba(var(--accent-rgb),0.04)' : 'transparent',
-          }}
-        >
-          <input type="file" accept=".zip" id="world-import-file" className="hidden"
-            onChange={e => setFile(e.target.files[0] || null)} />
-          <label htmlFor="world-import-file" className="cursor-pointer">
-            {file ? (
-              <div className="space-y-1">
-                <p className="text-accent font-medium text-sm">{file.name}</p>
-                <p className="text-fg-2 text-xs">{(file.size / 1024 / 1024).toFixed(1)} Mo</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Globe size={22} strokeWidth={1.5} className="mx-auto text-fg-3" />
-                <p className="text-sm text-fg-2">{t('worldImport.selectFile')}</p>
-              </div>
-            )}
-          </label>
-        </div>
-        <div className="flex gap-3">
-          <button className="btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
-          <button className="btn-primary ml-auto gap-2" onClick={handleImport} disabled={!file || uploading}>
-            <Upload size={13} strokeWidth={1.5} />
-            {uploading ? t('worldImport.loading') : t('worldImport.submit')}
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function resizeTo64(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        canvas.getContext('2d').drawImage(img, 0, 0, 64, 64);
-        URL.revokeObjectURL(url);
-        canvas.toBlob(blob => blob ? resolve(new File([blob], 'server-icon.png', { type: 'image/png' })) : reject(new Error('Canvas toBlob failed')), 'image/png');
-      } catch (e) { reject(e); }
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Invalid image')); };
-    img.src = url;
-  });
-}
-
-function Group({ title, footer, children }) {
-  return (
-    <section className="space-y-2">
-      {title && <h3 className="text-[13px] font-semibold text-fg px-1">{title}</h3>}
-      <div className="card !p-0 overflow-hidden divide-y divide-line">{children}</div>
-      {footer && <p className="text-[12px] text-fg-3 px-1 leading-relaxed">{footer}</p>}
-    </section>
-  );
-}
-
-function Row({ label, hint, children, stacked }) {
-  return (
-    <div className={clsx('px-4 py-3 min-h-[52px]', stacked ? 'space-y-2.5' : 'flex items-center justify-between gap-4')}>
-      <div className="min-w-0">
-        <p className="text-[13.5px] text-fg">{label}</p>
-        {hint && <p className="text-[12px] text-fg-3 mt-0.5">{hint}</p>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-const compactInput = 'h-8 w-28 px-2.5 rounded-md bg-bg border border-line-strong text-right text-[13px] text-fg outline-none focus:border-fg-2 font-mono transition-colors';
-
-function EditTab({ server, onInstallMods, onWorldImport }) {
-  const qc = useQueryClient();
-  const { t } = useI18n();
-  const { updateServer: patchStore } = useServerStore();
-  const bumpIcon = useIconStore(s => s.bumpIcon);
-
-  const [form, setForm] = useState({
-    name: server.name,
-    port: server.port,
-    ram_mb: server.ram_mb,
-    max_players: server.max_players,
-    whitelist_enabled: server.whitelist_enabled,
-    auto_update: server.auto_update,
-    update_interval_hours: server.update_interval_hours || 6,
-    motd: server.motd || '',
-    seed: server.seed || '',
-    difficulty: server.difficulty || 'normal',
-    view_distance: server.view_distance || 10,
-    spawn_protection: server.spawn_protection ?? 16,
-    pregen_enabled: !!server.pregen_enabled,
-    pregen_radius: server.pregen_radius || 3000,
-    pregen_pause_players: server.pregen_pause_players !== false,
-    pregen_worlds: server.pregen_worlds || ['minecraft:overworld'],
-  });
-  const [restartingPregen, setRestartingPregen] = useState(false);
-  const [base, setBase] = useState(form);
-  const dirty = JSON.stringify(form) !== JSON.stringify(base);
-  const [iconPreview, setIconPreview] = useState(null);
-  const [iconFile, setIconFile] = useState(null);
-  const [iconUploading, setIconUploading] = useState(false);
-  const iconKey = useIconStore(s => s.versions[server.id] || 1);
-  const [recreating, setRecreating] = useState(false);
-  const [downloadingWorld, setDownloadingWorld] = useState(false);
-
-  const isRunning = server.status === 'running' || server.status === 'starting';
-  const isStopped = server.status === 'stopped' || server.status === 'error';
-
-  function set(field, value) {
-    setForm(f => ({ ...f, [field]: value }));
-  }
-
-  const saveMut = useMutation({
-    mutationFn: () => patchServer(server.id, form),
-    onSuccess: async (updated) => {
-      if (updated.pregenError) {
-        toast.error(t('pregen.enableFailed', { error: updated.pregenError }));
-        const fixed = { ...form, pregen_enabled: false };
-        setForm(fixed);
-        setBase(fixed);
-      } else {
-        setBase(form);
-      }
-      patchStore(server.id, updated);
-      qc.invalidateQueries({ queryKey: ['server', server.id] });
-      const envChanged = Object.keys(form).some(
-        k => CONTAINER_ENV_FIELDS.has(k) && form[k] !== (server[k] ?? '')
-      );
-      if (envChanged && isStopped && updated.container_id) {
-        setRecreating(true);
-        try {
-          await recreateContainer(server.id);
-          toast.success(t('server.settings.savedRecreated'));
-          patchStore(server.id, { status: 'starting' });
-          qc.invalidateQueries({ queryKey: ['server', server.id] });
-        } catch (err) {
-          toast.error(t('server.settings.recreateError') + ': ' + (err.response?.data?.error || err.message));
-        } finally {
-          setRecreating(false);
-        }
-      } else if (envChanged && isRunning) {
-        toast.success(t('server.settings.savedNeedRecreate'));
-      } else {
-        toast.success(t('server.settings.saved'));
-      }
-    },
-    onError: (err) => toast.error(err.response?.data?.error || t('server.settings.saveError')),
-  });
-
-  function handleIconChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIconFile(file);
-    const reader = new FileReader();
-    reader.onload = ev => setIconPreview(ev.target.result);
-    reader.readAsDataURL(file);
-  }
-
-  async function handleIconUpload() {
-    if (!iconFile) return;
-    setIconUploading(true);
-    try {
-      const resized = await resizeTo64(iconFile);
-      await uploadServerIcon(server.id, resized);
-      bumpIcon(server.id);
-      toast.success(t('server.settings.iconUpdated'));
-      setIconPreview(null);
-      setIconFile(null);
-    } catch (err) {
-      toast.error(err.response?.data?.error || err.message || t('server.settings.iconError'));
-    } finally {
-      setIconUploading(false);
-    }
-  }
-
-  const isSaving = saveMut.isPending || recreating;
-  const ramLabel = form.ram_mb >= 1024 ? `${+(form.ram_mb / 1024).toFixed(1)} Go` : `${form.ram_mb} Mo`;
-
-  return (
-    <div className="max-w-2xl space-y-7 pt-1 pb-24">
-
-      {isRunning && (
-        <div
-          className="flex items-start gap-3 rounded-2xl px-4 py-3 text-[13px]"
-          style={{ background: 'rgba(var(--warn-rgb),0.08)', border: '1px solid rgba(var(--warn-rgb),0.2)', color: 'var(--warn)' }}
-        >
-          <AlertTriangle size={15} strokeWidth={1.75} className="shrink-0 mt-0.5" />
-          <span>{t('server.settings.runningWarning')}</span>
-        </div>
-      )}
-
-      <Group title={t('server.settings.appearance')} footer={t('server.settings.motdSupports')}>
-        <div className="flex items-center gap-4 px-4 py-4">
-          <div className="relative shrink-0">
-            <input type="file" accept="image/png,image/jpeg" id="settings-icon-input" className="hidden" onChange={handleIconChange} />
-            <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center bg-surface-2 border border-line">
-              {iconPreview
-                ? <img src={iconPreview} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
-                : <img
-                    key={iconKey}
-                    src={`${getServerIconUrl(server.id)}?v=${iconKey}`}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    style={{ imageRendering: 'pixelated' }}
-                    onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
-                  />
-              }
-              <span style={{ display: 'none' }} className="w-full h-full items-center justify-center text-lg text-fg-3 font-bold">
-                {server.name?.[0]?.toUpperCase() || 'S'}
-              </span>
-            </div>
-            <label
-              htmlFor="settings-icon-input"
-              className="cursor-pointer absolute -bottom-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full bg-fg text-inverse"
-              style={{ boxShadow: '0 0 0 3px var(--surface)' }}
-              title={t('server.settings.icon')}
-            >
-              <Pencil size={11} strokeWidth={2.5} />
-            </label>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[14px] text-fg">{t('server.settings.icon')}</p>
-            <p className="text-[11.5px] text-fg-3 mt-0.5">PNG · 64×64 px</p>
-          </div>
-          {iconFile && (
-            <button className="btn-primary !h-8 pop-in" onClick={handleIconUpload} disabled={iconUploading}>
-              <Upload size={12} strokeWidth={2} />
-              {iconUploading ? t('server.settings.uploading') : t('server.settings.upload')}
-            </button>
-          )}
-        </div>
-        <Row label={t('server.settings.motd')} stacked>
-          <div className="relative">
-            <input
-              className="input font-mono text-sm pr-14"
-              value={form.motd}
-              onChange={e => set('motd', e.target.value)}
-              placeholder={`${server.name} — Powered by Craftarr`}
-              maxLength={59}
-            />
-            <span className={clsx('absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono', form.motd.length > 50 ? 'text-warn' : 'text-fg-3')}>
-              {form.motd.length}/59
-            </span>
-          </div>
-        </Row>
-      </Group>
-
-      <Group title={t('server.settings.network')}>
-        <Row label={t('server.settings.port')}>
-          <input className={compactInput} type="number" min="1024" max="65535" value={form.port} onChange={e => set('port', +e.target.value)} />
-        </Row>
-        <Row label={t('server.settings.maxPlayers')}>
-          <input className={compactInput} type="number" min="1" max="500" value={form.max_players} onChange={e => set('max_players', +e.target.value)} />
-        </Row>
-      </Group>
-
-      <Group title={t('server.settings.gameplay')}>
-        <Row label={t('server.settings.difficulty')} stacked>
-          <Segmented
-            className="w-full [&>button]:flex-1"
-            value={form.difficulty}
-            onChange={v => set('difficulty', v)}
-            items={[
-              { id: 'peaceful', label: t('server.settings.difficultyPeaceful') },
-              { id: 'easy', label: t('server.settings.difficultyEasy') },
-              { id: 'normal', label: t('server.settings.difficultyNormal') },
-              { id: 'hard', label: t('server.settings.difficultyHard') },
-            ]}
-          />
-        </Row>
-        <Row label={t('server.settings.viewDistance')} stacked>
-          <div className="flex items-center gap-3">
-            <input type="range" min="4" max="32" step="1" value={form.view_distance} onChange={e => set('view_distance', +e.target.value)} className="flex-1" />
-            <span className="text-[14px] font-mono font-semibold text-fg w-8 text-right tabular-nums">{form.view_distance}</span>
-          </div>
-        </Row>
-        <Row label={t('server.settings.spawnProtection')} hint={t('server.settings.spawnHint')}>
-          <input className={compactInput} type="number" min="0" max="255" value={form.spawn_protection} onChange={e => set('spawn_protection', +e.target.value)} />
-        </Row>
-        <Row label={t('server.settings.seed')} hint={t('server.settings.seedHint')} stacked>
-          <input className="input font-mono" value={form.seed} onChange={e => set('seed', e.target.value)} placeholder={t('server.settings.seedPlaceholder')} />
-        </Row>
-      </Group>
-
-      <Group title={t('server.settings.resources')}>
-        <Row label={t('server.settings.ram')} stacked>
-          <div>
-            <div className="flex items-center gap-3">
-              <input type="range" min="1024" max="32768" step="512" value={form.ram_mb} onChange={e => set('ram_mb', +e.target.value)} className="flex-1" />
-              <span className="text-[14px] font-mono font-semibold text-fg w-16 text-right tabular-nums">{ramLabel}</span>
-            </div>
-            <div className="flex justify-between text-[10.5px] text-fg-3 mt-1 pr-[76px]">
-              <span>1 Go</span><span>8 Go</span><span>16 Go</span><span>32 Go</span>
-            </div>
-          </div>
-        </Row>
-      </Group>
-
-      <Group title={t('pregen.title')} footer={t('pregen.footer')}>
-        <Row label={t('pregen.enable')} hint={server.loader_type === 'vanilla' ? t('pregen.vanillaUnsupported') : t('pregen.enableHint')}>
-          <Switch
-            checked={form.pregen_enabled}
-            onChange={v => set('pregen_enabled', v)}
-            label={t('pregen.enable')}
-            disabled={server.loader_type === 'vanilla'}
-          />
-        </Row>
-        {form.pregen_enabled && (
-          <div className="fade-in divide-y divide-tint/[0.06]">
-            <Row label={t('pregen.radius')} hint={t('pregen.radiusHint', { size: (form.pregen_radius * 2).toLocaleString() })} stacked>
-              <Segmented
-                className="w-full [&>button]:flex-1"
-                value={form.pregen_radius}
-                onChange={v => set('pregen_radius', v)}
-                items={[1000, 2000, 3000, 5000, 10000].map(r => ({ id: r, label: `${r / 1000}k` }))}
-              />
-            </Row>
-            <Row label={t('pregen.worldsLabel')} hint={t('pregen.worldsHint')} stacked>
-              <PregenWorlds value={form.pregen_worlds} onChange={v => set('pregen_worlds', v)} />
-            </Row>
-            <Row label={t('pregen.pausePlayers')} hint={t('pregen.pausePlayersHint')}>
-              <Switch checked={form.pregen_pause_players} onChange={v => set('pregen_pause_players', v)} label={t('pregen.pausePlayers')} />
-            </Row>
-            {server.pregen_enabled && (
-              <div className="px-4 py-3.5 space-y-3">
-                <PregenStatus server={server} />
-                {['done', 'error', 'running', 'paused'].includes(server.pregen_status) && (
-                  <button
-                    className="btn-ghost !h-8 !px-3 -ml-1"
-                    disabled={restartingPregen}
-                    onClick={async () => {
-                      setRestartingPregen(true);
-                      try { await restartPregen(server.id); qc.invalidateQueries({ queryKey: ['server', server.id] }); }
-                      catch (err) { toast.error(err.response?.data?.error || t('common.error')); }
-                      finally { setRestartingPregen(false); }
-                    }}
-                  >
-                    <RotateCcw size={13} /> {t('pregen.restart')}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </Group>
-
-      <Group title={t('server.settings.autoUpdates')}>
-        <Row label={t('server.settings.enableAutoUpdate')}>
-          <Switch checked={!!form.auto_update} onChange={v => set('auto_update', v)} label={t('server.settings.enableAutoUpdate')} />
-        </Row>
-        {form.auto_update && (
-          <div className="fade-in">
-            <Row label={t('server.settings.checkEvery')}>
-              <div className="flex items-center gap-2">
-                <input className={clsx(compactInput, '!w-20')} type="number" min="1" max="168" value={form.update_interval_hours} onChange={e => set('update_interval_hours', +e.target.value)} />
-                <span className="text-[13px] text-fg-2">{t('server.settings.hours')}</span>
-              </div>
-            </Row>
-          </div>
-        )}
-      </Group>
-
-      <Group title={t('server.settings.maintenance')} footer={t('server.settings.downloadModsHint')}>
-        {[
-          { icon: Package, label: t('server.settings.downloadMods'), onClick: onInstallMods },
-          { icon: Globe, label: t('server.actions.importWorld'), onClick: onWorldImport },
-          {
-            icon: Download,
-            label: downloadingWorld ? '…' : t('server.actions.downloadWorld'),
-            disabled: downloadingWorld,
-            onClick: async () => {
-              setDownloadingWorld(true);
-              try { await downloadWorld(server.id, server.name); }
-              catch { toast.error(t('common.error')); }
-              finally { setDownloadingWorld(false); }
-            },
-          },
-        ].map(({ icon: Icon, label, onClick, disabled }) => (
-          <button
-            key={label}
-            onClick={onClick}
-            disabled={disabled}
-            className="w-full flex items-center gap-3 px-4 min-h-[48px] text-left hover:bg-tint/[0.03] disabled:opacity-50 transition-colors"
-          >
-            <Icon size={15} strokeWidth={1.75} className="text-fg-2 shrink-0" />
-            <span className="text-[13.5px] text-fg flex-1">{label}</span>
-            <ChevronRight size={15} className="text-fg-3" />
-          </button>
-        ))}
-      </Group>
-
-      {/* Barre d'enregistrement : n'apparaît que s'il y a des modifications */}
-      {(dirty || isSaving) && (
-        <div className="sticky bottom-4 z-10 flex justify-center pointer-events-none">
-          <div className="glass-strong pointer-events-auto flex items-center gap-2 h-12 pl-4 pr-1.5 rounded-xl pop-in max-w-full">
-            <span className="w-2 h-2 rounded-full bg-warn shrink-0" />
-            <div className="min-w-0 mr-2">
-              <p className="text-[13px] font-semibold text-fg whitespace-nowrap">{t('server.settings.unsavedChanges')}</p>
-              {isStopped && <p className="text-[11px] text-fg-3 truncate max-w-[18rem]">{t('server.settings.containerRecreateNote')}</p>}
-            </div>
-            <button className="btn-ghost" onClick={() => setForm(base)} disabled={isSaving}>{t('common.cancel')}</button>
-            <button className="btn-primary" onClick={() => saveMut.mutate()} disabled={isSaving}>
-              <Save size={13} strokeWidth={2} />
-              {isSaving
-                ? recreating ? t('server.settings.applying') : t('server.settings.saving')
-                : isStopped ? t('server.settings.saveAndApply') : t('server.settings.save')}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── ServerDetailPage ─────────────────────────────────────────────────────────
 export default function ServerDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -574,23 +50,40 @@ export default function ServerDetailPage() {
   const [tab, setTab] = useState('console');
   const [showUpdate, setShowUpdate] = useState(false);
   const [showWorldImport, setShowWorldImport] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [headerName, setHeaderName] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBackups, setDeleteBackups] = useState(false);
   const [confirmPower, setConfirmPower] = useState(null);
   const [confirmMods, setConfirmMods] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const scrollRef = useRef(null);
+  const sentinelRef = useRef(null);
   const { updateServer: patchStore, removeServer } = useServerStore();
   const bumpIcon = useIconStore(s => s.bumpIcon);
   const metrics = useMetricsStore(s => s.metrics[id]);
 
-  const transientStatuses = ['installing', 'starting', 'updating'];
-
   const { data: server, isLoading, isError } = useQuery({
     queryKey: ['server', id],
     queryFn: () => getServer(id),
-    refetchInterval: (query) => transientStatuses.includes(query.state.data?.status) ? 3000 : 10000,
+    refetchInterval: (query) => TRANSIENT_STATUSES.includes(query.state.data?.status) ? 3000 : 10000,
   });
+
+  const hasServer = !isLoading && !isError && !!server;
+
+  useEffect(() => {
+    if (!hasServer) {
+      setScrolled(false);
+      return;
+    }
+    const root = scrollRef.current;
+    const sentinel = sentinelRef.current;
+    if (!root || !sentinel || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { root, threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasServer, id]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -682,9 +175,6 @@ export default function ServerDetailPage() {
   );
 
   const isBusy = startMut.isPending || stopMut.isPending || restartMut.isPending;
-  const canStart = ['stopped', 'error'].includes(server.status);
-  const canStop = ['running', 'starting'].includes(server.status);
-  const canUpdate = ['running', 'stopped'].includes(server.status);
   const address = `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
 
   function getOnlinePlayersCount() {
@@ -726,10 +216,7 @@ export default function ServerDetailPage() {
     e.target.value = '';
   }
 
-  async function saveHeaderName() {
-    setEditingName(false);
-    const trimmed = headerName.trim();
-    if (!trimmed || trimmed === server.name) return;
+  async function saveHeaderName(trimmed) {
     try {
       const updated = await patchServer(server.id, { name: trimmed });
       patchStore(server.id, updated);
@@ -738,139 +225,34 @@ export default function ServerDetailPage() {
     } catch { toast.error(t('common.error')); }
   }
 
-  const meta = [
-    { icon: Package, value: server.modpack_name },
-    server.mc_version && { icon: Gamepad2, value: `MC ${server.mc_version}` },
-    server.loader_type && server.loader_type !== 'vanilla' && { icon: Layers3, value: loaderLabel(server.loader_type) },
-    { icon: MemoryStick, value: server.ram_mb >= 1024 ? `${server.ram_mb / 1024} Go` : `${server.ram_mb} Mo` },
-  ].filter(Boolean);
-
   return (
-    <div className="h-full flex flex-col">
-      {/* ── En-tête ── */}
-      <header className="shrink-0 border-b border-line bg-bg">
-        <div className="px-6 lg:px-8 pt-5">
-          <div className="flex items-start justify-between gap-6 flex-wrap">
-            {/* Identité */}
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="relative shrink-0 group/icon">
-                <input type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden" onChange={onHeaderIcon} />
-                <ServerAvatar server={server} size={48} showDot={false} />
-                <label
-                  htmlFor="header-icon-input"
-                  className="absolute inset-0 rounded-[10px] flex items-center justify-center cursor-pointer bg-black/55 text-white opacity-0 group-hover/icon:opacity-100 transition-opacity"
-                  title={t('server.settings.icon')}
-                >
-                  <Pencil size={14} strokeWidth={2} />
-                </label>
-              </div>
+    <div ref={scrollRef} className="h-full flex flex-col overflow-y-auto overflow-x-hidden">
+      <div className="relative shrink-0">
+        <div ref={sentinelRef} className="absolute top-0 left-0 right-0 h-px pointer-events-none" aria-hidden="true" />
+      </div>
 
-              <div className="min-w-0">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {editingName ? (
-                    <input
-                      autoFocus
-                      className="text-[20px] font-semibold text-fg bg-transparent border-b border-fg-3 outline-none min-w-[12rem] tracking-tight"
-                      value={headerName}
-                      onChange={e => setHeaderName(e.target.value)}
-                      onBlur={saveHeaderName}
-                      onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingName(false); }}
-                    />
-                  ) : (
-                    <h1
-                      className="group text-[20px] font-semibold text-fg tracking-tight cursor-text flex items-center gap-2 truncate"
-                      onClick={() => { setHeaderName(server.name); setEditingName(true); }}
-                      title={t('server.settings.serverName')}
-                    >
-                      <span className="truncate">{server.name}</span>
-                      <Pencil size={12} strokeWidth={2} className="text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </h1>
-                  )}
-                  <StatusBadge status={server.status} />
-                  {server.needs_recreate && (
-                    <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] font-medium text-warn border border-warn/30 bg-warn/[0.08]">
-                      <AlertTriangle size={12} strokeWidth={2} /> {t('server.needsRecreate')}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-x-4 gap-y-1 mt-1.5 flex-wrap text-[12.5px] text-fg-2">
-                  <button
-                    onClick={copyAddress}
-                    className="group inline-flex items-center gap-1.5 font-mono text-fg hover:text-fg-2 transition-colors"
-                    title={t('server.copyAddress')}
-                  >
-                    {address}
-                    <Copy size={11} strokeWidth={2} className="text-fg-3" />
-                  </button>
-                  {meta.map(({ icon: Icon, value, capitalize }) => (
-                    <span key={value} className={clsx('inline-flex items-center gap-1.5 min-w-0', capitalize && 'capitalize')}>
-                      <Icon size={12} strokeWidth={1.75} className="text-fg-3 shrink-0" />
-                      <span className="truncate max-w-[16rem]">{value}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {server.status === 'error' && !server.container_id ? (
-                <button className="btn-primary" onClick={() => reinstallMut.mutate()} disabled={reinstallMut.isPending}>
-                  <RotateCcw size={14} strokeWidth={2} /> {t('server.actions.reinstall')}
-                </button>
-              ) : canStart && (
-                <button className="btn-primary" onClick={() => startMut.mutate()} disabled={isBusy}>
-                  <Play size={13} strokeWidth={2} fill="currentColor" /> {startMut.isPending ? '…' : t('server.actions.start')}
-                </button>
-              )}
-              {canStop && (
-                <>
-                  <button className="btn-secondary" onClick={() => requestPowerAction('restart')} disabled={isBusy}>
-                    <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
-                  </button>
-                  <button className="btn-secondary" onClick={() => requestPowerAction('stop')} disabled={isBusy}>
-                    <Square size={11} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
-                  </button>
-                </>
-              )}
-              {canUpdate && (
-                <button className="btn-secondary" onClick={() => setShowUpdate(true)}>
-                  <ArrowUp size={14} strokeWidth={2} /> {t('server.actions.update')}
-                </button>
-              )}
-              <button
-                className="btn-danger w-9 !px-0"
-                onClick={() => setConfirmDelete(true)}
-                disabled={deleteMut.isPending}
-                title={t('server.actions.delete')}
-                aria-label={t('server.actions.delete')}
-              >
-                <Trash2 size={15} strokeWidth={1.75} />
-              </button>
-            </div>
-          </div>
-
-          {/* Onglets */}
-          <nav className="tabs mt-4 -mb-px !border-b-0" role="tablist">
-            {TABS.filter(tb => !tb.modded || server.loader_type !== 'vanilla').map(({ id: tabId, Icon, labelKey }) => (
-              <button
-                key={tabId}
-                role="tab"
-                aria-selected={tab === tabId}
-                onClick={() => setTab(tabId)}
-                className="tab"
-              >
-                <Icon size={14} strokeWidth={1.75} />
-                {t(labelKey)}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <ServerHeader
+        server={server}
+        tabs={TABS}
+        activeTab={tab}
+        onTabChange={setTab}
+        scrolled={scrolled}
+        address={address}
+        startMut={startMut}
+        stopMut={stopMut}
+        restartMut={restartMut}
+        reinstallMut={reinstallMut}
+        deleteMut={deleteMut}
+        onRequestPowerAction={requestPowerAction}
+        onOpenUpdate={() => setShowUpdate(true)}
+        onOpenDelete={() => setConfirmDelete(true)}
+        onCopyAddress={copyAddress}
+        onIconChange={onHeaderIcon}
+        onSaveName={saveHeaderName}
+      />
 
       {/* ── Contenu : chaque onglet est isolé (un onglet qui plante n'emporte pas la page) ── */}
-      <div className={clsx('flex-1 min-h-0 overflow-y-auto', tab === 'console' || tab === 'files' ? 'p-4 lg:p-5' : 'px-6 lg:px-8 py-6')}>
+      <div className={clsx(tab === 'console' || tab === 'files' ? 'flex-1 min-h-0 p-4 lg:p-5' : 'px-4 sm:px-6 lg:px-8 py-6')}>
         <div className={clsx('h-full', tab !== 'console' && 'hidden')}>
           <ErrorBoundary resetKey="console"><Console server={server} /></ErrorBoundary>
         </div>

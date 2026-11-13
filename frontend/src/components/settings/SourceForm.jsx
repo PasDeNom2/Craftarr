@@ -30,16 +30,19 @@ const MAPPER_EXAMPLE = `{
   "mcVersion": "gameVersion"
 }`;
 
+const INITIAL_FORM = { name: '', base_url: '', api_key: '', format: 'curseforge', field_mapping_json: '' };
+
 export default function SourceForm({ onClose }) {
   const qc = useQueryClient();
   const { t } = useI18n();
   const id = useId();
-  const [form, setForm] = useState({ name: '', base_url: '', api_key: '', format: 'curseforge', field_mapping_json: '' });
+  const [form, setForm] = useState(INITIAL_FORM);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [saving, setSaving] = useState(false);
   // Le test a besoin d'une source enregistrée : on la crée une fois, puis on la met à jour à l'enregistrement
   const [draftId, setDraftId] = useState(null);
+  const dirty = JSON.stringify(form) !== JSON.stringify(INITIAL_FORM);
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
@@ -97,7 +100,7 @@ export default function SourceForm({ onClose }) {
   }
 
   return (
-    <Modal open onClose={close} title={t('sources.formTitle')} icon={Plug} size="md">
+    <Modal open onClose={close} dirty={dirty} title={t('sources.formTitle')} icon={Plug} size="md">
       <form onSubmit={handleSave} className="p-6 space-y-4">
         <div>
           <p id={`${id}-presets`} className="label">{t('sources.presets')}</p>
