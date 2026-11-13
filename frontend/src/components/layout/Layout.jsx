@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useServerStore } from '../../store';
 import { getServers } from '../../services/api';
+import { flushUploads, clearUploads } from '../../services/pendingUploads';
 import { getSocket } from '../../hooks/useSocket';
 import { useQueryClient } from '@tanstack/react-query';
+import { useI18n } from '../../i18n';
 import toast from 'react-hot-toast';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import ConnectionBanner from '../ui/ConnectionBanner';
@@ -13,6 +15,9 @@ export default function Layout() {
   const { setServers, updateServer, addServer } = useServerStore();
   const qc = useQueryClient();
   const location = useLocation();
+  const { t } = useI18n();
+  const tRef = useRef(t);
+  tRef.current = t;
 
   useEffect(() => {
     // Merge les serveurs reçus avec le store existant pour ne jamais effacer les
@@ -43,8 +48,17 @@ export default function Layout() {
       qc.setQueryData(['server', serverId], old => old ? { ...old, status, ...extra } : old);
     };
 
-    const onInstallDone    = ({ serverId }) => applyStatus(serverId, 'running');
-    const onInstallError   = ({ serverId }) => applyStatus(serverId, 'error');
+    const onInstallDone = ({ serverId }) => {
+      applyStatus(serverId, 'running');
+      flushUploads(serverId, tRef.current);
+    };
+    const onInstallError = ({ serverId }) => {
+      applyStatus(serverId, 'error');
+      const pending = clearUploads(serverId);
+      if (pending && (pending.icon || pending.world)) {
+        toast.error(tRef.current('deploy.pendingUploadsAborted'));
+      }
+    };
     const onUpdateDone     = ({ serverId, version }) => applyStatus(serverId, 'running', { modpack_version: version });
     const onServerStatus   = ({ serverId, status }) => applyStatus(serverId, status);
     const onPregen = ({ serverId, status, progress, eta, message, worldIndex }) => {

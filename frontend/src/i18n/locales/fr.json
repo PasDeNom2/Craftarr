@@ -139,7 +139,11 @@
     "deploying": "Création en cours...",
     "deploy": "Déployer ce serveur",
     "portTaken": "Port déjà utilisé par « {name} ».",
-    "useFreePort": "Utiliser {port}"
+    "useFreePort": "Utiliser {port}",
+    "uploadingIcon": "Envoi de l'icône…",
+    "iconUploaded": "Icône appliquée",
+    "uploadingWorld": "Import du monde en cours…",
+    "pendingUploadsAborted": "L'installation a échoué : l'icône et/ou le monde n'ont pas été importés"
   },
   "server": {
     "tabs": {
@@ -180,6 +184,7 @@
     "restarted": "Serveur redémarré",
     "needsRecreate": "Recréation requise",
     "deleted": "Serveur supprimé",
+    "backupsKeptToast": "Sauvegardes conservées — retrouvez-les dans Paramètres → Sauvegardes orphelines",
     "installModsLaunched": "Téléchargement lancé — surveille la console...",
     "reinstallLaunched": "Réinstallation lancée — surveille la console...",
     "deleteConfirm": "Supprimer définitivement \"{name}\" et toutes ses données ?",
@@ -475,7 +480,16 @@
     "confirmPassword": "Confirmer",
     "passwordHint": "8 caractères minimum.",
     "changePassword": "Changer le mot de passe",
-    "passwordChanged": "Mot de passe changé — les autres sessions sont déconnectées"
+    "passwordChanged": "Mot de passe changé — les autres sessions sont déconnectées",
+    "orphanBackups": "Sauvegardes orphelines",
+    "orphanBackupsHint": "Sauvegardes conservées après la suppression d'un serveur.",
+    "noOrphanBackups": "Aucune sauvegarde orpheline",
+    "orphanServer": "Serveur #{id}",
+    "orphanFilesCount": "{count} fichier(s)",
+    "orphanDeleteTitle": "Supprimer les sauvegardes orphelines",
+    "orphanDeleteConfirm": "Supprimer définitivement les {count} sauvegarde(s) du serveur #{id} ?",
+    "orphanDeleted": "Sauvegardes orphelines supprimées",
+    "orphanDownload": "Télécharger"
   },
   "sources": {
     "title": "Sources",
@@ -725,7 +739,11 @@
   "confirm": {
     "typeToConfirm": "Tape « {name} » pour confirmer",
     "deleteServerTitle": "Supprimer le serveur",
-    "deleteServerBody": "Le monde, les mods et la configuration de « {name} » seront supprimés définitivement. Les backups sont conservés dans data/backups."
+    "deleteServerBody": "Le monde, les mods et la configuration de « {name} » seront supprimés définitivement. Les backups sont conservés dans data/backups.",
+    "deleteBackups": "Supprimer aussi les sauvegardes",
+    "stopServerTitle": "Arrêter le serveur",
+    "restartServerTitle": "Redémarrer le serveur",
+    "playersOnlineDisconnect": "{count} joueur(s) en ligne seront déconnectés."
   },
   "notFound": {
     "title": "Chunk introuvable",

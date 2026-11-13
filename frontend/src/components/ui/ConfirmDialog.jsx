@@ -8,7 +8,7 @@ import { useI18n } from '../../i18n';
  * (ex. le nom du serveur) : impossible de supprimer un serveur par un clic malheureux.
  */
 export default function ConfirmDialog({
-  open, onClose, onConfirm, title, message, confirmLabel, requireText, busy = false, tone = 'danger',
+  open, onClose, onConfirm, title, message, confirmLabel, requireText, busy = false, tone = 'danger', children,
 }) {
   const { t } = useI18n();
   const [typed, setTyped] = useState('');
@@ -25,6 +25,7 @@ export default function ConfirmDialog({
     <Modal open={open} onClose={close} title={title} icon={AlertTriangle} size="sm" tone={tone}>
       <form onSubmit={submit} className="p-5 space-y-4">
         <p className="text-sm text-fg-2 leading-relaxed">{message}</p>
+        {children}
         {requireText && (
           <div>
             <label className="label">{t('confirm.typeToConfirm', { name: requireText })}</label>

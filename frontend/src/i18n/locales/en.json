@@ -139,7 +139,11 @@
     "deploying": "Creating...",
     "deploy": "Deploy server",
     "portTaken": "Port already used by \"{name}\".",
-    "useFreePort": "Use {port}"
+    "useFreePort": "Use {port}",
+    "uploadingIcon": "Uploading icon…",
+    "iconUploaded": "Icon uploaded",
+    "uploadingWorld": "Importing world…",
+    "pendingUploadsAborted": "Installation failed: icon and/or world were not imported"
   },
   "server": {
     "tabs": {
@@ -180,6 +184,7 @@
     "restarted": "Server restarted",
     "needsRecreate": "Recreate required",
     "deleted": "Server deleted",
+    "backupsKeptToast": "Backups kept — find them in Settings → Orphan backups",
     "installModsLaunched": "Download started — watch the console...",
     "reinstallLaunched": "Reinstallation started — watch the console...",
     "deleteConfirm": "Permanently delete \"{name}\" and all its data?",
@@ -475,7 +480,16 @@
     "confirmPassword": "Confirm",
     "passwordHint": "At least 8 characters.",
     "changePassword": "Change password",
-    "passwordChanged": "Password changed — other sessions signed out"
+    "passwordChanged": "Password changed — other sessions signed out",
+    "orphanBackups": "Orphan backups",
+    "orphanBackupsHint": "Backups kept after a server was deleted.",
+    "noOrphanBackups": "No orphan backups",
+    "orphanServer": "Server #{id}",
+    "orphanFilesCount": "{count} file(s)",
+    "orphanDeleteTitle": "Delete orphan backups",
+    "orphanDeleteConfirm": "Permanently delete all {count} backup(s) for server #{id}?",
+    "orphanDeleted": "Orphan backups deleted",
+    "orphanDownload": "Download"
   },
   "sources": {
     "title": "Sources",
@@ -725,7 +739,11 @@
   "confirm": {
     "typeToConfirm": "Type \"{name}\" to confirm",
     "deleteServerTitle": "Delete server",
-    "deleteServerBody": "The world, mods and configuration of \"{name}\" will be permanently deleted. Backups are kept in data/backups."
+    "deleteServerBody": "The world, mods and configuration of \"{name}\" will be permanently deleted. Backups are kept in data/backups.",
+    "deleteBackups": "Also delete backups",
+    "stopServerTitle": "Stop server",
+    "restartServerTitle": "Restart server",
+    "playersOnlineDisconnect": "{count} online player(s) will be disconnected."
   },
   "notFound": {
     "title": "Chunk not found",

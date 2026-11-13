@@ -32,8 +32,14 @@ function cancelClientPack(serverId) {
   if (p) { pendingClientPackConfirm.delete(serverId); p.reject(new Error('Installation annulée par l\'utilisateur')); }
 }
 
+// Fin d'installation : diffusée à tous les clients (l'interface envoie alors l'icône / le monde
+// choisis au déploiement, même si l'utilisateur a quitté la page du serveur entre-temps)
+const BROADCAST_EVENTS = new Set(['install:done', 'install:error']);
+
 function emit(serverId, event, data) {
-  if (io) io.to(`server:${serverId}`).emit(event, { serverId, ...data });
+  if (!io) return;
+  const target = BROADCAST_EVENTS.has(event) ? io : io.to(`server:${serverId}`);
+  target.emit(event, { serverId, ...data });
 }
 
 function progress(serverId, step, message, percent) {

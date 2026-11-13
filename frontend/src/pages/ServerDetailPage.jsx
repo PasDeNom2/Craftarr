@@ -8,7 +8,7 @@ import {
   updateServer, importWorld, getModpackVersions, patchServer, recreateContainer, installMods, restartPregen,
   reinstallServer, uploadServerIcon, getServerIconUrl, downloadWorld,
 } from '../services/api';
-import { useServerStore, useIconStore } from '../store';
+import { useServerStore, useIconStore, useMetricsStore } from '../store';
 import StatusBadge from '../components/ui/StatusBadge';
 import Console from '../components/servers/Console';
 import MetricsPanel from '../components/servers/MetricsPanel';
@@ -577,9 +577,12 @@ export default function ServerDetailPage() {
   const [editingName, setEditingName] = useState(false);
   const [headerName, setHeaderName] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteBackups, setDeleteBackups] = useState(false);
+  const [confirmPower, setConfirmPower] = useState(null);
   const [confirmMods, setConfirmMods] = useState(false);
   const { updateServer: patchStore, removeServer } = useServerStore();
   const bumpIcon = useIconStore(s => s.bumpIcon);
+  const metrics = useMetricsStore(s => s.metrics[id]);
 
   const transientStatuses = ['installing', 'starting', 'updating'];
 
@@ -630,8 +633,17 @@ export default function ServerDetailPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: () => deleteServer(id),
-    onSuccess: () => { setConfirmDelete(false); removeServer(id); navigate('/'); toast.success(t('server.deleted')); },
+    mutationFn: () => deleteServer(id, { deleteBackups }),
+    onSuccess: (data) => {
+      setConfirmDelete(false);
+      setDeleteBackups(false);
+      removeServer(id);
+      navigate('/');
+      toast.success(t('server.deleted'));
+      if (data?.backupsKeptIn) {
+        toast(t('server.backupsKeptToast'), { duration: 6000 });
+      }
+    },
     onError: (err) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
@@ -674,6 +686,22 @@ export default function ServerDetailPage() {
   const canStop = ['running', 'starting'].includes(server.status);
   const canUpdate = ['running', 'stopped'].includes(server.status);
   const address = `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
+
+  function getOnlinePlayersCount() {
+    if (metrics?.players?.online != null) return metrics.players.online;
+    const cachedPlayers = qc.getQueryData(['players', id]);
+    if (Array.isArray(cachedPlayers)) return cachedPlayers.filter(p => p.is_online).length;
+    return 0;
+  }
+
+  function requestPowerAction(action) {
+    const count = getOnlinePlayersCount();
+    if (count > 0) {
+      setConfirmPower({ action, count });
+    } else {
+      (action === 'restart' ? restartMut : stopMut).mutate();
+    }
+  }
 
   async function copyAddress() {
     try {
@@ -798,10 +826,10 @@ export default function ServerDetailPage() {
               )}
               {canStop && (
                 <>
-                  <button className="btn-secondary" onClick={() => restartMut.mutate()} disabled={isBusy}>
+                  <button className="btn-secondary" onClick={() => requestPowerAction('restart')} disabled={isBusy}>
                     <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
                   </button>
-                  <button className="btn-secondary" onClick={() => stopMut.mutate()} disabled={isBusy}>
+                  <button className="btn-secondary" onClick={() => requestPowerAction('stop')} disabled={isBusy}>
                     <Square size={11} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
                   </button>
                 </>
@@ -868,13 +896,39 @@ export default function ServerDetailPage() {
 
       <ConfirmDialog
         open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
+        onClose={() => { setConfirmDelete(false); setDeleteBackups(false); }}
         onConfirm={() => deleteMut.mutate()}
         busy={deleteMut.isPending}
         title={t('confirm.deleteServerTitle')}
         message={t('confirm.deleteServerBody', { name: server.name })}
         confirmLabel={t('server.actions.delete')}
         requireText={server.name}
+      >
+        <label className="flex items-center gap-2.5 cursor-pointer select-none text-sm text-fg">
+          <input
+            type="checkbox"
+            className="w-4 h-4 rounded"
+            checked={deleteBackups}
+            onChange={e => setDeleteBackups(e.target.checked)}
+            style={{ accentColor: 'var(--danger)' }}
+          />
+          <span>{t('confirm.deleteBackups')}</span>
+        </label>
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={!!confirmPower}
+        onClose={() => setConfirmPower(null)}
+        onConfirm={() => {
+          const action = confirmPower?.action;
+          setConfirmPower(null);
+          if (action === 'restart') restartMut.mutate();
+          else if (action === 'stop') stopMut.mutate();
+        }}
+        busy={isBusy}
+        tone="default"
+        title={confirmPower?.action === 'restart' ? t('confirm.restartServerTitle') : t('confirm.stopServerTitle')}
+        message={t('confirm.playersOnlineDisconnect', { count: confirmPower?.count || 0 })}
+        confirmLabel={confirmPower?.action === 'restart' ? t('server.actions.restart') : t('server.actions.stop')}
       />
       <ConfirmDialog
         open={confirmMods}

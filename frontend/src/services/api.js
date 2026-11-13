@@ -50,7 +50,11 @@ export const getModpackMods     = (source, id) => api.get(`/catalog/${source}/${
 export const getServers = () => api.get('/servers').then(r => r.data);
 export const getServer = (id) => api.get(`/servers/${id}`).then(r => r.data);
 export const createServer = (data) => api.post('/servers', data).then(r => r.data);
-export const deleteServer = (id) => api.delete(`/servers/${id}`, LONG).then(r => r.data);
+export const deleteServer = (id, { deleteBackups = false } = {}) =>
+  api.delete(`/servers/${id}`, {
+    ...LONG,
+    params: deleteBackups ? { deleteBackups: 'true' } : undefined,
+  }).then(r => r.data);
 export const startServer = (id) => api.post(`/servers/${id}/start`).then(r => r.data);
 export const stopServer = (id) => api.post(`/servers/${id}/stop`, null, LONG).then(r => r.data);
 export const restartServer = (id) => api.post(`/servers/${id}/restart`, null, LONG).then(r => r.data);
@@ -125,6 +129,10 @@ export const downloadFiles = async (id, paths) => {
 export const getBackups = (serverId) => api.get(`/servers/${serverId}/backups`).then(r => r.data);
 export const deleteBackup = (serverId, backupId) => api.delete(`/servers/${serverId}/backups/${backupId}`).then(r => r.data);
 export const restoreBackup = (serverId, backupId) => api.post(`/servers/${serverId}/backups/${backupId}/restore`, null, LONG).then(r => r.data);
+export const getOrphanBackups = () => api.get('/backups/orphans').then(r => r.data);
+export const deleteOrphanBackups = (serverId) => api.delete(`/backups/orphans/${encodeURIComponent(serverId)}`).then(r => r.data);
+export const getOrphanBackupDownloadUrl = (serverId, filename) =>
+  api.get(`/backups/orphans/${encodeURIComponent(serverId)}/${encodeURIComponent(filename)}/download-token`).then(r => r.data.url);
 
 // Players
 export const getPlayers = (serverId) => api.get(`/servers/${serverId}/players`).then(r => r.data);

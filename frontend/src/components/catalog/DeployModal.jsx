@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
-import { createServer, getModpackVersions, uploadServerIcon } from '../../services/api';
+import { createServer, getModpackVersions } from '../../services/api';
+import { queueUploads } from '../../services/pendingUploads';
 import { useServerStore } from '../../store';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -76,18 +77,7 @@ export default function DeployModal({ modpack, onClose }) {
         pregen_worlds: form.pregen_worlds,
       });
       addServer(server);
-      if (iconFile) {
-        uploadServerIcon(server.id, iconFile).catch(console.error);
-      }
-      if (worldFile) {
-        const formData = new FormData();
-        formData.append('world', worldFile);
-        fetch(`/api/servers/${server.id}/world-import`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${localStorage.getItem('mcm_token')}` },
-          body: formData,
-        }).catch(console.error);
-      }
+      queueUploads(server.id, { icon: iconFile, world: worldFile });
       onClose();
       navigate(`/servers/${server.id}`);
     } catch (err) {
