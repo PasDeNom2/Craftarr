@@ -73,8 +73,8 @@ router.post('/:id/mods/fix-dependencies', authMiddleware, serverLock.requireIdle
 // POST /api/servers/:id/mods/upload — .jar envoyés à la main (champ « files »), vérifiés avant d'être gardés
 router.post('/:id/mods/upload', authMiddleware, serverLock.requireIdle, wrap(async (req, res) => {
   const server = serverOf(req);
-  const { mods } = modManager.dirsOf(server.id);
-  fs.mkdirSync(mods, { recursive: true });
+  const { dir } = modManager.dirsOf(server);
+  fs.mkdirSync(dir, { recursive: true });
   const multer = require('multer');
   const tmpDir = path.join(DATA_PATH, 'servers', server.id, 'uploads');
   fs.mkdirSync(tmpDir, { recursive: true });
@@ -88,7 +88,7 @@ router.post('/:id/mods/upload', authMiddleware, serverLock.requireIdle, wrap(asy
     for (const f of req.files || []) {
       const name = Buffer.from(f.originalname, 'latin1').toString('utf8');
       if (!/^[^/\\\0]+\.jar$/i.test(name)) { skipped.push(`${name} (pas un .jar)`); continue; }
-      const dest = path.join(mods, name);
+      const dest = path.join(dir, name);
       if (fs.existsSync(dest) || fs.existsSync(`${dest}.disabled`)) { skipped.push(`${name} (déjà présent)`); continue; }
       const check = modManager.checkUploaded(server, f.path);
       warnings.push(...check.warnings);

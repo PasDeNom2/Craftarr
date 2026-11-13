@@ -7,7 +7,7 @@ import {
 import { useI18n } from '../../../i18n';
 import StatusBadge from '../../ui/StatusBadge';
 import ServerAvatar from '../../ui/ServerAvatar';
-import { loaderLabel } from '../../../utils/loaders';
+import { loaderLabel, isPluginLoader } from '../../../utils/loaders';
 
 export default function ServerHeader({
   server,
@@ -180,7 +180,7 @@ export default function ServerHeader({
               className="tab"
             >
               <Icon size={14} strokeWidth={1.75} />
-              {t(labelKey)}
+              {t(tabId === 'mods' && isPluginLoader(server.loader_type) ? 'serverTypes.plugins.tab' : labelKey)}
             </button>
           ))}
         </nav>

@@ -1,0 +1,42 @@
+{
+  "serverTypes": {
+    "label": "Type de serveur",
+    "vanilla": "Vanilla",
+    "paper": "Paper",
+    "purpur": "Purpur",
+    "modalTitle": "Créer un serveur {type}",
+    "createBtn": "Créer le serveur {type}",
+    "defaultName": "Serveur {type}",
+    "versionsError": "Impossible de récupérer les versions disponibles pour {type}.",
+    "noVersions": "Aucune version disponible pour ce filtre.",
+    "hint": {
+      "vanilla": "Serveur officiel Mojang sans mods ni plugins.",
+      "paper": "Serveur haute performance compatible avec les plugins Paper, Spigot et Bukkit.",
+      "purpur": "Fork optimisé de Paper avec options étendues, compatible avec les plugins Paper, Spigot et Bukkit."
+    },
+    "plugins": {
+      "tab": "Plugins",
+      "add": "Ajouter des plugins",
+      "addTitle": "Ajouter des plugins",
+      "searchPlaceholder": "Rechercher un plugin (ex. EssentialsX, LuckPerms, Chunky…)",
+      "compatibleWith": "Seuls les plugins compatibles avec Minecraft {mc} · {loader} sont proposés.",
+      "noResults": "Aucun plugin compatible trouvé.",
+      "filterPlaceholder": "Filtrer les plugins installés…",
+      "count": "{count} plugins",
+      "busy": "Installation ou mise à jour en cours : la gestion des plugins est en pause.",
+      "restartRequired": "Redémarrez le serveur pour appliquer les changements de plugins.",
+      "loadError": "Impossible de lire les plugins.",
+      "emptyTitle": "Aucun plugin installé",
+      "emptyBody": "Ajoutez des plugins depuis Modrinth, ou glissez-déposez des fichiers .jar ici.",
+      "colPlugin": "Plugin",
+      "noMatch": "Aucun plugin ne correspond.",
+      "footer": "Un plugin retiré est déplacé dans .craftarr/trash/plugins (récupérable depuis l'onglet Fichiers). Glissez-déposez des .jar pour les ajouter.",
+      "uploaded": "{count} plugin(s) ajouté(s)",
+      "updateOne": "Mettre à jour ce plugin",
+      "updatesNoneFound": "Tous les plugins suivis sont à jour",
+      "updatesConfirmAllBody": "Mettre à jour ces {count} plugin(s) vers leur dernière version compatible ? Les anciens fichiers seront déplacés dans la corbeille.",
+      "updatesAllSuccess": "{count} plugin(s) mis à jour"
+    },
+    "versionType": "Type de version"
+  }
+}

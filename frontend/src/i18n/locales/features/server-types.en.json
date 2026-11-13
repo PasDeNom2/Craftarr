@@ -1,0 +1,42 @@
+{
+  "serverTypes": {
+    "label": "Server type",
+    "vanilla": "Vanilla",
+    "paper": "Paper",
+    "purpur": "Purpur",
+    "modalTitle": "Create {type} server",
+    "createBtn": "Create {type} server",
+    "defaultName": "{type} Server",
+    "versionsError": "Unable to fetch available versions for {type}.",
+    "noVersions": "No version available for this filter.",
+    "hint": {
+      "vanilla": "Official Mojang server without mods or plugins.",
+      "paper": "High-performance server compatible with Paper, Spigot and Bukkit plugins.",
+      "purpur": "Paper fork with extra customization options, compatible with Paper, Spigot and Bukkit plugins."
+    },
+    "plugins": {
+      "tab": "Plugins",
+      "add": "Add plugins",
+      "addTitle": "Add plugins",
+      "searchPlaceholder": "Search a plugin (e.g. EssentialsX, LuckPerms, Chunky…)",
+      "compatibleWith": "Only plugins compatible with Minecraft {mc} · {loader} are shown.",
+      "noResults": "No compatible plugin found.",
+      "filterPlaceholder": "Filter installed plugins…",
+      "count": "{count} plugins",
+      "busy": "Install or update in progress: plugin management is paused.",
+      "restartRequired": "Restart the server to apply plugin changes.",
+      "loadError": "Could not read plugins.",
+      "emptyTitle": "No plugins installed",
+      "emptyBody": "Add plugins from Modrinth, or drag and drop .jar files here.",
+      "colPlugin": "Plugin",
+      "noMatch": "No plugin matches.",
+      "footer": "Removed plugins are moved to .craftarr/trash/plugins (recoverable from the Files tab). Drag and drop .jar files to add them.",
+      "uploaded": "{count} plugin(s) added",
+      "updateOne": "Update this plugin",
+      "updatesNoneFound": "All tracked plugins are up to date",
+      "updatesConfirmAllBody": "Update these {count} plugin(s) to their latest compatible version? Old files will be moved to the trash.",
+      "updatesAllSuccess": "{count} plugin(s) updated"
+    },
+    "versionType": "Version type"
+  }
+}

@@ -143,7 +143,9 @@ async function installServer(server) {
 async function doInstallServer(server) {
   const db = getDb();
   const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
-  const modsDir = path.join(serverDir, 'mods');
+  const { PLUGIN_LOADERS } = require('./modrinthInstall');
+  const isPluginServer = PLUGIN_LOADERS.has((server.loader_type || '').toLowerCase());
+  const modsDir = path.join(serverDir, isPluginServer ? 'plugins' : 'mods');
   fs.mkdirSync(serverDir, { recursive: true });
   fs.mkdirSync(modsDir, { recursive: true });
 

@@ -37,9 +37,8 @@ function invalidateCache(serverId) {
 /** Dossier des jars, corbeille, dossier temporaire et loaders acceptés pour ce serveur. */
 function targetContext(server) {
   const { mcVersion, loader } = modManager.targetOf(server);
-  const { root, mods, trash, tmp } = modManager.dirsOf(server.id);
   const isPlugin = PLUGIN_LOADERS.has(loader);
-  const dir = isPlugin ? path.join(root, 'plugins') : mods;
+  const { dir, trash, tmp } = modManager.dirsOf(server.id, isPlugin ? 'plugins' : 'mods');
   const loaders = isPlugin
     ? [...new Set([loader, 'paper', 'bukkit', 'spigot'])]
     : loader === 'quilt'
@@ -265,7 +264,7 @@ async function checkUpdates(server, { force = false } = {}) {
       icon: project?.icon_url || null,
       projectId,
       slug,
-      url: slug ? `https://modrinth.com/mod/${slug}` : null,
+      url: slug ? `https://modrinth.com/${ctx.isPlugin ? 'plugin' : 'mod'}/${slug}` : null,
       currentVersion,
       currentVersionId: currentVer?.id || null,
       status,

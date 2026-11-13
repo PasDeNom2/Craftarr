@@ -16,7 +16,7 @@ import Modal from '../ui/Modal';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import Segmented from '../ui/Segmented';
 import SourceBadge from '../ui/SourceBadge';
-import { LOADER_LABEL } from '../../utils/loaders';
+import { LOADER_LABEL, isPluginLoader } from '../../utils/loaders';
 
 
 function formatCount(n) {
@@ -29,12 +29,13 @@ function formatCount(n) {
 const errMsg = (err, fallback) => err.response?.data?.error || err.message || fallback;
 
 // ─── Recherche et installation ────────────────────────────────────────────────
-function AddModsModal({ server, target, onClose, onInstalled }) {
+function AddModsModal({ server, target, isPlugin, onClose, onInstalled }) {
   const { t } = useI18n();
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
-  const [source, setSource] = useState('all');
+  const [source, setSource] = useState(isPlugin ? 'modrinth' : 'all');
   const [installing, setInstalling] = useState(null);
+  const effectiveSource = isPlugin ? 'modrinth' : source;
 
   useEffect(() => {
     const id = setTimeout(() => setQuery(input.trim()), 350);
@@ -42,8 +43,8 @@ function AddModsModal({ server, target, onClose, onInstalled }) {
   }, [input]);
 
   const { data, isFetching, isError } = useQuery({
-    queryKey: ['mod-search', server.id, query, source],
-    queryFn: () => searchMods(server.id, query, source === 'all' ? undefined : source),
+    queryKey: ['mod-search', server.id, query, effectiveSource],
+    queryFn: () => searchMods(server.id, query, effectiveSource === 'all' ? undefined : effectiveSource),
     staleTime: 60000,
   });
   const results = data?.results || [];
@@ -64,7 +65,7 @@ function AddModsModal({ server, target, onClose, onInstalled }) {
   }
 
   return (
-    <Modal open onClose={onClose} title={t('mods.addTitle')} icon={Plus} size="lg">
+    <Modal open onClose={onClose} title={t(isPlugin ? 'serverTypes.plugins.addTitle' : 'mods.addTitle')} icon={Plus} size="lg">
       <div className="p-5 space-y-3">
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -72,23 +73,28 @@ function AddModsModal({ server, target, onClose, onInstalled }) {
             <input
               autoFocus
               className="input pl-9"
-              placeholder={t('mods.searchPlaceholder')}
+              placeholder={t(isPlugin ? 'serverTypes.plugins.searchPlaceholder' : 'mods.searchPlaceholder')}
               value={input}
               onChange={e => setInput(e.target.value)}
             />
           </div>
-          <Segmented
-            value={source}
-            onChange={setSource}
-            items={[
-              { id: 'all', label: t('mods.sourceAll') },
-              { id: 'modrinth', label: 'Modrinth' },
-              { id: 'curseforge', label: 'CurseForge' },
-            ]}
-          />
+          {!isPlugin && (
+            <Segmented
+              value={source}
+              onChange={setSource}
+              items={[
+                { id: 'all', label: t('mods.sourceAll') },
+                { id: 'modrinth', label: 'Modrinth' },
+                { id: 'curseforge', label: 'CurseForge' },
+              ]}
+            />
+          )}
         </div>
         <p className="text-[12px] text-fg-3">
-          {t('mods.compatibleWith', { mc: target?.mcVersion || '?', loader: LOADER_LABEL[target?.loader] || target?.loader || '?' })}
+          {t(isPlugin ? 'serverTypes.plugins.compatibleWith' : 'mods.compatibleWith', {
+            mc: target?.mcVersion || '?',
+            loader: LOADER_LABEL[target?.loader] || target?.loader || '?',
+          })}
         </p>
 
         <div className="min-h-[360px] max-h-[52vh] overflow-y-auto -mx-5 px-5 border-t border-line">
@@ -97,7 +103,7 @@ function AddModsModal({ server, target, onClose, onInstalled }) {
           ) : isError ? (
             <p className="text-[13px] text-danger py-10 text-center">{t('mods.searchError')}</p>
           ) : !results.length ? (
-            <p className="text-[13px] text-fg-3 py-10 text-center">{t('mods.noResults')}</p>
+            <p className="text-[13px] text-fg-3 py-10 text-center">{t(isPlugin ? 'serverTypes.plugins.noResults' : 'mods.noResults')}</p>
           ) : (
             <ul className="divide-y divide-line">
               {results.map(mod => {
@@ -175,6 +181,7 @@ export default function ModsPanel({ server }) {
   const problems = data?.problems || [];
   const running = ['running', 'starting'].includes(server.status);
   const busy = ['installing', 'updating'].includes(server.status);
+  const isPlugin = isPluginLoader(server?.loader_type);
 
   const updateByFile = useMemo(() => {
     const map = new Map();
@@ -206,7 +213,7 @@ export default function ModsPanel({ server }) {
       const fresh = await getModUpdates(server.id, { refresh: true });
       qc.setQueryData(['mod-updates', server.id], fresh);
       if (fresh.updatesCount > 0) toast.success(t('modUpdates.foundCount', { count: fresh.updatesCount }));
-      else toast(t('modUpdates.noneFound'));
+      else toast(t(isPlugin ? 'serverTypes.plugins.updatesNoneFound' : 'modUpdates.noneFound'));
     } catch (err) {
       toast.error(errMsg(err, t('common.error')));
     } finally {
@@ -241,9 +248,9 @@ export default function ModsPanel({ server }) {
       if (r.failedCount > 0) {
         toast.error(t('modUpdates.updateAllPartial', { updated: r.updatedCount, failed: r.failedCount }));
       } else if (r.updatedCount > 0) {
-        toast.success(t('modUpdates.updateAllSuccess', { count: r.updatedCount }));
+        toast.success(t(isPlugin ? 'serverTypes.plugins.updatesAllSuccess' : 'modUpdates.updateAllSuccess', { count: r.updatedCount }));
       } else {
-        toast(t('modUpdates.noneFound'));
+        toast(t(isPlugin ? 'serverTypes.plugins.updatesNoneFound' : 'modUpdates.noneFound'));
       }
       changed(r);
     } catch (err) {
@@ -275,7 +282,7 @@ export default function ModsPanel({ server }) {
     setUploadPct(0);
     try {
       const r = await uploadMods(server.id, jars, setUploadPct);
-      if (r.saved.length) toast.success(t('mods.uploaded', { count: r.saved.length }));
+      if (r.saved.length) toast.success(t(isPlugin ? 'serverTypes.plugins.uploaded' : 'mods.uploaded', { count: r.saved.length }));
       for (const s of r.skipped) toast(s, { icon: '↷' });
       for (const w of r.warnings) toast(w, { icon: '⚠️', duration: 8000 });
       changed(r);
@@ -318,10 +325,10 @@ export default function ModsPanel({ server }) {
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search size={14} strokeWidth={1.75} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-3 pointer-events-none" />
-          <input className="input pl-9" placeholder={t('mods.filterPlaceholder')} value={filter} onChange={e => setFilter(e.target.value)} />
+          <input className="input pl-9" placeholder={t(isPlugin ? 'serverTypes.plugins.filterPlaceholder' : 'mods.filterPlaceholder')} value={filter} onChange={e => setFilter(e.target.value)} />
         </div>
         <p className="text-[12.5px] text-fg-3 mr-auto">
-          {t('mods.count', { count: mods.length })}{disabledCount > 0 && ` · ${t('mods.disabledCount', { count: disabledCount })}`}
+          {t(isPlugin ? 'serverTypes.plugins.count' : 'mods.count', { count: mods.length })}{disabledCount > 0 && ` · ${t('mods.disabledCount', { count: disabledCount })}`}
         </p>
         <input ref={fileRef} type="file" accept=".jar" multiple className="hidden" onChange={e => { upload(e.target.files); e.target.value = ''; }} />
         <button
@@ -347,13 +354,13 @@ export default function ModsPanel({ server }) {
           {uploadPct !== null ? <><Loader2 size={14} className="animate-spin" /> {uploadPct}%</> : <><Upload size={14} strokeWidth={1.75} /> {t('mods.upload')}</>}
         </button>
         <button className="btn-primary" onClick={() => setAdding(true)} disabled={busy}>
-          <Plus size={15} strokeWidth={2} /> {t('mods.add')}
+          <Plus size={15} strokeWidth={2} /> {t(isPlugin ? 'serverTypes.plugins.add' : 'mods.add')}
         </button>
       </div>
 
       {busy && (
         <div className="card !py-3 text-[13px] text-fg-2 flex items-center gap-2">
-          <Loader2 size={14} className="animate-spin" /> {t('mods.busy')}
+          <Loader2 size={14} className="animate-spin" /> {t(isPlugin ? 'serverTypes.plugins.busy' : 'mods.busy')}
         </div>
       )}
 
@@ -361,7 +368,7 @@ export default function ModsPanel({ server }) {
       {needsRestart && running && (
         <div className="card !py-3 flex items-center gap-3 flex-wrap fade-in">
           <RotateCcw size={15} className="text-fg-2 shrink-0" />
-          <p className="text-[13px] text-fg flex-1 min-w-[200px]">{t('mods.restartRequired')}</p>
+          <p className="text-[13px] text-fg flex-1 min-w-[200px]">{t(isPlugin ? 'serverTypes.plugins.restartRequired' : 'mods.restartRequired')}</p>
           <button className="btn-secondary !h-8" onClick={() => setNeedsRestart(false)}>{t('mods.later')}</button>
           <button className="btn-primary !h-8" onClick={restart} disabled={restarting}>
             {restarting ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} {t('server.actions.restart')}
@@ -434,19 +441,19 @@ export default function ModsPanel({ server }) {
           <div className="p-4 space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton h-11" />)}</div>
         ) : isError ? (
           <div className="py-12 text-center">
-            <p className="text-[13px] text-danger">{t('mods.loadError')}</p>
+            <p className="text-[13px] text-danger">{t(isPlugin ? 'serverTypes.plugins.loadError' : 'mods.loadError')}</p>
             <button className="btn-secondary mt-3" onClick={() => refetch()}>{t('catalog.retry')}</button>
           </div>
         ) : !mods.length ? (
           <div className="py-14 text-center px-6">
             <Package size={22} strokeWidth={1.5} className="text-fg-3 mx-auto mb-3" />
-            <p className="text-[14px] font-medium text-fg">{t('mods.emptyTitle')}</p>
-            <p className="text-[13px] text-fg-2 mt-1">{t('mods.emptyBody')}</p>
+            <p className="text-[14px] font-medium text-fg">{t(isPlugin ? 'serverTypes.plugins.emptyTitle' : 'mods.emptyTitle')}</p>
+            <p className="text-[13px] text-fg-2 mt-1">{t(isPlugin ? 'serverTypes.plugins.emptyBody' : 'mods.emptyBody')}</p>
           </div>
         ) : (
           <>
             <div className="hidden md:grid grid-cols-[minmax(0,1fr)_160px_96px_104px] gap-4 px-4 h-9 items-center border-b border-line text-[12px] text-fg-3 font-medium">
-              <span>{t('mods.colMod')}</span><span>{t('mods.colVersion')}</span><span>{t('mods.colLoader')}</span><span />
+              <span>{t(isPlugin ? 'serverTypes.plugins.colPlugin' : 'mods.colMod')}</span><span>{t('mods.colVersion')}</span><span>{t('mods.colLoader')}</span><span />
             </div>
             <ul className="divide-y divide-line">
               {shown.map(mod => {
@@ -485,8 +492,8 @@ export default function ModsPanel({ server }) {
                           style={{ color: 'var(--info)' }}
                           onClick={() => updateOne(mod)}
                           disabled={busyFile === mod.file || busy || updatingAll}
-                          title={t('modUpdates.updateOne')}
-                          aria-label={t('modUpdates.updateOne')}
+                          title={t(isPlugin ? 'serverTypes.plugins.updateOne' : 'modUpdates.updateOne')}
+                          aria-label={t(isPlugin ? 'serverTypes.plugins.updateOne' : 'modUpdates.updateOne')}
                         >
                           {busyFile === mod.file ? <Loader2 size={14} className="animate-spin" /> : <ArrowUpCircle size={14} strokeWidth={1.75} />}
                         </button>
@@ -499,12 +506,12 @@ export default function ModsPanel({ server }) {
                   </li>
                 );
               })}
-              {!shown.length && <li className="py-8 text-center text-[13px] text-fg-3">{t('mods.noMatch')}</li>}
+              {!shown.length && <li className="py-8 text-center text-[13px] text-fg-3">{t(isPlugin ? 'serverTypes.plugins.noMatch' : 'mods.noMatch')}</li>}
             </ul>
           </>
         )}
       </div>
-      <p className="text-[12px] text-fg-3">{t('mods.footer')}</p>
+      <p className="text-[12px] text-fg-3">{t(isPlugin ? 'serverTypes.plugins.footer' : 'mods.footer')}</p>
 
       {dragging && (
         <div className="absolute inset-0 z-20 rounded-xl border-2 border-dashed border-fg-2 bg-bg/85 flex items-center justify-center pointer-events-none">
@@ -516,6 +523,7 @@ export default function ModsPanel({ server }) {
         <AddModsModal
           server={server}
           target={data?.target}
+          isPlugin={isPlugin}
           onClose={() => setAdding(false)}
           onInstalled={changed}
         />
@@ -526,7 +534,7 @@ export default function ModsPanel({ server }) {
         onClose={() => !updatingAll && setConfirmUpdateAll(false)}
         onConfirm={updateAll}
         title={t('modUpdates.confirmAllTitle', { count: updatableMods.length })}
-        message={t('modUpdates.confirmAllBody', { count: updatableMods.length })}
+        message={t(isPlugin ? 'serverTypes.plugins.updatesConfirmAllBody' : 'modUpdates.confirmAllBody', { count: updatableMods.length })}
         confirmLabel={t('modUpdates.updateAllBtn', { count: updatableMods.length })}
         busy={updatingAll}
         tone="default"

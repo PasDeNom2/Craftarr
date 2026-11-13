@@ -1,9 +1,10 @@
 /**
- * Gestion des mods d'un serveur : liste (métadonnées lues dans les jars), activation /
- * désactivation, corbeille, recherche Modrinth + CurseForge filtrée sur la version Minecraft et
- * le loader du serveur, installation avec dépendances obligatoires.
+ * Gestion des mods et plugins d'un serveur : liste (métadonnées lues dans les jars), activation /
+ * désactivation, corbeille par dossier, recherche Modrinth + CurseForge filtrée sur la version
+ * Minecraft et le loader du serveur, installation avec dépendances obligatoires.
  *
- * Rien n'est jamais supprimé définitivement : un mod retiré part dans .craftarr/trash/mods.
+ * Rien n'est jamais supprimé définitivement : un fichier retiré part dans
+ * .craftarr/trash/mods (ou .craftarr/trash/plugins pour Paper/Purpur).
  */
 const fs = require('fs');
 const path = require('path');
@@ -11,36 +12,55 @@ const axios = require('axios');
 const { readModInfo, analyze, describeProblems } = require('./modJar');
 const curseforge = require('./curseforge');
 const { getCurseForgeKey } = require('./sourceAggregator');
+const { PLUGIN_LOADERS } = require('./modrinthInstall');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
 const MODRINTH = 'https://api.modrinth.com/v2';
 const UA = { 'User-Agent': 'Craftarr (github.com/PasDeNom2/Craftarr)' };
 const CF_LOADER = { forge: 1, fabric: 4, quilt: 5, neoforge: 6 };
+const PLUGIN_SEARCH_LOADERS = ['paper', 'purpur', 'bukkit', 'spigot'];
 const MAX_INSTALLS = 30; // garde-fou contre une chaîne de dépendances délirante
 
 function httpError(status, message) { return Object.assign(new Error(message), { status }); }
 
-function dirsOf(serverId) {
-  const root = path.join(DATA_PATH, 'servers', serverId, 'server');
-  return {
-    root,
-    mods: path.join(root, 'mods'),
-    trash: path.join(root, '.craftarr', 'trash', 'mods'),
-    tmp: path.join(root, '.craftarr', 'tmp-mods'),
-  };
+function isPluginLoader(loader) {
+  return PLUGIN_LOADERS.has(String(loader || '').toLowerCase());
 }
 
-/** Nom de fichier de mod acceptable (pas de chemin, extension .jar ou .jar.disabled). */
-function validModFile(name) {
-  return typeof name === 'string' && /^[^/\\\0]+\.jar(\.disabled)?$/i.test(name) && name.length <= 255;
+function readPackMeta(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, '.craftarr-pack.json'), 'utf8')); } catch { return null; }
 }
 
 /** Version MC + loader réellement utilisés par le serveur (métadonnées du pack prioritaires). */
 function targetOf(server) {
-  let meta = null;
-  try { meta = JSON.parse(fs.readFileSync(path.join(dirsOf(server.id).root, '.craftarr-pack.json'), 'utf8')); } catch {}
+  const root = path.join(DATA_PATH, 'servers', server.id, 'server');
+  const meta = readPackMeta(root);
   const loader = (meta?.loader || server.loader_type || '').toLowerCase();
   return { mcVersion: meta?.mcVersion || server.mc_version || null, loader };
+}
+
+function dirsOf(serverOrId, kind = null) {
+  const id = typeof serverOrId === 'string' ? serverOrId : serverOrId?.id;
+  const root = path.join(DATA_PATH, 'servers', id, 'server');
+  let folder = kind;
+  if (!folder) {
+    const loader = typeof serverOrId === 'object' && serverOrId !== null ? targetOf(serverOrId).loader : null;
+    folder = isPluginLoader(loader) ? 'plugins' : 'mods';
+  }
+  return {
+    root,
+    folder,
+    dir: path.join(root, folder),
+    mods: path.join(root, 'mods'),
+    plugins: path.join(root, 'plugins'),
+    trash: path.join(root, '.craftarr', 'trash', folder),
+    tmp: path.join(root, '.craftarr', `tmp-${folder}`),
+  };
+}
+
+/** Nom de fichier de mod/plugin acceptable (pas de chemin, extension .jar ou .jar.disabled). */
+function validModFile(name) {
+  return typeof name === 'string' && /^[^/\\\0]+\.jar(\.disabled)?$/i.test(name) && name.length <= 255;
 }
 
 // ─── Liste ───────────────────────────────────────────────────────────────────
@@ -58,12 +78,13 @@ function cachedInfo(file, prefer = null) {
 }
 
 function listMods(server) {
-  const { mods } = dirsOf(server.id);
-  const { loader } = targetOf(server);
+  const { dir } = dirsOf(server);
+  const target = targetOf(server);
+  const { loader } = target;
   let names = [];
-  try { names = fs.readdirSync(mods).filter(validModFile); } catch {}
+  try { names = fs.readdirSync(dir).filter(validModFile); } catch {}
   const list = names.map(file => {
-    const abs = path.join(mods, file);
+    const abs = path.join(dir, file);
     const { info, st } = cachedInfo(abs, loader) || {};
     return {
       file,
@@ -79,7 +100,7 @@ function listMods(server) {
     };
   }).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
-  const enabledPaths = list.filter(m => m.enabled).map(m => path.join(mods, m.file));
+  const enabledPaths = list.filter(m => m.enabled).map(m => path.join(dir, m.file));
   const problems = describeProblems(analyze(enabledPaths, f => cachedInfo(f, loader)?.info || null));
   // Jar d'un autre loader (ex. mod Fabric sur un serveur Forge) : ignoré au mieux, crash au pire
   for (const m of list) {
@@ -87,7 +108,7 @@ function listMods(server) {
       problems.push(`${m.file} est un mod ${m.loader}, le serveur utilise ${loader}`);
     }
   }
-  return { mods: list, problems, target: targetOf(server) };
+  return { mods: list, problems, target };
 }
 
 function loaderAccepts(serverLoader, modLoader) {
@@ -100,24 +121,25 @@ function loaderAccepts(serverLoader, modLoader) {
 // ─── Activation / corbeille ──────────────────────────────────────────────────
 function setEnabled(server, file, enabled) {
   if (!validModFile(file)) throw httpError(400, 'Nom de fichier invalide');
-  const { mods } = dirsOf(server.id);
-  const src = path.join(mods, file);
-  if (!fs.existsSync(src)) throw httpError(404, 'Mod introuvable');
+  const { dir } = dirsOf(server);
+  const { loader } = targetOf(server);
+  const src = path.join(dir, file);
+  if (!fs.existsSync(src)) throw httpError(404, isPluginLoader(loader) ? 'Plugin introuvable' : 'Mod introuvable');
   const base = file.replace(/\.disabled$/i, '');
   const target = enabled ? base : `${base}.disabled`;
   if (target === file) return file;
-  if (fs.existsSync(path.join(mods, target))) throw httpError(409, `${target} existe déjà`);
-  fs.renameSync(src, path.join(mods, target));
+  if (fs.existsSync(path.join(dir, target))) throw httpError(409, `${target} existe déjà`);
+  fs.renameSync(src, path.join(dir, target));
   return target;
 }
 
 function trashMods(server, files) {
-  const { mods, trash } = dirsOf(server.id);
+  const { dir, trash } = dirsOf(server);
   fs.mkdirSync(trash, { recursive: true });
   const moved = [];
   for (const file of files) {
     if (!validModFile(file)) throw httpError(400, `Nom de fichier invalide : ${file}`);
-    const src = path.join(mods, file);
+    const src = path.join(dir, file);
     if (!fs.existsSync(src)) continue;
     let dest = path.join(trash, file);
     if (fs.existsSync(dest)) dest = path.join(trash, `${Date.now()}-${file}`);
@@ -129,21 +151,30 @@ function trashMods(server, files) {
 
 // ─── Recherche ───────────────────────────────────────────────────────────────
 async function searchModrinth(query, { mcVersion, loader }) {
-  const facets = [['project_type:mod'], ['server_side:required', 'server_side:optional']];
+  const isPlugin = isPluginLoader(loader);
+  const facets = [
+    [isPlugin ? 'project_type:plugin' : 'project_type:mod'],
+    ['server_side:required', 'server_side:optional'],
+  ];
   if (mcVersion) facets.push([`versions:${mcVersion}`]);
-  if (loader) facets.push(loader === 'quilt' ? ['categories:quilt', 'categories:fabric'] : [`categories:${loader}`]);
+  if (isPlugin) {
+    facets.push([...new Set([loader, ...PLUGIN_SEARCH_LOADERS])].map(l => `categories:${l}`));
+  } else if (loader) {
+    facets.push(loader === 'quilt' ? ['categories:quilt', 'categories:fabric'] : [`categories:${loader}`]);
+  }
   const { data } = await axios.get(`${MODRINTH}/search`, {
     params: { query: query || undefined, facets: JSON.stringify(facets), limit: 20, index: query ? 'relevance' : 'downloads' },
     headers: UA, timeout: 15000,
   });
-  return data.hits.map(h => ({
+  return (data.hits || []).map(h => ({
     source: 'modrinth', id: h.project_id, slug: h.slug, name: h.title, summary: h.description,
     icon: h.icon_url || null, downloads: h.downloads, author: h.author,
-    url: `https://modrinth.com/mod/${h.slug}`,
+    url: `https://modrinth.com/${isPlugin ? 'plugin' : 'mod'}/${h.slug}`,
   }));
 }
 
 async function searchCurseForge(query, { mcVersion, loader }) {
+  if (isPluginLoader(loader)) return [];
   const key = getCurseForgeKey();
   if (!key) return [];
   const params = { gameId: 432, classId: 6, searchFilter: query || undefined, sortField: 2, sortOrder: 'desc', pageSize: 20 };
@@ -170,7 +201,13 @@ async function search(server, query, source) {
 
 // ─── Résolution d'un fichier compatible ──────────────────────────────────────
 async function resolveModrinth(projectId, { mcVersion, loader }) {
-  const loaders = loader === 'quilt' ? ['quilt', 'fabric'] : loader ? [loader] : undefined;
+  const loaders = isPluginLoader(loader)
+    ? [...new Set([loader, ...PLUGIN_SEARCH_LOADERS])]
+    : loader === 'quilt'
+      ? ['quilt', 'fabric']
+      : loader
+        ? [loader]
+        : undefined;
   const { data } = await axios.get(`${MODRINTH}/project/${encodeURIComponent(projectId)}/version`, {
     params: {
       loaders: loaders ? JSON.stringify(loaders) : undefined,
@@ -229,15 +266,15 @@ async function download(urls, dest, expected) {
  */
 async function installMod(server, source, projectId, { asDependency = false, resolveMissing = !asDependency } = {}) {
   const target = targetOf(server);
-  const { mods, tmp } = dirsOf(server.id);
-  fs.mkdirSync(mods, { recursive: true });
+  const { dir, tmp } = dirsOf(server);
+  fs.mkdirSync(dir, { recursive: true });
   fs.rmSync(tmp, { recursive: true, force: true });
   fs.mkdirSync(tmp, { recursive: true });
 
   // Ids déjà fournis par les mods actifs
   const provided = new Set();
-  for (const f of fs.readdirSync(mods).filter(n => /\.jar$/i.test(n))) {
-    for (const id of cachedInfo(path.join(mods, f), target.loader)?.info?.ids || []) provided.add(id);
+  for (const f of fs.readdirSync(dir).filter(n => /\.jar$/i.test(n))) {
+    for (const id of cachedInfo(path.join(dir, f), target.loader)?.info?.ids || []) provided.add(id);
   }
 
   const installed = [];
@@ -263,7 +300,7 @@ async function installMod(server, source, projectId, { asDependency = false, res
         continue;
       }
       if (!/^[^/\\\0]+\.jar$/i.test(resolved.fileName)) { warnings.push(`Fichier ignoré : ${resolved.fileName}`); continue; }
-      if (fs.existsSync(path.join(mods, resolved.fileName))) {
+      if (fs.existsSync(path.join(dir, resolved.fileName))) {
         if (item.root) throw httpError(409, `${resolved.fileName} est déjà installé`);
         skipped.push(resolved.fileName);
         continue;
@@ -288,7 +325,7 @@ async function installMod(server, source, projectId, { asDependency = false, res
         warnings.push(`${resolved.fileName} est un mod ${info.loader}, le serveur utilise ${target.loader}`);
       }
 
-      fs.renameSync(tmpFile, path.join(mods, resolved.fileName));
+      fs.renameSync(tmpFile, path.join(dir, resolved.fileName));
       ids.forEach(id => provided.add(id));
       installed.push(resolved.fileName);
       queue.push(...resolved.deps);
@@ -297,7 +334,7 @@ async function installMod(server, source, projectId, { asDependency = false, res
     fs.rmSync(tmp, { recursive: true, force: true });
   }
   // Dépendances que l'API n'a pas déclarées mais que les jars exigent (ex. Fabric API)
-  if (resolveMissing && installed.length) {
+  if (resolveMissing && installed.length && !isPluginLoader(target.loader)) {
     const extra = await installMissingDependencies(server, new Set(installed));
     installed.push(...extra.installed);
     for (const dep of extra.unresolved) warnings.push(`Dépendance « ${dep} » introuvable automatiquement : à installer à la main`);
@@ -325,13 +362,14 @@ async function modrinthProjectFor(modId) {
  * onlyFor : limite aux dépendances de ces fichiers (après une installation).
  */
 async function installMissingDependencies(server, onlyFor = null) {
-  const { mods } = dirsOf(server.id);
+  const { dir } = dirsOf(server);
   const { loader } = targetOf(server);
+  if (isPluginLoader(loader) || !fs.existsSync(dir)) return { installed: [], unresolved: [] };
   const installed = [];
   const unresolved = [];
   const tried = new Set();
   for (let round = 0; round < 5; round++) {
-    const files = fs.readdirSync(mods).filter(n => /.jar$/i.test(n)).map(n => path.join(mods, n));
+    const files = fs.readdirSync(dir).filter(n => /\.jar$/i.test(n)).map(n => path.join(dir, n));
     const { missing } = analyze(files, f => cachedInfo(f, loader)?.info || null);
     const todo = missing.filter(m => (!onlyFor || onlyFor.has(m.file) || installed.includes(m.file)) && !tried.has(m.dep));
     if (!todo.length) break;
@@ -356,8 +394,11 @@ function checkUploaded(server, absFile) {
   const { loader } = targetOf(server);
   const info = readModInfo(absFile, { prefer: loader });
   const warnings = [];
-  if (!info) warnings.push(`${path.basename(absFile)} : pas de métadonnées de mod lisibles (librairie ou très ancien mod ?)`);
-  else {
+  if (!info) {
+    if (!isPluginLoader(loader)) {
+      warnings.push(`${path.basename(absFile)} : pas de métadonnées de mod lisibles (librairie ou très ancien mod ?)`);
+    }
+  } else {
     if (loader && info.loaders?.length && !info.loaders.some(l => loaderAccepts(loader, l))) warnings.push(`${path.basename(absFile)} est un mod ${info.loader}, le serveur utilise ${loader}`);
     if (info.clientOnly) warnings.push(`${path.basename(absFile)} est déclaré client-only : il ne sera pas chargé par le serveur`);
   }
@@ -365,6 +406,6 @@ function checkUploaded(server, absFile) {
 }
 
 module.exports = {
-  listMods, setEnabled, trashMods, search, installMod, installMissingDependencies, checkUploaded, dirsOf, validModFile, targetOf,
+  listMods, setEnabled, trashMods, search, installMod, installMissingDependencies, checkUploaded, dirsOf, validModFile, targetOf, isPluginLoader,
   _internals: { loaderAccepts, infoCache },
 };

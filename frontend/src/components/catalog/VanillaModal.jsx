@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../ui/Modal';
+import Segmented from '../ui/Segmented';
 import { createServer, getVanillaVersions } from '../../services/api';
+import { getServerTypeVersions } from '../../services/features/server-types';
 import { queueUploads } from '../../services/pendingUploads';
 import { useServerStore } from '../../store';
 import { useQuery } from '@tanstack/react-query';
@@ -18,12 +20,15 @@ const VERSION_TYPES = [
   { value: 'all', label: 'Tout' },
 ];
 
+const SERVER_TYPES = ['vanilla', 'paper', 'purpur'];
+
 export default function VanillaModal({ open, onClose }) {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { addServer } = useServerStore();
   const allServers = useServerStore(s => s.servers);
 
+  const [serverType, setServerType] = useState('vanilla');
   const [versionType, setVersionType] = useState('release');
   const [form, setForm] = useState({
     pregen_enabled: false,
@@ -46,20 +51,65 @@ export default function VanillaModal({ open, onClose }) {
   const [iconFile, setIconFile] = useState(null);
   const [deploying, setDeploying] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['vanilla-versions', versionType],
-    queryFn: () => getVanillaVersions(versionType),
+  const activeVersionType = serverType === 'vanilla' ? versionType : 'release';
+
+  const { data: vanillaData, isLoading: vanillaLoading } = useQuery({
+    queryKey: ['vanilla-versions', activeVersionType],
+    queryFn: () => getVanillaVersions(activeVersionType),
     staleTime: 600000,
     enabled: open,
   });
 
-  const versions = data?.versions || [];
-  const latestRelease = data?.latest?.release;
+  const {
+    data: typeData,
+    isLoading: typeLoading,
+    isError: typeError,
+  } = useQuery({
+    queryKey: ['server-type-versions', serverType],
+    queryFn: () => getServerTypeVersions(serverType),
+    staleTime: 3600000,
+    enabled: open && serverType !== 'vanilla',
+    retry: 1,
+  });
+
+  const versions = useMemo(() => {
+    const vanillaVersions = vanillaData?.versions || [];
+    if (serverType === 'vanilla') return vanillaVersions;
+    const supported = typeData?.versions || [];
+    if (!supported.length) return [];
+    if (!vanillaVersions.length) return supported.map(id => ({ id, type: 'release' }));
+    const supportedSet = new Set(supported);
+    const filtered = vanillaVersions.filter(v => supportedSet.has(v.id));
+    return filtered.length > 0 ? filtered : supported.map(id => ({ id, type: 'release' }));
+  }, [serverType, vanillaData, typeData]);
+
+  const versionsLoading = serverType === 'vanilla'
+    ? vanillaLoading
+    : (typeLoading || (vanillaLoading && !typeData?.versions?.length));
+
+  const latestRelease = serverType === 'vanilla'
+    ? (vanillaData?.latest?.release || '')
+    : (versions[0]?.id || '');
 
   const effectiveMcVersion = form.mc_version || latestRelease || '';
+  const typeLabel = t(`serverTypes.${serverType}`);
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
+  }
+
+  function handleServerTypeChange(nextType) {
+    setServerType(nextType);
+    if (nextType !== 'vanilla') setVersionType('release');
+    setForm(f => {
+      const defaultNames = new Set(SERVER_TYPES.map(id => t('serverTypes.defaultName', { type: t(`serverTypes.${id}`) })));
+      const nextDefault = t('serverTypes.defaultName', { type: t(`serverTypes.${nextType}`) });
+      return {
+        ...f,
+        mc_version: '',
+        name: defaultNames.has(f.name) || !f.name ? nextDefault : f.name,
+      };
+    });
   }
 
   async function handleDeploy(e) {
@@ -69,7 +119,8 @@ export default function VanillaModal({ open, onClose }) {
     try {
       const server = await createServer({
         name: form.name,
-        loader_type: 'vanilla',
+        loader_type: serverType,
+        modpack_source: 'vanilla',
         pregen_enabled: form.pregen_enabled,
         pregen_radius: form.pregen_radius,
         pregen_worlds: form.pregen_worlds,
@@ -101,31 +152,48 @@ export default function VanillaModal({ open, onClose }) {
   const portConflict = portTakenBy(allServers, form.port);
 
   return (
-    <Modal open={open} onClose={onClose} title="Créer un serveur Vanilla" size="lg">
+    <Modal open={open} onClose={onClose} title={t('serverTypes.modalTitle', { type: typeLabel })} size="lg">
       <div className="p-6">
         <form onSubmit={handleDeploy} className="space-y-5">
 
-          {/* Version type tabs */}
+          {/* Type de serveur */}
           <div>
-            <label className="label">Type de version</label>
-            <div className="flex gap-2">
-              {VERSION_TYPES.map(vt => (
-                <button
-                  key={vt.value}
-                  type="button"
-                  onClick={() => { setVersionType(vt.value); set('mc_version', ''); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{
-                    background: versionType === vt.value ? 'var(--accent)' : 'rgba(var(--tint-rgb),0.05)',
-                    color: versionType === vt.value ? 'var(--bg)' : 'var(--fg-2)',
-                    border: `1px solid ${versionType === vt.value ? 'var(--accent)' : 'rgba(var(--tint-rgb),0.08)'}`,
-                  }}
-                >
-                  {vt.label}
-                </button>
-              ))}
+            {/* Groupe de boutons : intitulé relié par aria-labelledby (un <label> ne peut pas viser un groupe) */}
+            <p className="label" id="vanilla-server-type-label">{t('serverTypes.label')}</p>
+            <div role="group" aria-labelledby="vanilla-server-type-label">
+            <Segmented
+              value={serverType}
+              onChange={handleServerTypeChange}
+              items={SERVER_TYPES.map(id => ({ id, label: t(`serverTypes.${id}`) }))}
+              className="w-full [&>button]:flex-1"
+            />
             </div>
+            <p className="text-[11px] text-fg-3 mt-1.5">{t(`serverTypes.hint.${serverType}`)}</p>
           </div>
+
+          {/* Version type tabs (Vanilla uniquement : Paper/Purpur ne publient que les releases) */}
+          {serverType === 'vanilla' && (
+            <div>
+              <p className="label" id="vanilla-version-type-label">{t('serverTypes.versionType')}</p>
+              <div className="flex gap-2" role="group" aria-labelledby="vanilla-version-type-label">
+                {VERSION_TYPES.map(vt => (
+                  <button
+                    key={vt.value}
+                    type="button"
+                    onClick={() => { setVersionType(vt.value); set('mc_version', ''); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      background: versionType === vt.value ? 'var(--accent)' : 'rgba(var(--tint-rgb),0.05)',
+                      color: versionType === vt.value ? 'var(--bg)' : 'var(--fg-2)',
+                      border: `1px solid ${versionType === vt.value ? 'var(--accent)' : 'rgba(var(--tint-rgb),0.08)'}`,
+                    }}
+                  >
+                    {vt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -159,7 +227,7 @@ export default function VanillaModal({ open, onClose }) {
 
           {/* MC Version */}
           <div>
-            <label className="label">
+            <label className="label" htmlFor="vanilla-mc-version">
               Version Minecraft
               {latestRelease && !form.mc_version && (
                 <span className="ml-2 text-fg-3 font-normal normal-case tracking-normal">
@@ -167,10 +235,14 @@ export default function VanillaModal({ open, onClose }) {
                 </span>
               )}
             </label>
-            {isLoading ? (
+            {versionsLoading ? (
               <div className="input text-fg-3 text-sm">{t('common.loading')}</div>
+            ) : serverType !== 'vanilla' && typeError ? (
+              <p className="text-xs text-danger py-2">{t('serverTypes.versionsError', { type: typeLabel })}</p>
+            ) : versions.length === 0 ? (
+              <p className="text-xs text-fg-3 py-2">{t('serverTypes.noVersions')}</p>
             ) : (
-              <select className="input" value={form.mc_version} onChange={e => set('mc_version', e.target.value)}>
+              <select id="vanilla-mc-version" className="input" value={form.mc_version} onChange={e => set('mc_version', e.target.value)}>
                 <option value="">Dernière version ({latestRelease})</option>
                 {versions.map(v => (
                   <option key={v.id} value={v.id}>
@@ -284,11 +356,11 @@ export default function VanillaModal({ open, onClose }) {
               <span className="text-sm text-fg-2">{t('deploy.onlineMode')}</span>
             </label>
           </div>
-          <PregenOption form={form} set={set} vanilla />
+          <PregenOption form={form} set={set} vanilla={serverType === 'vanilla'} />
 
-          <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying || !!portConflict}>
+          <button type="submit" className="btn-primary w-full justify-center py-2.5 gap-2" disabled={deploying || !!portConflict || !effectiveMcVersion}>
             <Rocket size={14} strokeWidth={1.5} />
-            {deploying ? t('deploy.deploying') : 'Créer le serveur Vanilla'}
+            {deploying ? t('deploy.deploying') : t('serverTypes.createBtn', { type: typeLabel })}
           </button>
         </form>
       </div>

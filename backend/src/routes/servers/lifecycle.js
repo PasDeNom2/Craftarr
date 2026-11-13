@@ -89,14 +89,18 @@ router.post('/', authMiddleware, async (req, res, next) => {
       pregen_enabled = false, pregen_radius = 3000, pregen_worlds,
     } = req.body;
 
-    let isVanilla = loader_type === 'vanilla';
+    const normalizedLoader = typeof loader_type === 'string' ? loader_type.toLowerCase() : 'forge';
+    const isStandaloneType = ['vanilla', 'paper', 'purpur'].includes(normalizedLoader)
+      && (!modpack_source || modpack_source === 'vanilla');
+    const isVanilla = normalizedLoader === 'vanilla' && (!modpack_source || modpack_source === 'vanilla');
     // Vanilla + pré-génération : Chunky a besoin d'un loader. On passe sur Fabric (compatible avec
     // les clients vanilla, aucun mod à installer côté joueurs) si Chunky existe pour cette version.
-    let effectiveLoader = loader_type;
+    // Paper / Purpur : Chunky existe en plugin, on conserve le loader choisi.
+    let effectiveLoader = isStandaloneType ? normalizedLoader : loader_type;
     if (isVanilla && pregen_enabled && isMcVersion(mc_version) && await pregen.isAvailable('fabric', mc_version)) {
       effectiveLoader = 'fabric';
     }
-    if (!name || (!isVanilla && (!modpack_id || !modpack_source))) {
+    if (!name || (!isStandaloneType && (!modpack_id || !modpack_source))) {
       return res.status(400).json({ error: 'name (et modpack_id/modpack_source pour les modpacks) sont requis' });
     }
     const validName = validate.str(name, { max: 64, field: 'name' });
@@ -109,8 +113,8 @@ router.post('/', authMiddleware, async (req, res, next) => {
     const validOnlineMode = validate.bool(online_mode, 'online_mode') ? 1 : 0;
     const validAutoUpdate = validate.bool(auto_update, 'auto_update') ? 1 : 0;
     const validPregen = validate.bool(pregen_enabled, 'pregen_enabled') ? 1 : 0;
-    const effectiveModpackId = isVanilla ? `vanilla-${mc_version || 'latest'}` : modpack_id;
-    const effectiveModpackSource = isVanilla ? 'vanilla' : modpack_source;
+    const effectiveModpackId = isStandaloneType ? `${normalizedLoader}-${mc_version || 'latest'}` : modpack_id;
+    const effectiveModpackSource = isStandaloneType ? 'vanilla' : modpack_source;
 
     const db = getDb();
     const assignedPort = (port !== undefined && port !== null && port !== '')
