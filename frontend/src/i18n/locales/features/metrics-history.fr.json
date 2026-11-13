@@ -1,0 +1,15 @@
+{
+  "metricsHistory": {
+    "live": "Direct",
+    "range1h": "1 h",
+    "range6h": "6 h",
+    "range24h": "24 h",
+    "range7d": "7 j",
+    "range30d": "30 j",
+    "empty": "Aucune donnée enregistrée sur cette période.",
+    "error": "Impossible de charger l'historique des métriques.",
+    "loading": "Chargement de l'historique...",
+    "granularityMinute": "Résolution 1 min",
+    "granularityHour": "Moyenne horaire"
+  }
+}

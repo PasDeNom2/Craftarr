@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useMetricsStore } from '../../store';
 import { useI18n } from '../../i18n';
+import { getMetricsHistory } from '../../services/features/metrics-history';
+import Segmented from '../ui/Segmented';
 import { Activity, Users, MemoryStick, Cpu, Gauge } from 'lucide-react';
 
 // Les points arrivent via la console (toujours montée sur la page serveur) : l'historique
@@ -32,18 +35,22 @@ function StatCard({ icon: Icon, label, value, unit, sub, tone = 'var(--fg)', pro
   );
 }
 
-function ChartTooltip({ active, payload, unit, label: name }) {
+function ChartTooltip({ active, payload, unit, label: name, showDate }) {
   if (!active || !payload?.length) return null;
   const p = payload[0];
+  const date = new Date(p.payload.t);
+  const stamp = showDate
+    ? date.toLocaleString(undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleTimeString();
   return (
     <div className="glass-strong rounded-xl px-3 py-2 text-[11px]">
-      <p className="text-fg-3 font-mono">{new Date(p.payload.t).toLocaleTimeString()}</p>
-      <p className="text-fg font-semibold mt-0.5">{name} · {p.value}{unit}</p>
+      <p className="text-fg-3 font-mono">{stamp}</p>
+      <p className="text-fg font-semibold mt-0.5">{name} · {p.value != null ? `${p.value}${unit}` : '—'}</p>
     </div>
   );
 }
 
-function Chart({ data, dataKey, color, id, label, unit = '', domain, current }) {
+function Chart({ data, dataKey, color, id, label, unit = '', domain, current, showDate }) {
   return (
     <div className="card !p-4 !pb-2">
       <div className="flex items-baseline justify-between mb-2">
@@ -63,8 +70,8 @@ function Chart({ data, dataKey, color, id, label, unit = '', domain, current }) 
           </defs>
           <XAxis dataKey="t" type="number" domain={['dataMin', 'dataMax']} hide />
           <YAxis tick={{ fontSize: 9, fill: 'rgba(235,235,245,0.3)' }} domain={domain} axisLine={false} tickLine={false} width={34} tickFormatter={v => (v >= 1000 ? `${+(v / 1000).toFixed(1)}k` : v)} />
-          <Tooltip content={<ChartTooltip unit={unit} label={label} />} cursor={{ stroke: 'rgba(var(--tint-rgb),0.2)', strokeDasharray: '3 3' }} />
-          <Area type="monotone" dataKey={dataKey} stroke={color} fill={`url(#${id})`} strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+          <Tooltip content={<ChartTooltip unit={unit} label={label} showDate={showDate} />} cursor={{ stroke: 'rgba(var(--tint-rgb),0.2)', strokeDasharray: '3 3' }} />
+          <Area type="monotone" dataKey={dataKey} stroke={color} fill={`url(#${id})`} strokeWidth={2} dot={data.length === 1 ? { r: 3 } : false} isAnimationActive={false} connectNulls />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -73,8 +80,37 @@ function Chart({ data, dataKey, color, id, label, unit = '', domain, current }) 
 
 export default function MetricsPanel({ server }) {
   const { t } = useI18n();
+  const [range, setRange] = useState('live');
   const current = useMetricsStore(s => s.metrics[server.id]) || null;
-  const history = useMetricsStore(s => s.history[server.id]) || EMPTY;
+  const liveHistory = useMetricsStore(s => s.history[server.id]) || EMPTY;
+  const isLive = range === 'live';
+
+  const { data: remoteHistory, isLoading: historyLoading, isError: historyError } = useQuery({
+    queryKey: ['metrics-history', server.id, range],
+    queryFn: () => getMetricsHistory(server.id, range),
+    enabled: !isLive,
+    refetchInterval: 60000,
+  });
+
+  const remotePoints = useMemo(
+    () => (remoteHistory?.points || []).map(p => ({
+      t: p.t,
+      memUsed: p.mem,
+      cpu: p.cpu,
+      tps: p.tps,
+      players: p.players,
+    })),
+    [remoteHistory],
+  );
+
+  const rangeItems = useMemo(() => [
+    { id: 'live', label: t('metricsHistory.live') },
+    { id: '1h',   label: t('metricsHistory.range1h') },
+    { id: '6h',   label: t('metricsHistory.range6h') },
+    { id: '24h',  label: t('metricsHistory.range24h') },
+    { id: '7d',   label: t('metricsHistory.range7d') },
+    { id: '30d',  label: t('metricsHistory.range30d') },
+  ], [t]);
 
   const tps = current?.tps?.tps1;
   const tpsColor = tps == null ? 'var(--fg-2)' : tps >= 18 ? 'var(--success)' : tps >= 12 ? 'var(--warn)' : 'var(--danger)';
@@ -84,47 +120,102 @@ export default function MetricsPanel({ server }) {
   const memColor = memPct > 90 ? 'var(--danger)' : memPct > 75 ? 'var(--warn)' : 'var(--purple)';
   const isRunning = server.status === 'running';
   const maxPlayers = current?.players?.max ?? server.max_players;
-  const span = history.length > 1 ? Math.round((history[history.length - 1].t - history[0].t) / 60000) : 0;
+  const span = liveHistory.length > 1 ? Math.round((liveHistory[liveHistory.length - 1].t - liveHistory[0].t) / 60000) : 0;
   const memDomain = useMemo(() => [0, current?.memLimit || 'auto'], [current?.memLimit]);
 
-  if (!isRunning && !history.length) {
+  const chartData = isLive ? liveHistory : remotePoints;
+  const lastPoint = chartData[chartData.length - 1] || null;
+  const showDate = range === '24h' || range === '7d' || range === '30d';
+  const showStatCards = isLive ? (isRunning || liveHistory.length > 0) : (isRunning || !!current);
+
+  const ramDisplay = isLive ? current?.memUsed : (current?.memUsed ?? lastPoint?.memUsed);
+  const cpuDisplay = isLive ? current?.cpu?.toFixed(1) : (current?.cpu ?? lastPoint?.cpu)?.toFixed(1);
+  const tpsDisplay = isLive ? tps?.toFixed(1) : (tps ?? lastPoint?.tps)?.toFixed(1);
+  const playersDisplay = isLive ? current?.players?.online : (current?.players?.online ?? lastPoint?.players);
+
+  const rangeSelector = (
+    <div className="flex items-center justify-end">
+      <Segmented size="sm" value={range} onChange={setRange} items={rangeItems} />
+    </div>
+  );
+
+  if (isLive && !isRunning && !liveHistory.length) {
     return (
-      <div className="card flex flex-col items-center justify-center text-center py-16 gap-3 max-w-4xl">
-        <span className="w-14 h-14 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><Activity size={24} strokeWidth={1.5} /></span>
-        <p className="text-fg-2 text-sm">{t('metrics.startServer')}</p>
+      <div className="space-y-4 max-w-5xl">
+        {rangeSelector}
+        <div className="card flex flex-col items-center justify-center text-center py-16 gap-3 max-w-4xl">
+          <span className="w-14 h-14 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><Activity size={24} strokeWidth={1.5} /></span>
+          <p className="text-fg-2 text-sm">{t('metrics.startServer')}</p>
+        </div>
       </div>
+    );
+  }
+
+  const footerText = isLive
+    ? t('metrics.historySpan', { minutes: Math.max(1, span) })
+    : (range === '7d' || range === '30d' ? t('metricsHistory.granularityHour') : t('metricsHistory.granularityMinute'));
+
+  let body;
+  if (isLive && liveHistory.length <= 1) {
+    body = (
+      <div className="card flex items-center justify-center gap-2.5 py-10 text-fg-2 text-sm">
+        <span className="w-4 h-4 border-2 border-tint/20 border-t-tint/70 rounded-full animate-spin" />
+        {t('metrics.waiting')}
+      </div>
+    );
+  } else if (!isLive && historyLoading) {
+    body = (
+      <div className="card flex items-center justify-center gap-2.5 py-10 text-fg-2 text-sm">
+        <span className="w-4 h-4 border-2 border-tint/20 border-t-tint/70 rounded-full animate-spin" />
+        {t('metricsHistory.loading')}
+      </div>
+    );
+  } else if (!isLive && historyError) {
+    body = (
+      <div className="card flex flex-col items-center justify-center text-center py-14 gap-3">
+        <span className="w-12 h-12 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><Activity size={22} strokeWidth={1.5} /></span>
+        <p className="text-fg-2 text-sm">{t('metricsHistory.error')}</p>
+      </div>
+    );
+  } else if (!isLive && remotePoints.length === 0) {
+    body = (
+      <div className="card flex flex-col items-center justify-center text-center py-14 gap-3">
+        <span className="w-12 h-12 rounded-2xl bg-tint/[0.06] flex items-center justify-center text-fg-3"><Activity size={22} strokeWidth={1.5} /></span>
+        <p className="text-fg-2 text-sm">{t('metricsHistory.empty')}</p>
+      </div>
+    );
+  } else {
+    body = (
+      <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <Chart data={chartData} dataKey="memUsed" color="var(--purple)" id="g-ram" label={t('metrics.ramLabel')} unit=" Mo" domain={memDomain} current={ramDisplay} showDate={showDate} />
+          <Chart data={chartData} dataKey="cpu" color="var(--info)" id="g-cpu" label={t('metrics.cpuLabel')} unit=" %" domain={[0, dataMax => Math.max(100, Math.ceil(dataMax))]} current={cpuDisplay} showDate={showDate} />
+          <Chart data={chartData} dataKey="tps" color="var(--success)" id="g-tps" label="TPS" domain={[0, 20]} current={tpsDisplay} showDate={showDate} />
+          <Chart data={chartData} dataKey="players" color="var(--orange)" id="g-players" label={t('metrics.players')} domain={[0, dataMax => Math.max(4, dataMax + 1)]} current={playersDisplay} showDate={showDate} />
+        </div>
+        <p className="text-[11px] text-fg-3 px-1">{footerText}</p>
+      </>
     );
   }
 
   return (
     <div className="space-y-4 max-w-5xl">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
-        <StatCard icon={Users} label={t('metrics.players')} value={current?.players?.online ?? '—'} unit={`/ ${maxPlayers}`}
-          tone="var(--accent)" progress={current?.players ? (current.players.online / maxPlayers) * 100 : 0} />
-        <StatCard icon={MemoryStick} label={t('metrics.ram')} value={current?.memUsed != null ? (current.memUsed / 1024).toFixed(1) : '—'} unit={`/ ${current?.memLimit ? (current.memLimit / 1024).toFixed(0) : '—'} Go`}
-          tone={memColor} progress={memPct ?? 0} />
-        <StatCard icon={Cpu} label={t('metrics.cpu')} value={current?.cpu != null ? current.cpu.toFixed(1) : '—'} unit="%"
-          tone={cpuColor} progress={Math.min(100, cpuVal)} />
-        <StatCard icon={Gauge} label={t('metrics.tps')} value={tps != null ? tps.toFixed(1) : '—'} unit="/ 20"
-          tone={tpsColor} progress={tps != null ? (tps / 20) * 100 : 0} />
-      </div>
+      {rangeSelector}
 
-      {history.length > 1 ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <Chart data={history} dataKey="memUsed" color="var(--purple)" id="g-ram" label={t('metrics.ramLabel')} unit=" Mo" domain={memDomain} current={current?.memUsed} />
-            <Chart data={history} dataKey="cpu" color="var(--info)" id="g-cpu" label={t('metrics.cpuLabel')} unit=" %" domain={[0, dataMax => Math.max(100, Math.ceil(dataMax))]} current={current?.cpu?.toFixed(1)} />
-            <Chart data={history} dataKey="tps" color="var(--success)" id="g-tps" label="TPS" domain={[0, 20]} current={tps?.toFixed(1)} />
-            <Chart data={history} dataKey="players" color="var(--orange)" id="g-players" label={t('metrics.players')} domain={[0, dataMax => Math.max(4, dataMax + 1)]} current={current?.players?.online} />
-          </div>
-          <p className="text-[11px] text-fg-3 px-1">{t('metrics.historySpan', { minutes: Math.max(1, span) })}</p>
-        </>
-      ) : (
-        <div className="card flex items-center justify-center gap-2.5 py-10 text-fg-2 text-sm">
-          <span className="w-4 h-4 border-2 border-tint/20 border-t-tint/70 rounded-full animate-spin" />
-          {t('metrics.waiting')}
+      {showStatCards && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+          <StatCard icon={Users} label={t('metrics.players')} value={current?.players?.online ?? '—'} unit={`/ ${maxPlayers}`}
+            tone="var(--accent)" progress={current?.players ? (current.players.online / maxPlayers) * 100 : 0} />
+          <StatCard icon={MemoryStick} label={t('metrics.ram')} value={current?.memUsed != null ? (current.memUsed / 1024).toFixed(1) : '—'} unit={`/ ${current?.memLimit ? (current.memLimit / 1024).toFixed(0) : '—'} Go`}
+            tone={memColor} progress={memPct ?? 0} />
+          <StatCard icon={Cpu} label={t('metrics.cpu')} value={current?.cpu != null ? current.cpu.toFixed(1) : '—'} unit="%"
+            tone={cpuColor} progress={Math.min(100, cpuVal)} />
+          <StatCard icon={Gauge} label={t('metrics.tps')} value={tps != null ? tps.toFixed(1) : '—'} unit="/ 20"
+            tone={tpsColor} progress={tps != null ? (tps / 20) * 100 : 0} />
         </div>
       )}
+
+      {body}
     </div>
   );
 }
