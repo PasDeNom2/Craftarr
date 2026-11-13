@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { extraPages } from '../../extensions/registry';
 import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { LayoutGrid, Compass, Settings, LogOut, Plus, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
@@ -118,6 +119,9 @@ export default function Sidebar() {
 
       {/* Pied : paramètres, langue, compte */}
       <div className="shrink-0 border-t border-line p-2 space-y-0.5">
+        {extraPages.filter(pg => pg.navKey).map(pg => (
+          <NavItem key={pg.path} to={`/${pg.path}`} icon={pg.Icon || Settings} label={t(pg.navKey)} collapsed={collapsed} />
+        ))}
         <NavItem to="/settings" icon={Settings} label={t('nav.settings')} collapsed={collapsed} />
         {!collapsed ? (
           <div className="flex items-center gap-2 h-10 pl-2.5 pr-1">

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { extraSettingsSections } from '../extensions/registry';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Check, Moon, Sun, Monitor, ChevronDown, ChevronRight, Download, HardDrive, Trash2 } from 'lucide-react';
@@ -468,6 +469,11 @@ export default function SettingsPage() {
           <OrphanBackupsSection />
         </Section>
 
+        {extraSettingsSections.map(sec => (
+          <Section key={sec.id} title={t(sec.titleKey)} description={sec.descKey ? t(sec.descKey) : undefined}>
+            <sec.Component />
+          </Section>
+        ))}
         <Section title={t('settings.system')}>
           <div className="card !p-0 divide-y divide-line text-[13px]">
             {[

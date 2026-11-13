@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { extraPages } from './extensions/registry';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store';
 import { getMe, checkSetupNeeded } from './services/api';
@@ -79,6 +80,7 @@ export default function App() {
             <Route path="catalog" element={<CatalogPage />} />
             <Route path="servers/:id" element={<ServerDetailPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            {extraPages.map(pg => <Route key={pg.path} path={pg.path} element={<pg.Component />} />)}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 

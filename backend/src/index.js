@@ -90,6 +90,17 @@ app.use('/api/backups', require('./routes/backups').orphans);
 app.use('/api/vanilla', vanillaRoutes);
 app.use('/api/settings', settingsRoutes);
 
+// Routes des fonctionnalités : routes/features/*.js exporte { mount: '/api/…', router } (ou un tableau).
+// Chaque module protège lui-même ses routes (authMiddleware).
+for (const f of require('fs').readdirSync(path.join(__dirname, 'routes', 'features')).filter(n => n.endsWith('.js')).sort()) {
+  try {
+    const mod = require(path.join(__dirname, 'routes', 'features', f));
+    for (const { mount, router } of [].concat(mod)) app.use(mount, router);
+  } catch (err) {
+    console.error(`[Craftarr] Routes ${f} ignorées :`, err.message);
+  }
+}
+
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use(errorHandler);
@@ -177,6 +188,8 @@ server.listen(PORT, async () => {
   crashGuard.setIo(io);
   crashGuard.start();
   updater.scheduleUpdater();
+  // Extensions (planificateur, veille, journal…) : abonnements au bus et tâches de fond
+  require('./services/extensions').init({ events: require('./services/events'), io, app });
   require('./services/backup').scheduleBackups();
 });
 

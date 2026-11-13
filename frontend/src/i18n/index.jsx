@@ -23,14 +23,34 @@ export const LANGUAGES = [
   { code: 'cs', name: 'Czech', native: 'Čeština', flag: '🇨🇿' },
 ];
 
+// ─── Traductions des fonctionnalités ─────────────────────────────────────────
+// locales/features/<fonctionnalité>.<langue>.json, fusionnées dans la langue correspondante
+// (en et fr suffisent : les autres langues retombent sur l'anglais).
+const FEATURE_FILES = import.meta.glob('./locales/features/*.json', { eager: true });
+function deepMerge(target, source) {
+  const out = { ...target };
+  for (const [k, v] of Object.entries(source || {})) {
+    out[k] = v && typeof v === 'object' && !Array.isArray(v) ? deepMerge(out[k] || {}, v) : v;
+  }
+  return out;
+}
+function featureMessages(code) {
+  let merged = {};
+  for (const [file, mod] of Object.entries(FEATURE_FILES)) {
+    if (file.endsWith(`.${code}.json`)) merged = deepMerge(merged, mod.default || mod);
+  }
+  return merged;
+}
+const FALLBACK = deepMerge(FALLBACK_MESSAGES, featureMessages('en'));
+
 // ─── Lazy locale loader ───────────────────────────────────────────────────────
 const localeCache = {};
 async function loadLocale(code) {
   if (localeCache[code]) return localeCache[code];
   try {
     const mod = await import(`./locales/${code}.json`);
-    localeCache[code] = mod.default;
-    return mod.default;
+    localeCache[code] = deepMerge(mod.default, featureMessages(code));
+    return localeCache[code];
   } catch {
     // fallback to French
     if (code !== 'fr') return loadLocale('fr');
@@ -86,7 +106,7 @@ export function I18nProvider({ children }) {
   }, []);
 
   const t = useCallback((key, vars) => {
-    let str = deepGet(messages, key, undefined) ?? deepGet(FALLBACK_MESSAGES, key, key);
+    let str = deepGet(messages, key, undefined) ?? deepGet(FALLBACK, key, key);
     if (vars && typeof str === 'string') {
       Object.entries(vars).forEach(([k, v]) => {
         str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v);

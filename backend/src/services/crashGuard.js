@@ -42,6 +42,7 @@ async function checkServer(server) {
   history.delete(server.container_id);
   try { await dockerService.stopContainer(server.container_id, 30); } catch {}
   getDb().prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
+  require('./events').emit('server:crashed', { serverId: server.id, restarts: info.RestartCount || 0 });
   require('./notify').notify({
     serverName: server.name, level: 'error', title: 'Crash en boucle',
     message: `Le serveur a planté ${MAX_RESTARTS} fois en ${WINDOW_MS / 60000} minutes et a été arrêté. Consultez la console dans Craftarr.`,

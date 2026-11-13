@@ -23,22 +23,25 @@ import EditTab, { resizeTo64 } from '../components/servers/detail/EditTab';
 import ServerHeader from '../components/servers/detail/ServerHeader';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import { extraTabs } from '../extensions/registry';
 import {
   Terminal, Activity, HardDrive, FolderOpen, Settings as SettingsIcon,
   Package, Users, Shield,
 } from 'lucide-react';
 
 // Stable English IDs — never change, only labelKey is translated
-const TABS = [
-  { id: 'console',   Icon: Terminal,     labelKey: 'server.tabs.console'   },
-  { id: 'mods',      Icon: Package,      labelKey: 'server.tabs.mods', modded: true },
-  { id: 'metrics',   Icon: Activity,     labelKey: 'server.tabs.metrics'   },
-  { id: 'backups',   Icon: HardDrive,    labelKey: 'server.tabs.backups'   },
-  { id: 'files',     Icon: FolderOpen,   labelKey: 'server.tabs.files'     },
-  { id: 'players',   Icon: Users,        labelKey: 'server.tabs.players'   },
-  { id: 'whitelist', Icon: Shield,       labelKey: 'server.tabs.whitelist' },
-  { id: 'settings',  Icon: SettingsIcon, labelKey: 'server.tabs.settings'  },
+const CORE_TABS = [
+  { id: 'console',   Icon: Terminal,     labelKey: 'server.tabs.console',   order: 10 },
+  { id: 'mods',      Icon: Package,      labelKey: 'server.tabs.mods', modded: true, order: 20 },
+  { id: 'metrics',   Icon: Activity,     labelKey: 'server.tabs.metrics',   order: 30 },
+  { id: 'backups',   Icon: HardDrive,    labelKey: 'server.tabs.backups',   order: 40 },
+  { id: 'files',     Icon: FolderOpen,   labelKey: 'server.tabs.files',     order: 50 },
+  { id: 'players',   Icon: Users,        labelKey: 'server.tabs.players',   order: 60 },
+  { id: 'whitelist', Icon: Shield,       labelKey: 'server.tabs.whitelist', order: 70 },
+  { id: 'settings',  Icon: SettingsIcon, labelKey: 'server.tabs.settings',  order: 90 },
 ];
+// Onglets des fonctionnalités (components/extensions/tabs/*.jsx), intercalés selon leur ordre
+const TABS = [...CORE_TABS, ...extraTabs].sort((a, b) => (a.order ?? 100) - (b.order ?? 100));
 
 const TRANSIENT_STATUSES = ['installing', 'starting', 'updating'];
 
@@ -48,6 +51,7 @@ export default function ServerDetailPage() {
   const qc = useQueryClient();
   const { t } = useI18n();
   const [tab, setTab] = useState('console');
+  const activeExtra = extraTabs.find(x => x.id === tab);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showWorldImport, setShowWorldImport] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -233,7 +237,7 @@ export default function ServerDetailPage() {
 
       <ServerHeader
         server={server}
-        tabs={TABS}
+        tabs={TABS.filter(tb => !tb.show || tb.show(server))}
         activeTab={tab}
         onTabChange={setTab}
         scrolled={scrolled}
@@ -252,7 +256,7 @@ export default function ServerDetailPage() {
       />
 
       {/* ── Contenu : chaque onglet est isolé (un onglet qui plante n'emporte pas la page) ── */}
-      <div className={clsx(tab === 'console' || tab === 'files' ? 'flex-1 min-h-0 p-4 lg:p-5' : 'px-4 sm:px-6 lg:px-8 py-6')}>
+      <div className={clsx(tab === 'console' || tab === 'files' || activeExtra?.fullHeight ? 'flex-1 min-h-0 p-4 lg:p-5' : 'px-4 sm:px-6 lg:px-8 py-6')}>
         <div className={clsx('h-full', tab !== 'console' && 'hidden')}>
           <ErrorBoundary resetKey="console"><Console server={server} /></ErrorBoundary>
         </div>
@@ -265,6 +269,7 @@ export default function ServerDetailPage() {
               {tab === 'files' && <FileExplorer server={server} />}
               {tab === 'players' && <PlayersPanel server={server} />}
               {tab === 'whitelist' && <WhitelistPanel server={server} />}
+              {activeExtra && <activeExtra.Component server={server} />}
               {tab === 'settings' && (
                 <EditTab server={server} onInstallMods={() => setConfirmMods(true)} onWorldImport={() => setShowWorldImport(true)} />
               )}

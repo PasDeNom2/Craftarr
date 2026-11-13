@@ -90,6 +90,16 @@ function initDb() {
     // Réglages globaux modifiables dans l'interface (webhook de notifications…)
     "CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)",
   ];
+  // Migrations des fonctionnalités : config/migrations/*.js (tableau de requêtes SQL idempotentes),
+  // appliquées dans l'ordre des noms de fichiers après celles du cœur.
+  const migDir = path.join(__dirname, 'migrations');
+  if (fs.existsSync(migDir)) {
+    for (const f of fs.readdirSync(migDir).filter(n => n.endsWith('.js')).sort()) {
+      try { migrations.push(...require(path.join(migDir, f))); } catch (err) {
+        console.error(`[DB] Migrations ${f} illisibles : ${err.message}`);
+      }
+    }
+  }
   for (const sql of migrations) {
     try {
       db.exec(sql);

@@ -17,6 +17,7 @@ const pregen = require('../../services/pregen');
 const serverLock = require('../../services/serverLock');
 const validate = require('../../services/validate');
 const { requireIdle } = serverLock;
+const events = require('../../services/events');
 
 /** Rayon de pré-génération borné (blocs) */
 const clampRadius = r => Math.max(500, Math.min(20000, Math.round(+r || 3000)));
@@ -135,6 +136,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
       validPregen && effectiveLoader !== 'vanilla' ? 1 : 0, clampRadius(pregen_radius), pregen.normalizeWorlds(pregen_worlds));
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
+    events.emit('server:created', { serverId: server.id });
     res.status(201).json(formatServer(server));
 
     // Lancement async de l'installation
@@ -269,6 +271,7 @@ async function recreate(req, res) {
   await dockerCall(() => dockerService.startContainer(containerId, fresh));
   db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
   startLogStream(req.app.get('io'), server.id);
+  events.emit('server:power', { serverId: server.id, action: 'recreate', userId: req.user?.id });
   res.json({ ok: true, status: 'starting' });
 }
 
@@ -291,6 +294,7 @@ router.post('/:id/start', authMiddleware, requireIdle, async (req, res, next) =>
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     }
     startLogStream(req.app.get('io'), server.id);
+    events.emit('server:power', { serverId: server.id, action: 'start', userId: req.user?.id });
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
@@ -311,6 +315,7 @@ router.post('/:id/stop', authMiddleware, requireIdle, async (req, res, next) => 
     await dockerCall(() => dockerService.stopContainer(server.container_id));
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
     db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ?').run(server.id);
+    events.emit('server:power', { serverId: server.id, action: 'stop', userId: req.user?.id });
     res.json({ ok: true, status: 'stopped' });
   } catch (err) {
     next(err);
@@ -339,6 +344,7 @@ router.post('/:id/restart', authMiddleware, requireIdle, async (req, res, next) 
       // « starting » : le flux de logs repasse en « running » sur la ligne Done (avant : en ligne trop tôt)
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     }
+    events.emit('server:power', { serverId: server.id, action: 'restart', userId: req.user?.id });
     res.json({ ok: true, status: 'starting' });
   } catch (err) {
     next(err);
@@ -411,6 +417,7 @@ router.delete('/:id', authMiddleware, requireIdle, async (req, res, next) => {
         console.log(`[Delete] Backups de ${server.name} conservés dans ${backupsDir}`);
       }
 
+      events.emit('server:deleted', { serverId: server.id });
       res.json({ ok: true, backupsKeptIn });
     });
   } catch (err) {
@@ -504,6 +511,11 @@ router.patch('/:id', authMiddleware, requireIdle, async (req, res, next) => {
         updates[key] = normalize(req.body[key]);
       }
     }
+    // Champs déclarés par les extensions (services/extensions/*.js → fields)
+    const extFields = require('../../services/extensions').fields();
+    for (const [key, def] of Object.entries(extFields)) {
+      if (req.body[key] !== undefined && PATCH_VALIDATORS[key] === undefined) updates[key] = def.parse(req.body[key]);
+    }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
     const worldsChanged = updates.pregen_worlds !== undefined && updates.pregen_worlds !== pregen.worldsOf(server).join(',');
 
@@ -533,7 +545,7 @@ router.patch('/:id', authMiddleware, requireIdle, async (req, res, next) => {
     }
 
     // Lever needs_recreate si un champ impactant le container a changé
-    const needsRecreate = Object.keys(updates).some(k => CONTAINER_FIELDS.has(k) && updates[k] !== server[k]);
+    const needsRecreate = Object.keys(updates).some(k => (CONTAINER_FIELDS.has(k) || extFields[k]?.container) && updates[k] !== server[k]);
     if (needsRecreate) updates.needs_recreate = 1;
 
     const setClauses = Object.keys(updates).map(k => `${k} = ?`).join(', ');

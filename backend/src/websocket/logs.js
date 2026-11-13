@@ -110,6 +110,7 @@ function parsePlayerEvent(serverId, line) {
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'join', NULL)`).run(serverId, username);
       openSession(db, serverId, username);
       _io?.emit('player:status', { serverId, username, is_online: 1 });
+      require('../services/events').emit('player:join', { serverId, username });
       return;
     }
 
@@ -123,6 +124,7 @@ function parsePlayerEvent(serverId, line) {
       db.prepare(`INSERT INTO player_events (server_id, player_name, type, detail) VALUES (?, ?, 'leave', ?)`).run(serverId, username, reason);
       closeSession(db, serverId, username, reason);
       _io?.emit('player:status', { serverId, username, is_online: 0 });
+      require('../services/events').emit('player:leave', { serverId, username, reason });
       return;
     }
 
@@ -258,6 +260,7 @@ function startLogStream(io, serverId, attempt = 0) {
           .run('running', serverId, 'starting');
         if (changed.changes > 0) {
           io.emit('server:status', { serverId, status: 'running' });
+          require('../services/events').emit('server:started', { serverId });
         }
       }
     },
@@ -285,6 +288,7 @@ function startLogStream(io, serverId, attempt = 0) {
       if (changed.changes > 0) {
         io.emit('server:status', { serverId, status: 'stopped' });
       }
+      require('../services/events').emit('server:stopped', { serverId });
       // Tous les joueurs sont offline quand le serveur s'arrête
       closeAllSessions(serverId, 'server_stop');
       db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ?').run(serverId);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { extraServerSettings } from '../../../extensions/registry';
 import { useI18n } from '../../../i18n';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -381,6 +382,9 @@ export default function EditTab({ server, onInstallMods, onWorldImport }) {
           </button>
         ))}
       </Group>
+
+      {/* Blocs des fonctionnalités (components/extensions/server-settings/*.jsx), enregistrés séparément */}
+      {extraServerSettings.filter(b => !b.show || b.show(server)).map(b => <b.Component key={b.id} server={server} />)}
 
       {/* Barre d'enregistrement : n'apparaît que s'il y a des modifications */}
       {(dirty || isSaving) && (

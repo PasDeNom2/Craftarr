@@ -65,7 +65,9 @@ async function createBackup(server, trigger = 'manual') {
 
   console.log(`[Backup] ${trigger} backup créé pour serveur ${server.id}: ${filename} (${Math.round(stats.size / 1024 / 1024)}MB)`);
 
-  return db.prepare('SELECT * FROM backups WHERE id = ?').get(id);
+  const created = db.prepare('SELECT * FROM backups WHERE id = ?').get(id);
+  require('./events').emit('backup:created', { serverId: server.id, backup: created });
+  return created;
 }
 
 /**

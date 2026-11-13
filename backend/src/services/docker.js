@@ -446,11 +446,14 @@ async function createServerContainer(server, onProgress) {
   const ramWarning = await hostRamWarning(server.ram_mb);
   if (ramWarning) console.warn(`[Docker] ${server.name || server.id} : ${ramWarning}`);
 
+  const extensions = require('./extensions');
+  const extCtx = { serverDir, javaVersion, packMeta };
   const exposedPorts = { '25565/tcp': {} };
   // RCON (25575) volontairement NON publié sur l'hôte : le backend y accède via le réseau
   // Docker interne (rcon.js → container_name:25575). Le publier exposait la console du
   // serveur à tout le réseau, protégée uniquement par le mot de passe RCON.
-  const portBindings = { '25565/tcp': [{ HostPort: String(server.port) }] };
+  // Une extension (routeur par sous-domaine) peut demander de ne pas publier le port de jeu
+  const portBindings = extensions.publishGamePort(server) ? { '25565/tcp': [{ HostPort: String(server.port) }] } : {};
   if (hasVoiceChatMod(serverDir)) {
     // Simple Voice Chat : même numéro que le serveur, en UDP (voir ensureVoiceChatPort)
     exposedPorts[`${server.port}/udp`] = {};
@@ -458,10 +461,15 @@ async function createServerContainer(server, onProgress) {
     console.log(`[Docker] Simple Voice Chat détecté — port UDP ${server.port} publié`);
   }
 
+  const extPorts = extensions.ports(server, extCtx);
+  Object.assign(exposedPorts, extPorts.exposed);
+  Object.assign(portBindings, extPorts.bindings);
+
   const container = await docker.createContainer({
     name: containerName,
     Image: image,
-    Env: buildEnvVars(server, { javaVersion }),
+    Env: [...buildEnvVars(server, { javaVersion }), ...extensions.env(server, extCtx)],
+    Labels: { 'craftarr.server-id': server.id, ...extensions.labels(server) },
     ExposedPorts: exposedPorts,
     HostConfig: {
       Binds: [`${hostServerDir}:/data`],
