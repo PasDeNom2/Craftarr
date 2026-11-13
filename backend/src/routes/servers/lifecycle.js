@@ -2,6 +2,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const { randomUUID: uuidv4 } = require('crypto');
 const { getDb } = require('../../config/database');
 const authMiddleware = require('../../middleware/auth');
@@ -144,31 +145,37 @@ router.post('/:id/install-mods', authMiddleware, requireIdle, async (req, res, n
 
     res.json({ ok: true, message: 'Téléchargement des mods lancé en arrière-plan' });
 
-    const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
-    const modsDir = path.join(serverDir, 'mods');
-    fs.mkdirSync(modsDir, { recursive: true });
-
-    // Stop server if running
-    let wasRunning = false;
-    if (server.container_id && ['running', 'starting'].includes(server.status)) {
-      wasRunning = true;
-      await dockerService.stopContainer(server.container_id).catch(() => {});
-      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
-    }
-
-    installer.installModsOnly(server, serverDir, modsDir)
-      .then(async () => {
-        console.log(`[install-mods] Mods installés pour ${server.id}`);
-        if (wasRunning && server.container_id) {
-          await dockerService.startContainer(server.container_id, server);
-          db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
-        }
-      })
-      .catch(err => console.error(`[install-mods] Erreur:`, err.message));
+    runInstallModsInBackground(db, server).catch(err => {
+      console.error(`[install-mods] Erreur pour ${server.id}:`, err.message);
+      try {
+        db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
+      } catch {}
+    });
   } catch (err) {
-    next(err);
+    if (!res.headersSent) next(err);
   }
 });
+
+async function runInstallModsInBackground(db, server) {
+  const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+  const modsDir = path.join(serverDir, 'mods');
+  fs.mkdirSync(modsDir, { recursive: true });
+
+  // Arrêter le container s'il tourne avant de toucher aux mods
+  let wasRunning = false;
+  if (server.container_id && ['running', 'starting'].includes(server.status)) {
+    wasRunning = true;
+    await dockerService.stopContainer(server.container_id).catch(() => {});
+    db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
+  }
+
+  await installer.installModsOnly(server, serverDir, modsDir);
+  console.log(`[install-mods] Mods installés pour ${server.id}`);
+  if (wasRunning && server.container_id) {
+    await dockerService.startContainer(server.container_id, server);
+    db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
+  }
+}
 
 // POST /api/servers/:id/reinstall — Relance l'installation depuis zéro (pour les serveurs en erreur sans container)
 router.post('/:id/reinstall', authMiddleware, requireIdle, async (req, res, next) => {
@@ -204,25 +211,40 @@ router.post('/:id/recreate', authMiddleware, requireIdle, async (req, res, next)
   }
 });
 
+/**
+ * Supprime l'ancien container, efface ses identifiants en base puis crée le nouveau.
+ * En cas d'échec de création, passe le serveur en erreur avant de relancer l'exception.
+ */
+async function recreateContainer(db, server) {
+  if (server.container_id) {
+    await dockerService.removeContainer(server.container_id).catch(() => {});
+  }
+
+  db.prepare("UPDATE servers SET container_id = NULL, container_name = NULL, status = 'stopped' WHERE id = ?").run(server.id);
+  const fresh = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
+
+  let created;
+  try {
+    created = await dockerService.createServerContainer(fresh);
+  } catch (err) {
+    db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
+    throw err;
+  }
+
+  db.prepare('UPDATE servers SET container_id = ?, container_name = ?, needs_recreate = 0 WHERE id = ?')
+    .run(created.containerId, created.containerName, server.id);
+  return { ...created, server: fresh };
+}
+
 async function recreate(req, res) {
   const db = getDb();
   const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
   if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-  // Arrêt et suppression de l'ancien container
-  if (server.container_id) {
-    await dockerService.removeContainer(server.container_id).catch(() => {});
-  }
-
-  db.prepare('UPDATE servers SET container_id = NULL, container_name = NULL, status = ? WHERE id = ?').run('stopped', server.id);
-  const fresh = db.prepare('SELECT * FROM servers WHERE id = ?').get(server.id);
-
   // Recréation avec les paramètres actuels (incluant CF_API_KEY, RAM, port)
-  const { containerId, containerName } = await dockerService.createServerContainer(fresh);
-  db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
-    .run(containerId, containerName, 'starting', server.id);
-
+  const { containerId, server: fresh } = await recreateContainer(db, server);
   await dockerService.startContainer(containerId, fresh);
+  db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
   startLogStream(req.app.get('io'), server.id);
   res.json({ ok: true, status: 'starting' });
 }
@@ -238,11 +260,9 @@ router.post('/:id/start', authMiddleware, requireIdle, async (req, res, next) =>
 
     if (server.needs_recreate) {
       // Recréer le container pour appliquer les nouveaux paramètres
-      await dockerService.removeContainer(server.container_id).catch(() => {});
-      const { containerId, containerName } = await dockerService.createServerContainer(server);
-      db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
-        .run(containerId, containerName, 'starting', server.id);
-      await dockerService.startContainer(containerId, server);
+      const { containerId, server: fresh } = await recreateContainer(db, server);
+      await dockerService.startContainer(containerId, fresh);
+      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     } else {
       await dockerService.startContainer(server.container_id, server);
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
@@ -287,11 +307,9 @@ router.post('/:id/restart', authMiddleware, requireIdle, async (req, res, next) 
 
     if (server.needs_recreate) {
       // Arrêter + recréer le container pour appliquer les nouveaux paramètres
-      await dockerService.removeContainer(server.container_id).catch(() => {});
-      const { containerId, containerName } = await dockerService.createServerContainer(server);
-      db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ?, needs_recreate = 0 WHERE id = ?')
-        .run(containerId, containerName, 'starting', server.id);
-      await dockerService.startContainer(containerId, server);
+      const { containerId, server: fresh } = await recreateContainer(db, server);
+      await dockerService.startContainer(containerId, fresh);
+      db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
       startLogStream(req.app.get('io'), server.id);
     } else {
       await dockerService.restartContainer(server.container_id, server);
@@ -339,37 +357,39 @@ router.post('/:id/rcon', authMiddleware, async (req, res, next) => {
 });
 
 // DELETE /api/servers/:id
-router.delete('/:id', authMiddleware, async (req, res, next) => {
+router.delete('/:id', authMiddleware, requireIdle, async (req, res, next) => {
   try {
-    const db = getDb();
-    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
-    if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
+    await serverLock.withLock(req.params.id, 'suppression', async () => {
+      const db = getDb();
+      const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
+      if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-    if (server.container_id) {
-      await dockerService.removeContainerAndImage(server.container_id).catch(() => {});
-    }
-    db.prepare('DELETE FROM servers WHERE id = ?').run(server.id);
+      if (server.container_id) {
+        await dockerService.removeContainerAndImage(server.container_id).catch(() => {});
+      }
+      db.prepare('DELETE FROM servers WHERE id = ?').run(server.id);
 
-    // Suppression du dossier de ce serveur uniquement (modpack, fichiers installés, monde).
-    // Plus de "nettoyage des dossiers orphelins" : une base réinitialisée ou désynchronisée
-    // aurait fait effacer TOUS les serveurs du disque.
-    const serverDir = path.join(DATA_PATH, 'servers', server.id);
-    try { fs.rmSync(serverDir, { recursive: true, force: true }); } catch (e) {
-      console.warn(`[Delete] Impossible de supprimer ${serverDir}:`, e.message);
-    }
+      // Suppression du dossier de ce serveur uniquement (modpack, fichiers installés, monde).
+      // Plus de "nettoyage des dossiers orphelins" : une base réinitialisée ou désynchronisée
+      // aurait fait effacer TOUS les serveurs du disque.
+      const serverDir = path.join(DATA_PATH, 'servers', server.id);
+      try { fs.rmSync(serverDir, { recursive: true, force: true }); } catch (e) {
+        console.warn(`[Delete] Impossible de supprimer ${serverDir}:`, e.message);
+      }
 
-    // Les backups (data/backups/<id>) sont conservés par défaut : dernier recours si la suppression
-    // était une erreur. ?deleteBackups=true pour les effacer aussi.
-    const backupsDir = backupService.backupsDirFor(server.id);
-    let backupsKeptIn = null;
-    if (req.query.deleteBackups === 'true') {
-      fs.rmSync(backupsDir, { recursive: true, force: true });
-    } else if (fs.existsSync(backupsDir)) {
-      backupsKeptIn = backupsDir;
-      console.log(`[Delete] Backups de ${server.name} conservés dans ${backupsDir}`);
-    }
+      // Les backups (data/backups/<id>) sont conservés par défaut : dernier recours si la suppression
+      // était une erreur. ?deleteBackups=true pour les effacer aussi.
+      const backupsDir = backupService.backupsDirFor(server.id);
+      let backupsKeptIn = null;
+      if (req.query.deleteBackups === 'true') {
+        fs.rmSync(backupsDir, { recursive: true, force: true });
+      } else if (fs.existsSync(backupsDir)) {
+        backupsKeptIn = backupsDir;
+        console.log(`[Delete] Backups de ${server.name} conservés dans ${backupsDir}`);
+      }
 
-    res.json({ ok: true, backupsKeptIn });
+      res.json({ ok: true, backupsKeptIn });
+    });
   } catch (err) {
     next(err);
   }
@@ -512,8 +532,6 @@ router.post('/:id/icon', authMiddleware, (req, res, next) => {
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-    if (!multer) return res.status(501).json({ error: 'multer non disponible' });
-
     const upload = multer({
       storage: multer.diskStorage({
         destination: (req, file, cb) => {
@@ -525,13 +543,18 @@ router.post('/:id/icon', authMiddleware, (req, res, next) => {
       }),
       limits: { fileSize: 2 * 1024 * 1024 },
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype.startsWith('image/')) return cb(new Error('Fichier image requis'));
+        if (file.mimetype !== 'image/png') {
+          return cb(Object.assign(new Error('Format PNG requis (image/png)'), { status: 400 }));
+        }
         cb(null, true);
       },
     }).single('icon');
 
     upload(req, res, err => {
-      if (err) return next(err);
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE' && !err.status) err.status = 400;
+        return next(err);
+      }
       if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu' });
       res.json({ ok: true, message: 'Icône mise à jour. Redémarrez le serveur pour l\'appliquer.' });
     });

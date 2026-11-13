@@ -7,6 +7,7 @@ const { getDb } = require('../../config/database');
 const authMiddleware = require('../../middleware/auth');
 const dockerService = require('../../services/docker');
 const backupService = require('../../services/backup');
+const serverLock = require('../../services/serverLock');
 const { DATA_PATH, getUpload } = require('./common');
 
 const router = express.Router();
@@ -27,69 +28,74 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
       const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
       if (!server) { cleanupUpload(); return res.status(404).json({ error: 'Serveur introuvable' }); }
 
-      const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
-      const stagingDir = path.join(DATA_PATH, 'servers', server.id, '.import-staging');
+      const busy = serverLock.busyReason(server);
+      if (busy) { cleanupUpload(); return res.status(409).json({ error: busy }); }
 
-      // 1. Validation du zip AVANT de toucher au monde actuel (serveur toujours en marche)
-      const AdmZip = require('adm-zip');
-      let zip;
-      try { zip = new AdmZip(zipPath); } catch {
-        cleanupUpload();
-        return res.status(400).json({ error: 'Fichier zip invalide ou corrompu' });
-      }
-      // Le dossier du monde = celui qui contient level.dat le moins profond (zip du dossier ou de son contenu)
-      const levelDats = zip.getEntries()
-        .map(e => e.entryName.replace(/\\/g, '/'))
-        .filter(n => n === 'level.dat' || n.endsWith('/level.dat'))
-        .sort((a, b) => a.split('/').length - b.split('/').length);
-      if (!levelDats.length) {
-        cleanupUpload();
-        return res.status(400).json({ error: 'Aucun monde Minecraft dans ce zip (level.dat introuvable)' });
-      }
-      const worldRootInZip = path.posix.dirname(levelDats[0]); // "." si level.dat est à la racine
+      await serverLock.withLock(server.id, 'import du monde', async () => {
+        const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+        const stagingDir = path.join(DATA_PATH, 'servers', server.id, '.import-staging');
 
-      // 2. Extraction à part
-      fs.rmSync(stagingDir, { recursive: true, force: true });
-      fs.mkdirSync(stagingDir, { recursive: true });
-      zip.extractAllTo(stagingDir, true);
-      cleanupUpload();
-      const extractedWorld = path.join(stagingDir, worldRootInZip);
-
-      // 3. Backup de sécurité du monde actuel, puis arrêt propre
-      const levelName = backupService.readLevelName(serverDir);
-      if (fs.existsSync(path.join(serverDir, levelName))) {
-        await backupService.createBackup(server, 'pre-import');
-      }
-      const wasRunning = !!server.container_id && ['running', 'starting'].includes(server.status);
-      if (wasRunning) {
-        await dockerService.stopContainer(server.container_id).catch(() => {});
-        db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
-      }
-
-      // 4. Bascule : le monde importé devient le monde principal (level-name).
-      //    Les dimensions séparées (_nether/_the_end, format Bukkit) sont reprises si présentes à côté.
-      try {
-        for (const d of backupService.getWorldDirs(serverDir)) fs.rmSync(path.join(serverDir, d), { recursive: true, force: true });
-        fs.renameSync(extractedWorld, path.join(serverDir, levelName));
-        if (worldRootInZip !== '.') {
-          const parent = path.dirname(extractedWorld);
-          const base = path.basename(extractedWorld);
-          for (const suffix of ['_nether', '_the_end']) {
-            const dim = path.join(parent, base + suffix);
-            if (fs.existsSync(dim)) fs.renameSync(dim, path.join(serverDir, levelName + suffix));
-          }
+        // 1. Validation du zip AVANT de toucher au monde actuel (serveur toujours en marche)
+        const AdmZip = require('adm-zip');
+        let zip;
+        try { zip = new AdmZip(zipPath); } catch {
+          cleanupUpload();
+          return res.status(400).json({ error: 'Fichier zip invalide ou corrompu' });
         }
-      } finally {
+        // Le dossier du monde = celui qui contient level.dat le moins profond (zip du dossier ou de son contenu)
+        const levelDats = zip.getEntries()
+          .map(e => e.entryName.replace(/\\/g, '/'))
+          .filter(n => n === 'level.dat' || n.endsWith('/level.dat'))
+          .sort((a, b) => a.split('/').length - b.split('/').length);
+        if (!levelDats.length) {
+          cleanupUpload();
+          return res.status(400).json({ error: 'Aucun monde Minecraft dans ce zip (level.dat introuvable)' });
+        }
+        const worldRootInZip = path.posix.dirname(levelDats[0]); // "." si level.dat est à la racine
+
+        // 2. Extraction à part
         fs.rmSync(stagingDir, { recursive: true, force: true });
-      }
+        fs.mkdirSync(stagingDir, { recursive: true });
+        zip.extractAllTo(stagingDir, true);
+        cleanupUpload();
+        const extractedWorld = path.join(stagingDir, worldRootInZip);
 
-      // 5. Redémarrage si était actif
-      if (wasRunning) {
-        await dockerService.startContainer(server.container_id, server);
-        db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
-      }
+        // 3. Backup de sécurité du monde actuel, puis arrêt propre
+        const levelName = backupService.readLevelName(serverDir);
+        if (fs.existsSync(path.join(serverDir, levelName))) {
+          await backupService.createBackup(server, 'pre-import');
+        }
+        const wasRunning = !!server.container_id && ['running', 'starting'].includes(server.status);
+        if (wasRunning) {
+          await dockerService.stopContainer(server.container_id).catch(() => {});
+          db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
+        }
 
-      res.json({ ok: true, message: 'World importé avec succès' });
+        // 4. Bascule : le monde importé devient le monde principal (level-name).
+        //    Les dimensions séparées (_nether/_the_end, format Bukkit) sont reprises si présentes à côté.
+        try {
+          for (const d of backupService.getWorldDirs(serverDir)) fs.rmSync(path.join(serverDir, d), { recursive: true, force: true });
+          fs.renameSync(extractedWorld, path.join(serverDir, levelName));
+          if (worldRootInZip !== '.') {
+            const parent = path.dirname(extractedWorld);
+            const base = path.basename(extractedWorld);
+            for (const suffix of ['_nether', '_the_end']) {
+              const dim = path.join(parent, base + suffix);
+              if (fs.existsSync(dim)) fs.renameSync(dim, path.join(serverDir, levelName + suffix));
+            }
+          }
+        } finally {
+          fs.rmSync(stagingDir, { recursive: true, force: true });
+        }
+
+        // 5. Redémarrage si était actif
+        if (wasRunning) {
+          await dockerService.startContainer(server.container_id, server);
+          db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
+        }
+
+        res.json({ ok: true, message: 'World importé avec succès' });
+      });
     } catch (e) {
       cleanupUpload();
       next(e);
