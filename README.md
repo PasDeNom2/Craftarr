@@ -15,9 +15,22 @@ Deploy vanilla, modpacks (CurseForge / Modrinth) and custom packs in a few click
 - **Server dashboard** — status, RAM/CPU metrics, live console, RCON commands
 - **Players panel** — online status in real-time, join/leave history, ban/unban
 - **Auto-updater** — periodic modpack update check, pre-update backup, one-click rollback
-- **Automatic backups** — worlds, configs, plugins saved as timestamped `.tar.gz`
+- **Automatic backups** — worlds, configs, plugins saved as timestamped `.zip`, plus optional incremental **offsite copies with restic** (S3, SFTP, REST, folder)
+- **Paper & Purpur** — plugin servers with a built-in Modrinth plugin installer
+- **Per-mod updates** — see and apply new compatible versions of each installed mod or plugin
+- **Task scheduler** — cron / interval / event triggers (crash, empty server…), announced restarts, commands, backups
+- **Sleep when empty** — pause the Java process or stop the container, woken up when a player connects
+- **One port, many servers** — optional subdomain routing with mc-router (`survival.mc.example.com`)
+- **Metrics history** — RAM, CPU, TPS and players kept for 30 days
+- **Diagnostics** — spark profiler, crash reports with automatic summary, one-click mclo.gs sharing
+- **Web map & crossplay** — BlueMap and Geyser + Floodgate (Bedrock players) in one click
+- **Server profiles** — keep several installations of a server and switch between them
+- **Accounts** — multiple users, per-server permissions, 2FA (TOTP), activity log
+- **API** — revocable API keys and full OpenAPI documentation (`/api/openapi.json`)
 - **Multi-source** — add your own modpack APIs with a JSON field mapper
 - **Multilingual** — 17 languages (EN, FR, ES, DE, PT, IT, RU, ZH, JA, KO, AR, PL, NL, TR, UK, SV, CS)
+
+Developers: see [docs/EXTENSIONS.md](docs/EXTENSIONS.md) to add a feature.
 
 ---
 
