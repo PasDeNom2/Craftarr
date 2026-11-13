@@ -253,6 +253,11 @@ test('routes /api/router/settings et /api/router/status + validation domaine', a
   assert.strictEqual(emptyOn.status, 400);
 
   // Domaine valide → 200
+  // mc-router absent : activation refusée (sinon les ports de jeu ne seraient plus publiés)
+  mockContainers = [];
+  const noRouter = await apiReq('PUT', '/api/router/settings', { enabled: true, domain: 'mc.exemple.fr' });
+  assert.strictEqual(noRouter.status, 409);
+  mockContainers = [{ Id: 'abcdef1234567890', Image: 'itzg/mc-router:1.55.0', State: 'running', Status: 'Up 1 minute' }];
   const ok = await apiReq('PUT', '/api/router/settings', { enabled: true, domain: 'MC.EXEMPLE.FR' });
   assert.strictEqual(ok.status, 200);
   assert.strictEqual(ok.data.enabled, true);
