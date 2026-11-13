@@ -162,6 +162,11 @@ async function pushImmediate(socket, serverId) {
   const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(serverId);
   if (!server) return;
   try {
+    // Le cache RCON est vidé quand personne ne regarde le serveur : sans relevé immédiat,
+    // la page affichait « 0 joueur » et aucun TPS pendant jusqu'à 15 s (constaté avec de vrais joueurs).
+    if (!rconCache[serverId] && ['running', 'starting'].includes(server.status)) {
+      try { rconCache[serverId] = await rcon.getServerStats(server); } catch {}
+    }
     const metrics = await collectServerMetrics(server);
     socket.emit('metrics', metrics);
   } catch {}
