@@ -1,0 +1,22 @@
+{
+  "geyser": {
+    "title": "Crossplay Bedrock (Geyser)",
+    "enable": "Activer le crossplay Bedrock",
+    "enableHint": "Permet aux joueurs console, mobile et Windows (Bedrock) de rejoindre ce serveur Java via Geyser.",
+    "floodgate": "Autoriser sans compte Java (Floodgate)",
+    "floodgateHint": "Recommandé : les joueurs Bedrock se connectent avec leur compte Xbox/Microsoft sans posséder Minecraft Java. Désactivé, ils devront saisir un compte Java valide.",
+    "addressLabel": "Adresse pour les joueurs Bedrock",
+    "addressHint": "Adresse et port UDP à saisir dans Minecraft Bedrock.",
+    "copyAddress": "Copier l'adresse Bedrock",
+    "addressCopied": "Adresse Bedrock copiée : {address}",
+    "udpPortLabel": "Pare-feu / box internet",
+    "udpPortHint": "Ouvrez et redirigez le port {port}/UDP (pas TCP) vers ce serveur sur votre box et votre pare-feu.",
+    "recreateNotice": "Redémarrez ou recréez le serveur pour appliquer le port UDP et charger Geyser.",
+    "enabledToast": "Geyser activé — redémarrez le serveur pour appliquer",
+    "disabledToast": "Geyser désactivé — redémarrez le serveur pour appliquer",
+    "floodgateUpdatedToast": "Option Floodgate mise à jour — redémarrez le serveur pour appliquer",
+    "unsupportedDefault": "Ce loader ne supporte pas Geyser (loaders supportés : Fabric, NeoForge, Paper, Purpur).",
+    "footer": "Port UDP attribué à ce serveur : {port}/UDP (distinct du port TCP Java).",
+    "footerDisabled": "Geyser et Floodgate sont téléchargés automatiquement depuis Modrinth dans la version correspondant à ce serveur."
+  }
+}
