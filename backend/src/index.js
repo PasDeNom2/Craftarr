@@ -83,6 +83,7 @@ app.use('/api/servers', serverRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/sources', sourcesRoutes);
 app.use('/api/servers', backupsRoutes);
+app.use('/api/backups', require('./routes/backups').orphans);
 app.use('/api/vanilla', vanillaRoutes);
 app.use('/api/settings', settingsRoutes);
 

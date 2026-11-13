@@ -15,10 +15,21 @@ const { isMcVersion } = require('../../services/mcVersion');
 const { DATA_PATH, formatServer, findFreePort, mapDockerStatus, portOwner } = require('./common');
 const pregen = require('../../services/pregen');
 const serverLock = require('../../services/serverLock');
+const validate = require('../../services/validate');
 const { requireIdle } = serverLock;
 
 /** Rayon de pré-génération borné (blocs) */
 const clampRadius = r => Math.max(500, Math.min(20000, Math.round(+r || 3000)));
+
+/** Exécute un appel Docker en marquant les erreurs comme exposables à l'UI. */
+async function dockerCall(fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    err.expose = true;
+    throw err;
+  }
+}
 
 const router = express.Router();
 
@@ -87,11 +98,23 @@ router.post('/', authMiddleware, async (req, res, next) => {
     if (!name || (!isVanilla && (!modpack_id || !modpack_source))) {
       return res.status(400).json({ error: 'name (et modpack_id/modpack_source pour les modpacks) sont requis' });
     }
+    const validName = validate.str(name, { max: 64, field: 'name' });
+    const validRam = validate.int(ram_mb, { min: 512, max: 262144, field: 'ram_mb' });
+    const validMaxPlayers = validate.int(max_players, { min: 1, max: 1000, field: 'max_players' });
+    const validSeed = (seed !== undefined && seed !== null)
+      ? (validate.str(seed, { max: 64, field: 'seed', allowEmpty: true }) || null)
+      : null;
+    const validWhitelist = validate.bool(whitelist_enabled, 'whitelist_enabled') ? 1 : 0;
+    const validOnlineMode = validate.bool(online_mode, 'online_mode') ? 1 : 0;
+    const validAutoUpdate = validate.bool(auto_update, 'auto_update') ? 1 : 0;
+    const validPregen = validate.bool(pregen_enabled, 'pregen_enabled') ? 1 : 0;
     const effectiveModpackId = isVanilla ? `vanilla-${mc_version || 'latest'}` : modpack_id;
     const effectiveModpackSource = isVanilla ? 'vanilla' : modpack_source;
 
     const db = getDb();
-    const assignedPort = port || findFreePort(db);
+    const assignedPort = (port !== undefined && port !== null && port !== '')
+      ? validate.int(port, { min: 1024, max: 65535, field: 'port' })
+      : findFreePort(db);
     // Deux serveurs sur le même port : le second container ne démarrerait jamais
     const clash = portOwner(db, assignedPort);
     if (clash) return res.status(409).json({ error: `Le port ${assignedPort} est déjà utilisé par « ${clash.name} »` });
@@ -104,12 +127,12 @@ router.post('/', authMiddleware, async (req, res, next) => {
         modpack_version_id, port, rcon_port, rcon_password, ram_mb, max_players, seed,
         whitelist_enabled, online_mode, status, mc_version, loader_type, auto_update, pregen_enabled, pregen_radius, pregen_worlds)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'installing', ?, ?, ?, ?, ?, ?)
-    `).run(id, name, effectiveModpackId, modpack_name || effectiveModpackId, effectiveModpackSource, modpack_version || null,
-      modpack_version_id || null, assignedPort, rconPort, rconPassword, ram_mb, max_players,
-      seed || null, whitelist_enabled ? 1 : 0, online_mode ? 1 : 0,
+    `).run(id, validName, effectiveModpackId, modpack_name || effectiveModpackId, effectiveModpackSource, modpack_version || null,
+      modpack_version_id || null, assignedPort, rconPort, rconPassword, validRam, validMaxPlayers,
+      validSeed, validWhitelist, validOnlineMode,
       (isMcVersion(mc_version) ? mc_version : null),
-      effectiveLoader, auto_update ? 1 : 0,
-      pregen_enabled && effectiveLoader !== 'vanilla' ? 1 : 0, clampRadius(pregen_radius), pregen.normalizeWorlds(pregen_worlds));
+      effectiveLoader, validAutoUpdate,
+      validPregen && effectiveLoader !== 'vanilla' ? 1 : 0, clampRadius(pregen_radius), pregen.normalizeWorlds(pregen_worlds));
 
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(id);
     res.status(201).json(formatServer(server));
@@ -225,7 +248,7 @@ async function recreateContainer(db, server) {
 
   let created;
   try {
-    created = await dockerService.createServerContainer(fresh);
+    created = await dockerCall(() => dockerService.createServerContainer(fresh));
   } catch (err) {
     db.prepare("UPDATE servers SET status = 'error' WHERE id = ?").run(server.id);
     throw err;
@@ -243,7 +266,7 @@ async function recreate(req, res) {
 
   // Recréation avec les paramètres actuels (incluant CF_API_KEY, RAM, port)
   const { containerId, server: fresh } = await recreateContainer(db, server);
-  await dockerService.startContainer(containerId, fresh);
+  await dockerCall(() => dockerService.startContainer(containerId, fresh));
   db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
   startLogStream(req.app.get('io'), server.id);
   res.json({ ok: true, status: 'starting' });
@@ -261,10 +284,10 @@ router.post('/:id/start', authMiddleware, requireIdle, async (req, res, next) =>
     if (server.needs_recreate) {
       // Recréer le container pour appliquer les nouveaux paramètres
       const { containerId, server: fresh } = await recreateContainer(db, server);
-      await dockerService.startContainer(containerId, fresh);
+      await dockerCall(() => dockerService.startContainer(containerId, fresh));
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     } else {
-      await dockerService.startContainer(server.container_id, server);
+      await dockerCall(() => dockerService.startContainer(server.container_id, server));
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     }
     startLogStream(req.app.get('io'), server.id);
@@ -285,7 +308,7 @@ router.post('/:id/stop', authMiddleware, requireIdle, async (req, res, next) => 
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
     if (!server.container_id) return res.status(400).json({ error: 'Container non créé' });
 
-    await dockerService.stopContainer(server.container_id);
+    await dockerCall(() => dockerService.stopContainer(server.container_id));
     db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('stopped', server.id);
     db.prepare('UPDATE players SET is_online = 0 WHERE server_id = ?').run(server.id);
     res.json({ ok: true, status: 'stopped' });
@@ -308,11 +331,11 @@ router.post('/:id/restart', authMiddleware, requireIdle, async (req, res, next) 
     if (server.needs_recreate) {
       // Arrêter + recréer le container pour appliquer les nouveaux paramètres
       const { containerId, server: fresh } = await recreateContainer(db, server);
-      await dockerService.startContainer(containerId, fresh);
+      await dockerCall(() => dockerService.startContainer(containerId, fresh));
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
       startLogStream(req.app.get('io'), server.id);
     } else {
-      await dockerService.restartContainer(server.container_id, server);
+      await dockerCall(() => dockerService.restartContainer(server.container_id, server));
       // « starting » : le flux de logs repasse en « running » sur la ligne Done (avant : en ligne trop tôt)
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('starting', server.id);
     }
@@ -450,24 +473,38 @@ router.post('/:id/update', authMiddleware, requireIdle, async (req, res, next) =
 // Champs qui nécessitent une recréation du container (port bindings, env vars Docker)
 const CONTAINER_FIELDS = new Set(['port', 'ram_mb', 'max_players', 'whitelist_enabled', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection']);
 
-router.patch('/:id', authMiddleware, async (req, res, next) => {
+const PATCH_VALIDATORS = {
+  name: v => validate.str(v, { max: 64, field: 'name' }),
+  port: v => validate.int(v, { min: 1024, max: 65535, field: 'port' }),
+  ram_mb: v => validate.int(v, { min: 512, max: 262144, field: 'ram_mb' }),
+  max_players: v => validate.int(v, { min: 1, max: 1000, field: 'max_players' }),
+  update_interval_hours: v => validate.int(v, { min: 1, max: 168, field: 'update_interval_hours' }),
+  motd: v => (v === null ? null : (validate.str(v, { max: 256, field: 'motd', allowEmpty: true, noNewlines: true }) || null)),
+  seed: v => (v === null ? null : (validate.str(v, { max: 64, field: 'seed', allowEmpty: true }) || null)),
+  difficulty: v => validate.oneOf(v, ['peaceful', 'easy', 'normal', 'hard'], 'difficulty'),
+  view_distance: v => validate.int(v, { min: 2, max: 32, field: 'view_distance' }),
+  spawn_protection: v => validate.int(v, { min: 0, max: 1000, field: 'spawn_protection' }),
+  whitelist_enabled: v => (validate.bool(v, 'whitelist_enabled') ? 1 : 0),
+  auto_update: v => (validate.bool(v, 'auto_update') ? 1 : 0),
+  pregen_enabled: v => (validate.bool(v, 'pregen_enabled') ? 1 : 0),
+  pregen_pause_players: v => (validate.bool(v, 'pregen_pause_players') ? 1 : 0),
+  pregen_radius: v => clampRadius(v),
+  pregen_worlds: v => pregen.normalizeWorlds(v),
+};
+
+router.patch('/:id', authMiddleware, requireIdle, async (req, res, next) => {
   try {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-    const allowed = ['name', 'port', 'ram_mb', 'max_players', 'whitelist_enabled', 'auto_update', 'update_interval_hours', 'motd', 'seed', 'difficulty', 'view_distance', 'spawn_protection',
-      'pregen_enabled', 'pregen_radius', 'pregen_pause_players', 'pregen_worlds'];
-    const booleans = new Set(['whitelist_enabled', 'auto_update', 'pregen_enabled', 'pregen_pause_players']);
     const updates = {};
-    for (const key of allowed) {
+    for (const [key, normalize] of Object.entries(PATCH_VALIDATORS)) {
       if (req.body[key] !== undefined) {
-        updates[key] = booleans.has(key) ? (req.body[key] ? 1 : 0) : req.body[key];
+        updates[key] = normalize(req.body[key]);
       }
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
-    if (updates.pregen_radius !== undefined) updates.pregen_radius = clampRadius(updates.pregen_radius);
-    if (updates.pregen_worlds !== undefined) updates.pregen_worlds = pregen.normalizeWorlds(updates.pregen_worlds);
     const worldsChanged = updates.pregen_worlds !== undefined && updates.pregen_worlds !== pregen.worldsOf(server).join(',');
 
     // Pré-génération : activation (installation de Chunky), désactivation, changement de rayon

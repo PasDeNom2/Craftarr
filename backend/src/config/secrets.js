@@ -13,14 +13,24 @@ const DATA_PATH = process.env.DATA_PATH || '/data';
 const SECRETS_FILE = path.join(DATA_PATH, 'secrets.json');
 
 function loadOrCreateSecrets() {
-  fs.mkdirSync(DATA_PATH, { recursive: true });
+  const dataPath = process.env.DATA_PATH || DATA_PATH;
+  const secretsFile = path.join(dataPath, 'secrets.json');
+  fs.mkdirSync(dataPath, { recursive: true });
 
   let stored = {};
-  if (fs.existsSync(SECRETS_FILE)) {
+  if (fs.existsSync(secretsFile)) {
     try {
-      stored = JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf8'));
-    } catch {
-      stored = {};
+      stored = JSON.parse(fs.readFileSync(secretsFile, 'utf8'));
+      if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
+        throw new Error('Format JSON invalide');
+      }
+    } catch (err) {
+      const corruptName = `secrets.json.corrupt-${Date.now()}`;
+      const corruptPath = path.join(dataPath, corruptName);
+      fs.renameSync(secretsFile, corruptPath);
+      throw new Error(
+        `secrets.json illisible : renommé en ${corruptName} ; restaurez-le depuis une sauvegarde ou supprimez-le pour régénérer (les clés API chiffrées seront perdues) — ${err.message}`
+      );
     }
   }
 
@@ -39,7 +49,7 @@ function loadOrCreateSecrets() {
   }
 
   if (changed) {
-    fs.writeFileSync(SECRETS_FILE, JSON.stringify(stored, null, 2), { mode: 0o600 });
+    fs.writeFileSync(secretsFile, JSON.stringify(stored, null, 2), { mode: 0o600 });
   }
 
   // Injecte dans process.env (priorité à l'env existant)

@@ -35,17 +35,17 @@ function formatServer(row) {
 }
 
 function findFreePort(db) {
-  const rows = db.prepare('SELECT port, rcon_port FROM servers').all();
-  const usedPorts = new Set(rows.flatMap(r => [r.port, r.rcon_port]));
+  const rows = db.prepare('SELECT port FROM servers').all();
+  const usedPorts = new Set(rows.map(r => r.port));
   let port = 25565;
-  while (usedPorts.has(port) || usedPorts.has(port + 10)) port++;
+  while (usedPorts.has(port)) port++;
   return port;
 }
 
 /** Serveur (autre que excludeId) qui utilise déjà ce port hôte, ou null. */
 function portOwner(db, port, excludeId = null) {
-  return db.prepare('SELECT id, name FROM servers WHERE (port = ? OR rcon_port = ?) AND id != ?')
-    .get(port, port, excludeId || '') || null;
+  return db.prepare('SELECT id, name FROM servers WHERE port = ? AND id != ?')
+    .get(port, excludeId || '') || null;
 }
 
 function mapDockerStatus(dockerStatus, currentStatus) {

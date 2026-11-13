@@ -7,6 +7,9 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 const { signUserToken } = require('../config/secrets');
 
+// Hash bcrypt factice (coût 10) pour égaliser le temps de réponse quand l'utilisateur n'existe pas
+const DUMMY_HASH = '$2b$10$.....................................................';
+
 // ─── Jeton de premier démarrage ───────────────────────────────
 // Tant qu'aucun compte n'existe, /setup exige ce jeton, affiché uniquement dans les logs du backend.
 // Sans lui, n'importe qui atteignant l'UI avant l'admin pouvait créer le compte et prendre la main.
@@ -85,16 +88,13 @@ router.post('/setup', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) {
+    if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
       return res.status(400).json({ error: 'Identifiants requis' });
     }
     const db = getDb();
     const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
-    if (!user) {
-      return res.status(401).json({ error: 'Identifiants invalides' });
-    }
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
+    const valid = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
+    if (!user || !valid) {
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
     const token = signUserToken(user);
