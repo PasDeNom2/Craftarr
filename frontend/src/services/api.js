@@ -19,9 +19,12 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
+    // Pas pour la connexion ni le setup (mauvais mot de passe, jeton invalide) : la page doit afficher
+    // l'erreur, un rechargement vers /login l'effaçait avant qu'elle soit lue.
+    const isAuthCall = ['/auth/login', '/auth/setup'].includes(err.config?.url);
+    if (err.response?.status === 401 && !isAuthCall) {
       localStorage.removeItem('mcm_token');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') window.location.href = '/login';
     }
     return Promise.reject(err);
   }
