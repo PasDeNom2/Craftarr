@@ -122,7 +122,8 @@ test('GET /api/vanilla/server-types/:type/versions requiert auth et rejette un t
 test('GET /api/vanilla/server-types/paper|purpur/versions renvoie les versions récentes en premier, timeout 15s et cache 1h', async () => {
   mockGetHandler = async (url) => {
     if (url.includes('papermc.io')) {
-      return { data: { project_id: 'paper', versions: ['1.8.8', '1.20.6', '1.21.4'] } };
+      // Format réel de l'API Fill v3 (constaté le 2026-11-13) : versions groupées, récentes d'abord
+      return { data: { project: { id: 'paper' }, versions: { '1.21': ['1.21.4', '1.21.4-rc1', '1.21.4-pre2'], '1.20': ['1.20.6'], '1.8': ['1.8.8'] } } };
     }
     if (url.includes('purpurmc.org')) {
       return { data: { project: 'purpur', versions: ['1.14.1', '1.20.4', '1.21.4'] } };
@@ -138,7 +139,7 @@ test('GET /api/vanilla/server-types/paper|purpur/versions renvoie les versions r
   assert.strictEqual(p1.data.latest, '1.21.4');
   assert.deepStrictEqual(p1.data.versions, ['1.21.4', '1.20.6', '1.8.8']);
   assert.strictEqual(getCalls.length, 1);
-  assert.strictEqual(getCalls[0].url, 'https://api.papermc.io/v2/projects/paper');
+  assert.strictEqual(getCalls[0].url, 'https://fill.papermc.io/v3/projects/paper');
   assert.strictEqual(getCalls[0].config.timeout, 15000);
 
   // Paper : second appel servi depuis le cache 1h (aucun appel réseau)
@@ -395,3 +396,4 @@ test('modUpdates sur Paper scanne plugins/ et déplace l’ancien plugin dans .c
   assert.ok(!fs.existsSync(path.join(dirs.dir, 'Vault-1.7.jar')));
   assert.ok(fs.existsSync(path.join(dirs.trash, 'Vault-1.7.jar')));
 });
+
