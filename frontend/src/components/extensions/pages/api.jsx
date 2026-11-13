@@ -30,7 +30,8 @@ import {
 } from '../../../services/features/api-keys';
 
 export const page = {
-  path: 'api',
+  // Pas « api » : nginx redirige /api vers /api/ (proxy du backend) et la page serait inaccessible en accès direct
+  path: 'api-docs',
   navKey: 'apiKeys.nav',
   Icon: KeyRound,
   order: 30,
