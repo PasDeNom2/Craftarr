@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 // Langue de repli pour toute clé absente d'une traduction (jamais de clé brute à l'écran)
 import FALLBACK_MESSAGES from './locales/en.json';
 
@@ -65,13 +65,18 @@ export function I18nProvider({ children }) {
   const [loading, setLoading] = useState(!localeCache[detectLang()]);
 
   // Eager-load the initial locale
-  React.useEffect(() => {
+  useEffect(() => {
     const initial = detectLang();
     loadLocale(initial).then(m => {
       setMessages(m);
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  }, [lang]);
 
   const changeLang = useCallback(async (code) => {
     const m = await loadLocale(code);

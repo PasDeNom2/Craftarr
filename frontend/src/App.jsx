@@ -1,15 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store';
 import { getMe, checkSetupNeeded } from './services/api';
 import Layout from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
-import SetupPage from './pages/SetupPage';
-import CatalogPage from './pages/CatalogPage';
-import DashboardPage from './pages/DashboardPage';
-import ServerDetailPage from './pages/ServerDetailPage';
-import SettingsPage from './pages/SettingsPage';
-import NotFoundPage from './pages/NotFoundPage';
+
+const SetupPage = lazy(() => import('./pages/SetupPage'));
+const CatalogPage = lazy(() => import('./pages/CatalogPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const ServerDetailPage = lazy(() => import('./pages/ServerDetailPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+function SpinnerFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center atmosphere">
+      <div className="w-5 h-5 border-2 border-line-strong border-t-fg rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function PrivateRoute({ children }) {
   const token = useAuthStore(s => s.token);
@@ -30,11 +39,7 @@ function AuthGate({ children }) {
   }, []);
 
   if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center atmosphere">
-        <div className="w-5 h-5 border-2 border-line-strong border-t-fg rounded-full animate-spin" />
-      </div>
-    );
+    return <SpinnerFallback />;
   }
 
   if (setupNeeded) return <Navigate to="/setup" replace />;
@@ -48,36 +53,38 @@ export default function App() {
     if (token) {
       getMe().then(setUser).catch(() => {});
     }
-  }, [token]);
+  }, [token, setUser]);
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Setup — premier démarrage, aucun compte existant */}
-        <Route path="/setup" element={<SetupPage />} />
+      <Suspense fallback={<SpinnerFallback />}>
+        <Routes>
+          {/* Setup — premier démarrage, aucun compte existant */}
+          <Route path="/setup" element={<SetupPage />} />
 
-        {/* Login — avec vérification setup */}
-        <Route path="/login" element={
-          <AuthGate>
-            <LoginPage />
-          </AuthGate>
-        } />
+          {/* Login — avec vérification setup */}
+          <Route path="/login" element={
+            <AuthGate>
+              <LoginPage />
+            </AuthGate>
+          } />
 
-        {/* App principale */}
-        <Route path="/" element={
-          <PrivateRoute>
-            <Layout />
-          </PrivateRoute>
-        }>
-          <Route index element={<DashboardPage />} />
-          <Route path="catalog" element={<CatalogPage />} />
-          <Route path="servers/:id" element={<ServerDetailPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
+          {/* App principale */}
+          <Route path="/" element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }>
+            <Route index element={<DashboardPage />} />
+            <Route path="catalog" element={<CatalogPage />} />
+            <Route path="servers/:id" element={<ServerDetailPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

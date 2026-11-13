@@ -365,7 +365,9 @@
     "uploading": "Envoi de {count} fichier(s)…",
     "uploaded": "{count} fichier(s) envoyé(s)",
     "uploadSkipped": "{count} fichier(s) ignoré(s) (déjà existants)",
+    "overwriteTitle": "Remplacer les fichiers existants ?",
     "overwriteConfirm": "Certains fichiers existent déjà. Les remplacer ?",
+    "replace": "Remplacer",
     "noMatch": "Aucun résultat",
     "binary": "Fichier binaire",
     "binaryDesc": "Ce fichier ne peut pas être affiché dans le navigateur. Téléchargez-le pour l'ouvrir.",
@@ -833,5 +835,8 @@
     "depsInstalled": "{count} dépendance(s) installée(s)",
     "depsUnresolved": "Introuvable automatiquement : {list}",
     "depsNothing": "Aucune dépendance manquante à installer"
+  },
+  "toast": {
+    "updateAvailable": "Mise à jour disponible pour {name} → {version}"
   }
 }

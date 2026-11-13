@@ -274,6 +274,7 @@ export default function FileExplorer({ server }) {
   const [deleting, setDeleting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [upload, setUpload] = useState(null); // { count, progress }
+  const [pendingOverwrite, setPendingOverwrite] = useState(null); // File[]
   const fileInput = useRef(null);
   const listRef = useRef(null);
   const dragDepth = useRef(0);
@@ -401,11 +402,7 @@ export default function FileExplorer({ server }) {
     } catch (err) { toast.error(errMsg(err, t('common.error'))); throw err; }
   }
 
-  async function doUpload(fileList) {
-    const files = [...fileList].filter(f => f.size > 0 || f.type);
-    if (!files.length) return;
-    const existing = new Set((data?.entries || []).map(e => e.name));
-    const overwrite = files.some(f => existing.has(f.name)) && window.confirm(t('files.overwriteConfirm'));
+  async function runUpload(files, overwrite) {
     setUpload({ count: files.length, progress: 0 });
     try {
       const res = await uploadFiles(server.id, dir, files, { overwrite, onProgress: p => setUpload(u => u && { ...u, progress: p }) });
@@ -414,6 +411,17 @@ export default function FileExplorer({ server }) {
       refresh();
     } catch (err) { toast.error(errMsg(err, t('common.error'))); }
     finally { setUpload(null); }
+  }
+
+  function doUpload(fileList) {
+    const files = [...fileList].filter(f => f.size > 0 || f.type);
+    if (!files.length) return;
+    const existing = new Set((data?.entries || []).map(e => e.name));
+    if (files.some(f => existing.has(f.name))) {
+      setPendingOverwrite(files);
+      return;
+    }
+    runUpload(files, false);
   }
 
   // Raccourcis clavier de la liste
@@ -731,6 +739,22 @@ export default function FileExplorer({ server }) {
         title={t('files.unsavedTitle')}
         message={t('files.unsavedBody')}
         confirmLabel={t('files.discard')}
+      />
+      <ConfirmDialog
+        open={!!pendingOverwrite}
+        onClose={() => {
+          const files = pendingOverwrite;
+          setPendingOverwrite(null);
+          if (files) runUpload(files, false);
+        }}
+        onConfirm={() => {
+          const files = pendingOverwrite;
+          setPendingOverwrite(null);
+          if (files) runUpload(files, true);
+        }}
+        title={t('files.overwriteTitle')}
+        message={t('files.overwriteConfirm')}
+        confirmLabel={t('files.replace')}
       />
     </div>
   );

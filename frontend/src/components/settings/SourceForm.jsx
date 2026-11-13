@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Plug, CheckCircle2, XCircle } from 'lucide-react';
@@ -33,6 +33,7 @@ const MAPPER_EXAMPLE = `{
 export default function SourceForm({ onClose }) {
   const qc = useQueryClient();
   const { t } = useI18n();
+  const id = useId();
   const [form, setForm] = useState({ name: '', base_url: '', api_key: '', format: 'curseforge', field_mapping_json: '' });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -99,8 +100,8 @@ export default function SourceForm({ onClose }) {
     <Modal open onClose={close} title={t('sources.formTitle')} icon={Plug} size="md">
       <form onSubmit={handleSave} className="p-6 space-y-4">
         <div>
-          <label className="label">{t('sources.presets')}</label>
-          <div className="flex flex-wrap gap-2">
+          <p id={`${id}-presets`} className="label">{t('sources.presets')}</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby={`${id}-presets`}>
             {PRESETS.map(p => (
               <button
                 key={p.name} type="button"
@@ -115,31 +116,32 @@ export default function SourceForm({ onClose }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">{t('sources.name')} *</label>
-            <input className="input" value={form.name} onChange={e => set('name', e.target.value)} required placeholder={t('sources.namePlaceholder')} />
+            <label htmlFor={`${id}-name`} className="label">{t('sources.name')} *</label>
+            <input id={`${id}-name`} className="input" value={form.name} onChange={e => set('name', e.target.value)} required placeholder={t('sources.namePlaceholder')} />
           </div>
           <div>
-            <label className="label">{t('sources.type')} *</label>
-            <select className="input" value={form.format} onChange={e => set('format', e.target.value)}>
+            <label htmlFor={`${id}-format`} className="label">{t('sources.type')} *</label>
+            <select id={`${id}-format`} className="input" value={form.format} onChange={e => set('format', e.target.value)}>
               {FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
           </div>
         </div>
 
         <div>
-          <label className="label">{t('sources.url')} *</label>
-          <input className="input font-mono" value={form.base_url} onChange={e => set('base_url', e.target.value)} required placeholder="https://api.example.com/v1" />
+          <label htmlFor={`${id}-url`} className="label">{t('sources.url')} *</label>
+          <input id={`${id}-url`} className="input font-mono" value={form.base_url} onChange={e => set('base_url', e.target.value)} required placeholder="https://api.example.com/v1" />
         </div>
 
         <div>
-          <label className="label">{t('sources.apiKey')} <span className="normal-case tracking-normal text-fg-3">({t('common.optional')})</span></label>
-          <input className="input" type="password" value={form.api_key} onChange={e => set('api_key', e.target.value)} placeholder={t('sources.apiKeyHint')} autoComplete="off" />
+          <label htmlFor={`${id}-api-key`} className="label">{t('sources.apiKey')} <span className="normal-case tracking-normal text-fg-3">({t('common.optional')})</span></label>
+          <input id={`${id}-api-key`} className="input" type="password" value={form.api_key} onChange={e => set('api_key', e.target.value)} placeholder={t('sources.apiKeyHint')} autoComplete="off" />
         </div>
 
         {form.format === 'custom' && (
           <div className="fade-in">
-            <label className="label">{t('sources.mapper')}</label>
+            <label htmlFor={`${id}-mapper`} className="label">{t('sources.mapper')}</label>
             <textarea
+              id={`${id}-mapper`}
               className="input font-mono text-xs" rows={7}
               value={form.field_mapping_json} onChange={e => set('field_mapping_json', e.target.value)}
               placeholder={MAPPER_EXAMPLE}

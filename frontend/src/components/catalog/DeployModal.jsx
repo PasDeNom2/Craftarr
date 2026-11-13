@@ -48,7 +48,7 @@ export default function DeployModal({ modpack, onClose }) {
     if (versions.length > 0 && !form.version_id) {
       setForm(f => ({ ...f, version_id: String(versions[0].id) }));
     }
-  }, [versions]);
+  }, [versions]); // eslint-disable-line react-hooks/exhaustive-deps -- sélection initiale uniquement à l'arrivée des versions
 
   const selectedVersion = versions.find(v => String(v.id) === form.version_id);
   const detectedLoaders = selectedVersion?.loaders || [];

@@ -12,5 +12,8 @@ module.exports = defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Les polices restent des fichiers (chargés à la demande via unicode-range) : inlinées en
+    // base64, elles alourdissaient le CSS bloquant de ~80 Ko
+    assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { login } from '../services/api';
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const { setToken, setUser } = useAuthStore();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const id = useId();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -50,8 +51,9 @@ export default function LoginPage() {
           className="card space-y-4 !p-6"
         >
           <div>
-            <label className="label">{t('login.username')}</label>
+            <label htmlFor={`${id}-username`} className="label">{t('login.username')}</label>
             <input
+              id={`${id}-username`}
               type="text"
               className="input"
               value={username}
@@ -62,8 +64,9 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="label">{t('login.password')}</label>
+            <label htmlFor={`${id}-password`} className="label">{t('login.password')}</label>
             <input
+              id={`${id}-password`}
               type="password"
               className="input"
               value={password}

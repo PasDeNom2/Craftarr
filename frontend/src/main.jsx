@@ -6,6 +6,25 @@ import App from './App';
 import { I18nProvider } from './i18n';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { useThemeStore } from './store';
+// Polices auto-hébergées : latin, latin étendu et cyrillique (langues de l'interface)
+import '@fontsource/geist/latin-400.css';
+import '@fontsource/geist/latin-ext-400.css';
+import '@fontsource/geist/cyrillic-400.css';
+import '@fontsource/geist/latin-500.css';
+import '@fontsource/geist/latin-ext-500.css';
+import '@fontsource/geist/cyrillic-500.css';
+import '@fontsource/geist/latin-600.css';
+import '@fontsource/geist/latin-ext-600.css';
+import '@fontsource/geist/cyrillic-600.css';
+import '@fontsource/geist/latin-700.css';
+import '@fontsource/geist/latin-ext-700.css';
+import '@fontsource/geist/cyrillic-700.css';
+import '@fontsource/geist-mono/latin-400.css';
+import '@fontsource/geist-mono/latin-ext-400.css';
+import '@fontsource/geist-mono/cyrillic-400.css';
+import '@fontsource/geist-mono/latin-500.css';
+import '@fontsource/geist-mono/latin-ext-500.css';
+import '@fontsource/geist-mono/cyrillic-500.css';
 import './index.css';
 
 // Applique le thème enregistré et suit le mode « système » dès le démarrage

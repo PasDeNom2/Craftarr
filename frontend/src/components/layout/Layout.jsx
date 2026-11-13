@@ -40,7 +40,7 @@ export default function Layout() {
     socket.on('connect', onConnect);
 
     socket.on('server:update-available', ({ serverName, latestVersion }) => {
-      toast(`Mise à jour disponible pour ${serverName} → ${latestVersion}`, { duration: 8000 });
+      toast(tRef.current('toast.updateAvailable', { name: serverName, version: latestVersion }), { duration: 8000 });
     });
 
     const applyStatus = (serverId, status, extra = {}) => {
@@ -89,7 +89,7 @@ export default function Layout() {
       socket.off('pregen:update',     onPregen);
       socket.off('server:update-available');
     };
-  }, []);
+  }, [setServers, updateServer, addServer, qc]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg">

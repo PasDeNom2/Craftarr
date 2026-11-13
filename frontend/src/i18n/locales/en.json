@@ -365,7 +365,9 @@
     "uploading": "Uploading {count} file(s)…",
     "uploaded": "{count} file(s) uploaded",
     "uploadSkipped": "{count} file(s) skipped (already exist)",
+    "overwriteTitle": "Replace existing files?",
     "overwriteConfirm": "Some files already exist. Replace them?",
+    "replace": "Replace",
     "noMatch": "No results",
     "binary": "Binary file",
     "binaryDesc": "This file can't be displayed in the browser. Download it to open it.",
@@ -833,5 +835,8 @@
     "depsInstalled": "{count} dependenc(ies) installed",
     "depsUnresolved": "Could not find automatically: {list}",
     "depsNothing": "No missing dependency to install"
+  },
+  "toast": {
+    "updateAvailable": "Update available for {name} → {version}"
   }
 }

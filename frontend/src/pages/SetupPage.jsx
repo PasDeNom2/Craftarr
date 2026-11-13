@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { setupAdmin } from '../services/api';
@@ -17,6 +17,7 @@ export default function SetupPage() {
   const { setToken, setUser } = useAuthStore();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const id = useId();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -70,8 +71,9 @@ export default function SetupPage() {
           className="card space-y-4 !p-6"
         >
           <div>
-            <label className="label">{t('setup.token')}</label>
+            <label htmlFor={`${id}-token`} className="label">{t('setup.token')}</label>
             <input
+              id={`${id}-token`}
               type="text"
               className="input font-mono uppercase tracking-widest"
               value={setupToken}
@@ -86,8 +88,9 @@ export default function SetupPage() {
           </div>
 
           <div>
-            <label className="label">{t('setup.username')}</label>
+            <label htmlFor={`${id}-username`} className="label">{t('setup.username')}</label>
             <input
+              id={`${id}-username`}
               type="text"
               className="input"
               value={username}
@@ -101,8 +104,9 @@ export default function SetupPage() {
           </div>
 
           <div>
-            <label className="label">{t('setup.password')}</label>
+            <label htmlFor={`${id}-password`} className="label">{t('setup.password')}</label>
             <input
+              id={`${id}-password`}
               type="password"
               className="input"
               value={password}
@@ -116,8 +120,9 @@ export default function SetupPage() {
           </div>
 
           <div>
-            <label className="label">{t('setup.confirm')}</label>
+            <label htmlFor={`${id}-confirm`} className="label">{t('setup.confirm')}</label>
             <input
+              id={`${id}-confirm`}
               type="password"
               className="input"
               value={confirm}

@@ -181,7 +181,7 @@ export default function Console({ server }) {
   }, [server.status]);
 
   // ── Préparation des entrées : bruit retiré, stacktraces regroupées, filtre + recherche
-  const rawLines = logs[server.id] || [];
+  const rawLines = useMemo(() => logs[server.id] || [], [logs, server.id]);
   const entries = useMemo(
     () => groupEntries(rawLines.filter(l => !NOISE.test(l)).map(parseLine)),
     [rawLines],
