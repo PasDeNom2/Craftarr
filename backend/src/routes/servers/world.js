@@ -8,6 +8,7 @@ const authMiddleware = require('../../middleware/auth');
 const dockerService = require('../../services/docker');
 const backupService = require('../../services/backup');
 const serverLock = require('../../services/serverLock');
+const zipStream = require('../../services/zipStream');
 const { DATA_PATH, getUpload } = require('./common');
 
 const router = express.Router();
@@ -36,15 +37,13 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
         const stagingDir = path.join(DATA_PATH, 'servers', server.id, '.import-staging');
 
         // 1. Validation du zip AVANT de toucher au monde actuel (serveur toujours en marche)
-        const AdmZip = require('adm-zip');
-        let zip;
-        try { zip = new AdmZip(zipPath); } catch {
+        let entries;
+        try { entries = await zipStream.listEntries(zipPath); } catch {
           cleanupUpload();
           return res.status(400).json({ error: 'Fichier zip invalide ou corrompu' });
         }
         // Le dossier du monde = celui qui contient level.dat le moins profond (zip du dossier ou de son contenu)
-        const levelDats = zip.getEntries()
-          .map(e => e.entryName.replace(/\\/g, '/'))
+        const levelDats = entries
           .filter(n => n === 'level.dat' || n.endsWith('/level.dat'))
           .sort((a, b) => a.split('/').length - b.split('/').length);
         if (!levelDats.length) {
@@ -53,10 +52,16 @@ router.post('/:id/world-import', authMiddleware, async (req, res, next) => {
         }
         const worldRootInZip = path.posix.dirname(levelDats[0]); // "." si level.dat est à la racine
 
-        // 2. Extraction à part
+        // 2. Extraction en flux à part (plafond 20 Gio par défaut)
         fs.rmSync(stagingDir, { recursive: true, force: true });
         fs.mkdirSync(stagingDir, { recursive: true });
-        zip.extractAllTo(stagingDir, true);
+        try {
+          await zipStream.extractAll(zipPath, stagingDir);
+        } catch {
+          fs.rmSync(stagingDir, { recursive: true, force: true });
+          cleanupUpload();
+          return res.status(400).json({ error: 'Fichier zip invalide ou corrompu' });
+        }
         cleanupUpload();
         const extractedWorld = path.join(stagingDir, worldRootInZip);
 
@@ -134,25 +139,46 @@ router.get('/:id/world-download', async (req, res, next) => {
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
 
-    const serverDir = path.join(DATA_PATH, 'servers', server.id, 'server');
+    const serverRoot = path.join(DATA_PATH, 'servers', server.id);
+    const serverDir = path.join(serverRoot, 'server');
     const worldDirs = backupService.getWorldDirs(serverDir).filter(d => fs.existsSync(path.join(serverDir, d)));
     if (!worldDirs.length) return res.status(404).json({ error: 'Aucun dossier world trouvé' });
 
     const filename = `${server.name.replace(/[^a-z0-9_-]/gi, '_')}_world.zip`;
-    res.set('Content-Type', 'application/zip');
-    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    const tmpZip = path.join(serverRoot, `.download-${uuidv4()}.zip`);
+    const cleanupTmp = () => { try { fs.unlinkSync(tmpZip); } catch {} };
 
-    // Monde cohérent (save-all + save-off) pendant la copie ; les .mca sont déjà compressés → niveau 1
-    await backupService.withWorldFlushed(server, () => new Promise((resolve, reject) => {
-      const archiver = require('archiver');
-      const archive = archiver('zip', { zlib: { level: 1 } });
-      req.on('close', () => { if (!res.writableFinished) archive.abort(); resolve(); });
-      archive.on('error', reject);
-      res.on('finish', resolve);
-      archive.pipe(res);
-      for (const dir of worldDirs) archive.directory(path.join(serverDir, dir), dir);
-      archive.finalize();
-    }));
+    // Monde cohérent (save-all + save-off) uniquement pendant la création du zip temporaire ; les .mca sont déjà compressés → niveau 1
+    try {
+      await backupService.withWorldFlushed(server, () => new Promise((resolve, reject) => {
+        const archiver = require('archiver');
+        const output = fs.createWriteStream(tmpZip);
+        const archive = archiver('zip', { zlib: { level: 1 } });
+        output.on('close', resolve);
+        output.on('error', reject);
+        archive.on('error', reject);
+        archive.pipe(output);
+        for (const dir of worldDirs) archive.directory(path.join(serverDir, dir), dir);
+        archive.finalize();
+      }));
+    } catch (err) {
+      cleanupTmp();
+      throw err;
+    }
+
+    // Envoi hors de withWorldFlushed : save-on est déjà rétabli pendant le transfert au navigateur
+    if (res.closed || req.destroyed) {
+      cleanupTmp();
+      return;
+    }
+    res.on('close', cleanupTmp);
+    res.download(tmpZip, filename, { dotfiles: 'allow' }, (err) => {
+      cleanupTmp();
+      if (err) {
+        if (res.headersSent) { console.error('[world-download]', err.message); res.destroy(); }
+        else next(err);
+      }
+    });
   } catch (err) {
     if (res.headersSent) { console.error('[world-download]', err.message); res.destroy(); return; }
     next(err);

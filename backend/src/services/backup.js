@@ -1,9 +1,9 @@
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
-const AdmZip = require('adm-zip');
 const { randomUUID: uuidv4 } = require('crypto');
 const { getDb } = require('../config/database');
+const zipStream = require('./zipStream');
 
 const DATA_PATH = process.env.DATA_PATH || '/data';
 // Hors du dossier du serveur : supprimer/réinstaller un serveur ne doit jamais emporter ses backups
@@ -141,22 +141,21 @@ async function restoreBackup(server, backup) {
 
   // 1. Vérification de l'archive (serveur toujours en marche)
   if (!fs.existsSync(backup.path)) throw Object.assign(new Error('Fichier de backup introuvable sur le disque'), { status: 404 });
-  let zip;
   try {
-    zip = new AdmZip(backup.path);
-    if (!zip.getEntries().length) throw new Error('archive vide');
+    const entries = await zipStream.listEntries(backup.path);
+    if (!entries.length) throw new Error('archive vide');
   } catch (err) {
     throw Object.assign(new Error(`Backup illisible ou corrompu (${err.message}) — rien n'a été modifié`), { status: 400 });
   }
 
-  // 2. Extraction à part
+  // 2. Extraction en flux à part (plafond 20 Gio par défaut)
   fs.rmSync(stagingDir, { recursive: true, force: true });
   fs.mkdirSync(stagingDir, { recursive: true });
   try {
-    zip.extractAllTo(stagingDir, true);
+    await zipStream.extractAll(backup.path, stagingDir);
   } catch (err) {
     fs.rmSync(stagingDir, { recursive: true, force: true });
-    throw new Error(`Extraction du backup impossible (${err.message}) — rien n'a été modifié`);
+    throw Object.assign(new Error(`Extraction du backup impossible (${err.message}) — rien n'a été modifié`), { status: 400 });
   }
 
   // 3. Arrêt propre, puis bascule
@@ -256,9 +255,7 @@ function scheduleBackups() {
     console.log('[Backup] Backups planifiés désactivés (BACKUP_INTERVAL_HOURS=0)');
     return;
   }
-  const cron = require('node-cron');
-  // Décalé de 30 min par rapport au check des mises à jour (minute 0) pour ne pas se chevaucher
-  cron.schedule(`30 */${hours} * * *`, runScheduledBackups);
+  setInterval(runScheduledBackups, hours * 3600_000);
   console.log(`[Backup] Backups planifiés toutes les ${hours} h (rétention : ${process.env.BACKUP_KEEP || 8})`);
 }
 

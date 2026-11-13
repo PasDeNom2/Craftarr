@@ -142,7 +142,8 @@ test('téléchargement de monde : lien signé, usage unique, zip streamé', asyn
   assert.strictEqual((await fetch(`http://127.0.0.1:${PORT}${other}`)).status, 401);
   const dl = await fetch(`http://127.0.0.1:${PORT}${data.url}`);
   assert.strictEqual(dl.status, 200);
-  assert.strictEqual(dl.headers.get('content-length'), null);
+  // Archive préparée sur disque (sauvegarde coupée seulement pendant sa création) : taille connue
+  assert.ok(Number(dl.headers.get('content-length')) > 0);
   const names = new AdmZip(Buffer.from(await dl.arrayBuffer())).getEntries().map(e => e.entryName);
   assert.ok(names.includes('monde/level.dat'), names.join(','));
   assert.strictEqual((await fetch(`http://127.0.0.1:${PORT}${data.url}`)).status, 401);
