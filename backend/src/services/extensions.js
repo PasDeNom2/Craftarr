@@ -7,8 +7,10 @@
  *   ports(server, ctx) => { exposed: {}, bindings: {} }   ports supplémentaires (ex. '19132/udp')
  *   labels(server) => Record<string,string>        labels Docker (ex. mc-router)
  *   publishGamePort(server) => boolean             false = ne pas publier le port de jeu sur l'hôte
+ *   hostConfig(server) => Record<string, any>      options fusionnées dans HostConfig Docker
  *   fields: { [colonne]: { parse(value) => any, container?: boolean } }
- *                                                  colonnes de `servers` modifiables via PATCH ;
+ *                                                  colonnes de `servers` modifiables via PATCH
+                                                 (parse reçoit aussi la ligne du serveur modifié) ;
  *                                                  container: true = recréation du container nécessaire
  *   decorate(row) => object                        champs ajoutés à la réponse JSON d'un serveur
  *   init({ events, io, app }) => void              démarrage (tâches de fond, abonnements au bus)
@@ -81,6 +83,11 @@ function publishGamePort(server) {
   return collect('publishGamePort', ext => ext.publishGamePort(server)).every(v => v !== false);
 }
 
+/** @returns {Record<string, any>} */
+function hostConfig(server) {
+  return Object.assign({}, ...collect('hostConfig', ext => ext.hostConfig(server) || {}));
+}
+
 /** @returns {Record<string, { parse: (v: any) => any, container?: boolean }>} */
 function fields() {
   /** @type {Record<string, { parse: (v: any) => any, container?: boolean }>} */
@@ -102,4 +109,4 @@ function init(deps) {
 /** Pour les tests : force le rechargement du dossier. */
 function _reset() { cache = null; }
 
-module.exports = { list, env, ports, labels, publishGamePort, fields, decorate, init, _reset };
+module.exports = { list, env, ports, labels, publishGamePort, hostConfig, fields, decorate, init, _reset };

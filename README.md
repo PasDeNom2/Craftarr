@@ -161,6 +161,21 @@ server {
 
 ---
 
+## Port unique et veille
+
+Craftarr intègre un routeur par sous-domaine (`itzg/mc-router`, profil Compose `router`) et une mise en veille automatique des serveurs vides :
+
+- **Port unique par sous-domaine** : créez un enregistrement DNS joker `*.mc.exemple.fr` vers l'hôte, activez le routeur dans **Paramètres**, puis lancez :
+  ```bash
+  docker compose --profile router up -d
+  ```
+  Chaque serveur devient joignable via `<sous-domaine>.<domaine>` sur le port `${ROUTER_PORT:-25565}` sans exposer de port individuel.
+- **Veille automatique** (onglet **Paramètres** du serveur) :
+  - `Pause` (`autopause`) : gèle le processus Java après *N* minutes sans joueur (libère le CPU) et reprend à la connexion.
+  - `Arrêt` (`autostop`) : arrête le container quand il est vide (libère toute la RAM) ; `mc-router` le redémarre automatiquement lorsqu'un joueur se connecte.
+
+---
+
 ## Troubleshooting
 
 **The UI shows "no server deployed" after a backend restart**  

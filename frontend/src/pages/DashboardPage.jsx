@@ -21,7 +21,7 @@ function formatRam(mb) {
 }
 
 function serverAddress(server) {
-  return `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
+  return server.join_address || `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
 }
 
 /** Chiffre clé (ligne de résumé en haut de page). */

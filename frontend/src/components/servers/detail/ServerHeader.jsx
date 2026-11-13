@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import clsx from 'clsx';
 import {
   Play, Square, RotateCcw, Trash2, ArrowUp, Package,
-  AlertTriangle, Pencil, Copy, Gamepad2, Layers3, MemoryStick,
+  AlertTriangle, Pencil, Copy, Gamepad2, Layers3, MemoryStick, Moon,
 } from 'lucide-react';
 import { useI18n } from '../../../i18n';
 import StatusBadge from '../../ui/StatusBadge';
@@ -99,6 +99,11 @@ export default function ServerHeader({
                   </h1>
                 )}
                 <StatusBadge status={server.status} />
+                {server.sleeping && (
+                  <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] font-medium text-info border border-info/30 bg-info/[0.08]">
+                    <Moon size={12} strokeWidth={2} /> {t('sleep.badge')}
+                  </span>
+                )}
                 {server.needs_recreate && (
                   <span className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] font-medium text-warn border border-warn/30 bg-warn/[0.08]">
                     <AlertTriangle size={12} strokeWidth={2} /> {t('server.needsRecreate')}

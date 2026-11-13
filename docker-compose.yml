@@ -37,6 +37,8 @@ services:
       - PORT=3000
       - DATA_PATH=/data
       - DOCKER_HOST=tcp://docker-proxy:2375
+      # Fuseau horaire des tâches planifiées (cron) — écrit par setup.sh d'après l'hôte
+      - TZ=${TZ:-UTC}
       # Chemin hôte du dossier data (pour les bind mounts des containers MC)
       - HOST_DATA_PATH=${HOST_DATA_PATH:-${PWD}/data}
       # Réglages optionnels, lus depuis le .env (voir .env.example)
@@ -72,6 +74,22 @@ services:
         condition: service_healthy
     networks:
       - craftarr-net
+
+  mc-router:
+    image: itzg/mc-router:1.55.0
+    container_name: craftarr-mc-router
+    profiles: ["router"]
+    restart: unless-stopped
+    ports:
+      - "${ROUTER_PORT:-25565}:25565"
+    environment:
+      - DOCKER_HOST=tcp://docker-proxy:2375
+    command: ["--in-docker", "--auto-scale-up", "--auto-scale-down=false"]
+    depends_on:
+      - docker-proxy
+    networks:
+      - craftarr-net
+      - docker-proxy
 
 networks:
   craftarr-net:

@@ -476,6 +476,7 @@ async function createServerContainer(server, onProgress) {
       PortBindings: portBindings,
       RestartPolicy: { Name: 'unless-stopped' },
       Memory: server.ram_mb * 1024 * 1024 * 2,
+      ...extensions.hostConfig(server),
     },
     // Laisse à Docker le temps d'un arrêt propre (voir STOP_TIMEOUT) même hors Craftarr (docker stop)
     StopTimeout: STOP_TIMEOUT,

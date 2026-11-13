@@ -179,7 +179,7 @@ export default function ServerDetailPage() {
   );
 
   const isBusy = startMut.isPending || stopMut.isPending || restartMut.isPending;
-  const address = `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
+  const address = server.join_address || `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
 
   function getOnlinePlayersCount() {
     if (metrics?.players?.online != null) return metrics.players.online;

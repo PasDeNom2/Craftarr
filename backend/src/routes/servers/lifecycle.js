@@ -514,7 +514,7 @@ router.patch('/:id', authMiddleware, requireIdle, async (req, res, next) => {
     // Champs déclarés par les extensions (services/extensions/*.js → fields)
     const extFields = require('../../services/extensions').fields();
     for (const [key, def] of Object.entries(extFields)) {
-      if (req.body[key] !== undefined && PATCH_VALIDATORS[key] === undefined) updates[key] = def.parse(req.body[key]);
+      if (req.body[key] !== undefined && PATCH_VALIDATORS[key] === undefined) updates[key] = def.parse(req.body[key], server);
     }
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Aucun champ modifiable fourni' });
     const worldsChanged = updates.pregen_worlds !== undefined && updates.pregen_worlds !== pregen.worldsOf(server).join(',');
