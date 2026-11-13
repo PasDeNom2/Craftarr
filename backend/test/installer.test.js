@@ -102,4 +102,14 @@ test('ramAdvice', () => {
   for (let i = 0; i < 233; i++) fs.writeFileSync(path.join(md, `m${i}.jar`), '');
   assert.match(t.ramAdvice(md, 6144), /233 mods pour 6 Go de RAM : 8 Go recommandés/);
   assert.strictEqual(t.ramAdvice(md, 8192), null);
+  // Petit pack : 2 Go suffisent, 1 Go déclenche l'alerte
+  const small = tmpDirForSmallPack(7);
+  assert.strictEqual(t.ramAdvice(small, 2048), null);
+  assert.match(t.ramAdvice(small, 1024), /7 mods pour 1 Go de RAM : 2 Go recommandés/);
 });
+
+function tmpDirForSmallPack(n) {
+  const dir = require('./helpers').tmpDir('craftarr-small-'); // supprimé à la fin du test
+  for (let i = 0; i < n; i++) require('fs').writeFileSync(require('path').join(dir, `m${i}.jar`), '');
+  return dir;
+}

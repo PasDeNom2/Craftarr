@@ -49,7 +49,9 @@ function writePackMeta(serverDir, meta) {
 function ramAdvice(modsDir, ramMb) {
   let mods = 0;
   try { mods = fs.readdirSync(modsDir).filter(f => f.endsWith('.jar')).length; } catch {}
-  const recommendedGb = mods < 50 ? 4 : mods < 150 ? 6 : mods < 250 ? 8 : 10;
+  // Un petit pack (performance, QoL) tourne comme un vanilla : 2 Go suffisent. Avant, l'alerte
+  // « 4 Go recommandés » s'affichait dès 1 mod (constaté avec un pack de 7 mods de performance).
+  const recommendedGb = mods < 20 ? 2 : mods < 50 ? 4 : mods < 150 ? 6 : mods < 250 ? 8 : 10;
   if (!ramMb || ramMb >= recommendedGb * 1024) return null;
   return `⚠ ${mods} mods pour ${Math.round(ramMb / 1024 * 10) / 10} Go de RAM : ${recommendedGb} Go recommandés `
     + '(Paramètres du serveur → RAM, puis recréer le container). Risque de lag ou de crash.';
