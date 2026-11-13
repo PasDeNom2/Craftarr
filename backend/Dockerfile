@@ -8,7 +8,8 @@ RUN npm ci --omit=dev --no-audit --no-fund
 
 # ─── Image finale ────────────────────────────────────────────
 FROM node:24-alpine
-RUN apk add --no-cache su-exec
+# restic : sauvegardes hors site ; openssh-client : dépôts sftp:
+RUN apk add --no-cache su-exec restic openssh-client
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
