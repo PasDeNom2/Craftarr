@@ -54,7 +54,8 @@ export default function ServerHeader({
   return (
     <header
       className={clsx(
-        'sticky top-0 z-20 shrink-0 backdrop-blur-md border-b transition-colors',
+        // Collant à partir de 640 px seulement : sur mobile l'en-tête replié occupe trop d'écran
+        'sm:sticky sm:top-0 z-20 shrink-0 backdrop-blur-md border-b transition-colors',
         scrolled ? 'border-line' : 'border-transparent',
       )}
       style={{ backgroundColor: 'rgba(var(--bg-rgb), 0.8)' }}

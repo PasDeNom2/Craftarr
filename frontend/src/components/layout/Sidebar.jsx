@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { LayoutGrid, Compass, Settings, LogOut, Plus, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
@@ -10,6 +10,22 @@ import { LogoMark } from '../ui/Logo';
 import { resetSocket } from '../../hooks/useSocket';
 
 const COLLAPSE_KEY = 'craftarr_sidebar_collapsed';
+
+// Sous 768 px, la barre latérale dépliée (236 px) mangeait plus de la moitié de l'écran :
+// elle passe automatiquement en rail d'icônes.
+const NARROW_QUERY = '(max-width: 767px)';
+
+function useNarrowScreen() {
+  const [narrow, setNarrow] = useState(() => window.matchMedia?.(NARROW_QUERY).matches ?? false);
+  useEffect(() => {
+    const mq = window.matchMedia?.(NARROW_QUERY);
+    if (!mq) return undefined;
+    const onChange = e => setNarrow(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return narrow;
+}
 
 function readCollapsed() {
   try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
@@ -31,7 +47,9 @@ function NavItem({ to, icon: Icon, label, collapsed, end = true }) {
 }
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [collapsedPref, setCollapsed] = useState(readCollapsed);
+  const narrow = useNarrowScreen();
+  const collapsed = collapsedPref || narrow;
   const servers = useServerStore(s => s.servers);
   const logout = useAuthStore(s => s.logout);
   const user = useAuthStore(s => s.user);
@@ -117,14 +135,14 @@ export default function Sidebar() {
             <LogOut size={15} strokeWidth={1.75} />
           </button>
         )}
-        <button
+        {!narrow && <button
           onClick={toggle}
           className={clsx(itemClass(false, collapsed), 'w-full text-fg-3')}
           title={collapsed ? t('nav.expand') : t('nav.collapse')}
         >
           {collapsed ? <PanelLeftOpen size={15} strokeWidth={1.75} /> : <PanelLeftClose size={15} strokeWidth={1.75} />}
           {!collapsed && <span>{t('nav.collapse')}</span>}
-        </button>
+        </button>}
       </div>
     </aside>
   );
