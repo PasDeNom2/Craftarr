@@ -16,6 +16,7 @@ const path = require('path');
 const { initDb } = require('./config/database');
 const { initSetupToken } = require('./routes/auth');
 const errorHandler = require('./middleware/errorHandler');
+const permissionsMiddleware = require('./middleware/permissions');
 
 const authRoutes = require('./routes/auth').router;
 const serverRoutes = require('./routes/servers');
@@ -79,6 +80,10 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/setup', authLimiter);
+app.use('/api/auth/2fa/verify', authLimiter);
+
+// Contrôle d'accès centralisé (rôles + permissions par serveur + journalisation)
+app.use('/api', permissionsMiddleware);
 
 // ─── Routes ─────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

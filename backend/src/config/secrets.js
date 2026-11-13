@@ -90,17 +90,18 @@ function getJwtSecret() {
  * avant, un lien vu dans les logs du proxy ouvrait toute l'API pendant 5 minutes.
  * Refuse aussi les sessions d'avant un changement de mot de passe (token_version).
  * @param {string} token
- * @returns {{ id: string, username: string }}
+ * @returns {{ id: string, username: string, role: string }}
  */
 function verifyUserToken(token) {
   const jwt = require('jsonwebtoken');
   const claims = jwt.verify(token, getJwtSecret());
   if (claims.purpose || !claims.id) throw new Error('jeton non utilisable pour une session');
   const { getDb } = require('./database');
-  const user = getDb().prepare('SELECT id, username, token_version FROM users WHERE id = ?').get(claims.id);
+  const user = getDb().prepare('SELECT id, username, token_version, role, disabled FROM users WHERE id = ?').get(claims.id);
   if (!user) throw new Error('utilisateur supprimé');
+  if (user.disabled) throw new Error('compte désactivé');
   if ((claims.tv || 0) !== (user.token_version || 0)) throw new Error('session révoquée');
-  return { id: user.id, username: user.username };
+  return { id: user.id, username: user.username, role: user.role || 'admin' };
 }
 
 /**

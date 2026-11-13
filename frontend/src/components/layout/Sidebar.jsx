@@ -54,6 +54,7 @@ export default function Sidebar() {
   const servers = useServerStore(s => s.servers);
   const logout = useAuthStore(s => s.logout);
   const user = useAuthStore(s => s.user);
+  const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -85,7 +86,7 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-2">
         <div className="space-y-0.5">
           <NavItem to="/" icon={LayoutGrid} label={t('nav.overview')} collapsed={collapsed} />
-          <NavItem to="/catalog" icon={Compass} label={t('nav.catalogue')} collapsed={collapsed} />
+          {isAdmin && <NavItem to="/catalog" icon={Compass} label={t('nav.catalogue')} collapsed={collapsed} />}
         </div>
 
         {/* Serveurs */}
@@ -93,9 +94,11 @@ export default function Sidebar() {
           {!collapsed && (
             <div className="flex items-center justify-between px-2.5 mb-1">
               <span className="eyebrow">{t('nav.servers')}</span>
-              <NavLink to="/catalog" className="icon-btn !h-6 !min-w-6" title={t('nav.newServer')} aria-label={t('nav.newServer')}>
-                <Plus size={14} strokeWidth={2} />
-              </NavLink>
+              {isAdmin && (
+                <NavLink to="/catalog" className="icon-btn !h-6 !min-w-6" title={t('nav.newServer')} aria-label={t('nav.newServer')}>
+                  <Plus size={14} strokeWidth={2} />
+                </NavLink>
+              )}
             </div>
           )}
           <div className="space-y-0.5">
@@ -119,7 +122,7 @@ export default function Sidebar() {
 
       {/* Pied : paramètres, langue, compte */}
       <div className="shrink-0 border-t border-line p-2 space-y-0.5">
-        {extraPages.filter(pg => pg.navKey).map(pg => (
+        {extraPages.filter(pg => pg.navKey && (!pg.adminOnly || isAdmin)).map(pg => (
           <NavItem key={pg.path} to={`/${pg.path}`} icon={pg.Icon || Settings} label={t(pg.navKey)} collapsed={collapsed} />
         ))}
         <NavItem to="/settings" icon={Settings} label={t('nav.settings')} collapsed={collapsed} />

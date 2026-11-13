@@ -7,7 +7,7 @@ import {
   getServer, startServer, stopServer, restartServer, deleteServer,
   patchServer, installMods, reinstallServer, uploadServerIcon,
 } from '../services/api';
-import { useServerStore, useIconStore, useMetricsStore } from '../store';
+import { useServerStore, useIconStore, useMetricsStore, useAuthStore } from '../store';
 import Console from '../components/servers/Console';
 import MetricsPanel from '../components/servers/MetricsPanel';
 import BackupList from '../components/servers/BackupList';
@@ -43,6 +43,20 @@ const CORE_TABS = [
 // Onglets des fonctionnalités (components/extensions/tabs/*.jsx), intercalés selon leur ordre
 const TABS = [...CORE_TABS, ...extraTabs].sort((a, b) => (a.order ?? 100) - (b.order ?? 100));
 
+const TAB_PERM = {
+  console: 'view',
+  mods: 'manage',
+  metrics: 'view',
+  backups: 'backups',
+  files: 'files',
+  players: 'players',
+  whitelist: 'players',
+  schedules: 'manage',
+  diagnostics: 'view',
+  profiles: 'manage',
+  settings: 'manage',
+};
+
 const TRANSIENT_STATUSES = ['installing', 'starting', 'updating'];
 
 export default function ServerDetailPage() {
@@ -50,8 +64,9 @@ export default function ServerDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { t } = useI18n();
+  const user = useAuthStore(s => s.user);
+  const isAdmin = user?.role === 'admin';
   const [tab, setTab] = useState('console');
-  const activeExtra = extraTabs.find(x => x.id === tab);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showWorldImport, setShowWorldImport] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -174,9 +189,15 @@ export default function ServerDetailPage() {
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-8">
       <p className="eyebrow">404</p>
       <p className="text-lg text-fg">{t('server.notFound')}</p>
-      <button className="btn-secondary mt-2" onClick={() => navigate('/catalog')}>{t('notFound.back')}</button>
+      <button className="btn-secondary mt-2" onClick={() => navigate(isAdmin ? '/catalog' : '/')}>{t('notFound.back')}</button>
     </div>
   );
+
+  const hasPerm = (perm) => isAdmin || (Array.isArray(server.my_perms) && server.my_perms.includes(perm));
+  const visibleTabs = TABS.filter(tb => (!tb.show || tb.show(server)) && hasPerm(tb.perm || TAB_PERM[tb.id] || 'manage'));
+  const effectiveTab = visibleTabs.some(tb => tb.id === tab) ? tab : (visibleTabs[0]?.id || 'console');
+  const activeExtra = extraTabs.find(x => x.id === effectiveTab);
+  const canConsole = hasPerm('console');
 
   const isBusy = startMut.isPending || stopMut.isPending || restartMut.isPending;
   const address = server.join_address || `${window.location.hostname}${server.port === 25565 ? '' : `:${server.port}`}`;
@@ -237,8 +258,8 @@ export default function ServerDetailPage() {
 
       <ServerHeader
         server={server}
-        tabs={TABS.filter(tb => !tb.show || tb.show(server))}
-        activeTab={tab}
+        tabs={visibleTabs}
+        activeTab={effectiveTab}
         onTabChange={setTab}
         scrolled={scrolled}
         address={address}
@@ -253,24 +274,29 @@ export default function ServerDetailPage() {
         onCopyAddress={copyAddress}
         onIconChange={onHeaderIcon}
         onSaveName={saveHeaderName}
+        canPower={hasPerm('power')}
+        canManage={hasPerm('manage')}
+        canDelete={isAdmin}
       />
 
       {/* ── Contenu : chaque onglet est isolé (un onglet qui plante n'emporte pas la page) ── */}
-      <div className={clsx(tab === 'console' || tab === 'files' || activeExtra?.fullHeight ? 'flex-1 min-h-0 p-4 lg:p-5' : 'px-4 sm:px-6 lg:px-8 py-6')}>
-        <div className={clsx('h-full', tab !== 'console' && 'hidden')}>
-          <ErrorBoundary resetKey="console"><Console server={server} /></ErrorBoundary>
-        </div>
-        {tab !== 'console' && (
-          <ErrorBoundary resetKey={tab}>
-            <div key={tab} className={clsx('tab-in', tab === 'files' ? 'h-full' : 'max-w-6xl')}>
-              {tab === 'metrics' && <MetricsPanel server={server} />}
-              {tab === 'mods' && <ModsPanel server={server} />}
-              {tab === 'backups' && <BackupList server={server} />}
-              {tab === 'files' && <FileExplorer server={server} />}
-              {tab === 'players' && <PlayersPanel server={server} />}
-              {tab === 'whitelist' && <WhitelistPanel server={server} />}
+      <div className={clsx(effectiveTab === 'console' || effectiveTab === 'files' || activeExtra?.fullHeight ? 'flex-1 min-h-0 p-4 lg:p-5' : 'px-4 sm:px-6 lg:px-8 py-6')}>
+        {hasPerm('view') && (
+          <div className={clsx('h-full', effectiveTab !== 'console' && 'hidden', !canConsole && '[&_form]:hidden')}>
+            <ErrorBoundary resetKey="console"><Console server={server} /></ErrorBoundary>
+          </div>
+        )}
+        {effectiveTab !== 'console' && (
+          <ErrorBoundary resetKey={effectiveTab}>
+            <div key={effectiveTab} className={clsx('tab-in', effectiveTab === 'files' ? 'h-full' : 'max-w-6xl')}>
+              {effectiveTab === 'metrics' && <MetricsPanel server={server} />}
+              {effectiveTab === 'mods' && <ModsPanel server={server} />}
+              {effectiveTab === 'backups' && <BackupList server={server} />}
+              {effectiveTab === 'files' && <FileExplorer server={server} />}
+              {effectiveTab === 'players' && <PlayersPanel server={server} />}
+              {effectiveTab === 'whitelist' && <WhitelistPanel server={server} />}
               {activeExtra && <activeExtra.Component server={server} />}
-              {tab === 'settings' && (
+              {effectiveTab === 'settings' && (
                 <EditTab server={server} onInstallMods={() => setConfirmMods(true)} onWorldImport={() => setShowWorldImport(true)} />
               )}
             </div>

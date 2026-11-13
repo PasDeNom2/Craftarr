@@ -2,6 +2,7 @@ const { getDb } = require('../config/database');
 const dockerService = require('../services/docker');
 const metrics = require('../services/metrics');
 const { createDiagnoser } = require('../services/logDiagnostics');
+const { hasServerPerm } = require('../middleware/permissions');
 
 // Lignes produites par le relevé RCON de Craftarr (joueurs/TPS toutes les 15 s). Sur un serveur
 // calme, elles remplissaient à elles seules les 200 dernières lignes : la console restait vide.
@@ -171,6 +172,10 @@ function setupLogsSocket(io) {
   io.on('connection', socket => {
     socket.on('logs:subscribe', async ({ serverId }) => {
       if (!serverId) return;
+      if (!hasServerPerm(socket.user, serverId, 'view')) {
+        socket.emit('logs:error', { serverId, error: 'Permission refusée' });
+        return;
+      }
       const alreadySubscribed = socket.rooms.has(`server:${serverId}`);
       socket.join(`server:${serverId}`);
 

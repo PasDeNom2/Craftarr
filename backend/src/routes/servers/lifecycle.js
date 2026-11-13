@@ -34,33 +34,45 @@ async function dockerCall(fn) {
 
 const router = express.Router();
 
+const ALL_PERMS = ['view', 'console', 'power', 'files', 'players', 'backups', 'manage'];
+const withPerms = (s, req) => ({
+  ...formatServer(s),
+  my_perms: req.permsFor ? req.permsFor(s.id) : [...ALL_PERMS],
+});
+
 // GET /api/servers
 router.get('/', authMiddleware, async (req, res, next) => {
   try {
     const db = getDb();
-    const servers = db.prepare('SELECT * FROM servers ORDER BY created_at DESC').all();
+    const allServers = db.prepare('SELECT * FROM servers ORDER BY created_at DESC').all();
+    const servers = req.allowedServerIds
+      ? allServers.filter(s => req.allowedServerIds.has(s.id))
+      : allServers;
 
     // Mise à jour statut depuis Docker — toujours retourner les serveurs même si Docker échoue
     const updated = await Promise.allSettled(servers.map(async s => {
-      if (!s.container_id) return formatServer(s);
+      if (!s.container_id) return withPerms(s, req);
       try {
         const status = await dockerService.getContainerStatus(s.container_id);
         const mappedStatus = mapDockerStatus(status, s.status);
         if (mappedStatus !== s.status && !['installing', 'updating'].includes(s.status)) {
           db.prepare('UPDATE servers SET status = ? WHERE id = ?').run(mappedStatus, s.id);
-          return formatServer({ ...s, status: mappedStatus });
+          return withPerms({ ...s, status: mappedStatus }, req);
         }
       } catch {}
-      return formatServer(s);
+      return withPerms(s, req);
     }));
 
-    res.json(updated.map((r, i) => r.status === 'fulfilled' ? r.value : formatServer(servers[i])));
+    res.json(updated.map((r, i) => r.status === 'fulfilled' ? r.value : withPerms(servers[i], req)));
   } catch (err) {
     // En dernier recours, retourner les serveurs bruts de la DB sans vérification Docker
     try {
       const db = getDb();
-      const servers = db.prepare('SELECT * FROM servers ORDER BY created_at DESC').all();
-      return res.json(servers.map(formatServer));
+      const allServers = db.prepare('SELECT * FROM servers ORDER BY created_at DESC').all();
+      const servers = req.allowedServerIds
+        ? allServers.filter(s => req.allowedServerIds.has(s.id))
+        : allServers;
+      return res.json(servers.map(s => withPerms(s, req)));
     } catch {
       next(err);
     }
@@ -73,7 +85,7 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
     const db = getDb();
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(req.params.id);
     if (!server) return res.status(404).json({ error: 'Serveur introuvable' });
-    res.json(formatServer(server));
+    res.json(withPerms(server, req));
   } catch (err) {
     next(err);
   }

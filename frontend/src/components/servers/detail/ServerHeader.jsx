@@ -27,6 +27,9 @@ export default function ServerHeader({
   onCopyAddress,
   onIconChange,
   onSaveName,
+  canPower = true,
+  canManage = true,
+  canDelete = true,
 }) {
   const { t } = useI18n();
   const [editingName, setEditingName] = useState(false);
@@ -65,21 +68,25 @@ export default function ServerHeader({
           {/* Identité */}
           <div className="flex items-center gap-3.5 sm:gap-4 min-w-0 max-w-full">
             <div className="relative shrink-0 group/icon">
-              <input type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden" onChange={onIconChange} />
+              {canManage && (
+                <input type="file" accept="image/png,image/jpeg" id="header-icon-input" className="hidden" onChange={onIconChange} />
+              )}
               <ServerAvatar server={server} size={48} showDot={false} />
-              <label
-                htmlFor="header-icon-input"
-                className="absolute inset-0 rounded-[10px] flex items-center justify-center cursor-pointer bg-black/55 text-white opacity-0 group-hover/icon:opacity-100 transition-opacity"
-                title={t('server.settings.icon')}
-                aria-label={t('server.settings.icon')}
-              >
-                <Pencil size={14} strokeWidth={2} />
-              </label>
+              {canManage && (
+                <label
+                  htmlFor="header-icon-input"
+                  className="absolute inset-0 rounded-[10px] flex items-center justify-center cursor-pointer bg-black/55 text-white opacity-0 group-hover/icon:opacity-100 transition-opacity"
+                  title={t('server.settings.icon')}
+                  aria-label={t('server.settings.icon')}
+                >
+                  <Pencil size={14} strokeWidth={2} />
+                </label>
+              )}
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                {editingName ? (
+                {canManage && editingName ? (
                   <input
                     autoFocus
                     className="text-[20px] font-semibold text-fg bg-transparent border-b border-fg-3 outline-none min-w-0 w-48 sm:min-w-[12rem] max-w-full tracking-tight"
@@ -90,12 +97,17 @@ export default function ServerHeader({
                   />
                 ) : (
                   <h1
-                    className="group text-[20px] font-semibold text-fg tracking-tight cursor-text flex items-center gap-2 min-w-0 max-w-full"
-                    onClick={() => { setHeaderName(server.name); setEditingName(true); }}
-                    title={t('server.settings.serverName')}
+                    className={clsx(
+                      'group text-[20px] font-semibold text-fg tracking-tight flex items-center gap-2 min-w-0 max-w-full',
+                      canManage && 'cursor-text',
+                    )}
+                    onClick={canManage ? () => { setHeaderName(server.name); setEditingName(true); } : undefined}
+                    title={canManage ? t('server.settings.serverName') : undefined}
                   >
                     <span className="truncate">{server.name}</span>
-                    <Pencil size={12} strokeWidth={2} className="text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    {canManage && (
+                      <Pencil size={12} strokeWidth={2} className="text-fg-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    )}
                   </h1>
                 )}
                 <StatusBadge status={server.status} />
@@ -132,41 +144,47 @@ export default function ServerHeader({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 flex-wrap max-w-full">
-            {server.status === 'error' && !server.container_id ? (
-              <button className="btn-primary min-h-[40px] sm:min-h-0" onClick={() => reinstallMut.mutate()} disabled={reinstallMut.isPending}>
-                <RotateCcw size={14} strokeWidth={2} /> {t('server.actions.reinstall')}
-              </button>
-            ) : canStart && (
-              <button className="btn-primary min-h-[40px] sm:min-h-0" onClick={() => startMut.mutate()} disabled={isBusy}>
-                <Play size={13} strokeWidth={2} fill="currentColor" /> {startMut.isPending ? '…' : t('server.actions.start')}
-              </button>
-            )}
-            {canStop && (
-              <>
-                <button className="btn-secondary min-h-[40px] sm:min-h-0" onClick={() => onRequestPowerAction('restart')} disabled={isBusy}>
-                  <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
+          {(canPower || canManage || canDelete) && (
+            <div className="flex items-center gap-2 flex-wrap max-w-full">
+              {server.status === 'error' && !server.container_id ? (
+                canManage && (
+                  <button className="btn-primary min-h-[40px] sm:min-h-0" onClick={() => reinstallMut.mutate()} disabled={reinstallMut.isPending}>
+                    <RotateCcw size={14} strokeWidth={2} /> {t('server.actions.reinstall')}
+                  </button>
+                )
+              ) : canPower && canStart && (
+                <button className="btn-primary min-h-[40px] sm:min-h-0" onClick={() => startMut.mutate()} disabled={isBusy}>
+                  <Play size={13} strokeWidth={2} fill="currentColor" /> {startMut.isPending ? '…' : t('server.actions.start')}
                 </button>
-                <button className="btn-secondary min-h-[40px] sm:min-h-0" onClick={() => onRequestPowerAction('stop')} disabled={isBusy}>
-                  <Square size={11} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
+              )}
+              {canPower && canStop && (
+                <>
+                  <button className="btn-secondary min-h-[40px] sm:min-h-0" onClick={() => onRequestPowerAction('restart')} disabled={isBusy}>
+                    <RotateCcw size={13} strokeWidth={2} className={clsx(restartMut.isPending && 'animate-spin')} /> {t('server.actions.restart')}
+                  </button>
+                  <button className="btn-secondary min-h-[40px] sm:min-h-0" onClick={() => onRequestPowerAction('stop')} disabled={isBusy}>
+                    <Square size={11} strokeWidth={2} fill="currentColor" /> {stopMut.isPending ? '…' : t('server.actions.stop')}
+                  </button>
+                </>
+              )}
+              {canManage && canUpdate && (
+                <button className="btn-secondary min-h-[40px] sm:min-h-0" onClick={onOpenUpdate}>
+                  <ArrowUp size={14} strokeWidth={2} /> {t('server.actions.update')}
                 </button>
-              </>
-            )}
-            {canUpdate && (
-              <button className="btn-secondary min-h-[40px] sm:min-h-0" onClick={onOpenUpdate}>
-                <ArrowUp size={14} strokeWidth={2} /> {t('server.actions.update')}
-              </button>
-            )}
-            <button
-              className="btn-danger w-10 sm:w-9 min-h-[40px] sm:min-h-0 !px-0"
-              onClick={onOpenDelete}
-              disabled={deleteMut.isPending}
-              title={t('server.actions.delete')}
-              aria-label={t('server.actions.delete')}
-            >
-              <Trash2 size={15} strokeWidth={1.75} />
-            </button>
-          </div>
+              )}
+              {canDelete && (
+                <button
+                  className="btn-danger w-10 sm:w-9 min-h-[40px] sm:min-h-0 !px-0"
+                  onClick={onOpenDelete}
+                  disabled={deleteMut.isPending}
+                  title={t('server.actions.delete')}
+                  aria-label={t('server.actions.delete')}
+                >
+                  <Trash2 size={15} strokeWidth={1.75} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Onglets */}

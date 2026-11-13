@@ -1,11 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { getDb } = require('../config/database');
 const authMiddleware = require('../middleware/auth');
+const { logActivity } = require('../middleware/permissions');
 
 const router = express.Router();
-const { signUserToken } = require('../config/secrets');
+const { signUserToken, getJwtSecret } = require('../config/secrets');
 
 // Hash bcrypt factice (coût 10) pour égaliser le temps de réponse quand l'utilisateur n'existe pas
 const DUMMY_HASH = '$2b$10$.....................................................';
@@ -78,7 +80,7 @@ router.post('/setup', async (req, res, next) => {
     console.log(`[Auth] Compte admin créé via setup : ${username.trim()}`);
 
     const token = signUserToken({ id, username: username.trim(), token_version: 0 });
-    res.json({ token, username: username.trim() });
+    res.json({ token, username: username.trim(), role: 'admin' });
   } catch (err) {
     next(err);
   }
@@ -95,10 +97,55 @@ router.post('/login', async (req, res, next) => {
     const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
     const valid = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
     if (!user || !valid) {
+      logActivity({
+        userId: user?.id || null,
+        username,
+        ip: req.ip,
+        action: 'POST /api/auth/login',
+        status: 401,
+        details: { reason: 'invalid_credentials' },
+      });
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
+    if (user.disabled) {
+      logActivity({
+        userId: user.id,
+        username: user.username,
+        ip: req.ip,
+        action: 'POST /api/auth/login',
+        status: 401,
+        details: { reason: 'disabled' },
+      });
+      return res.status(401).json({ error: 'Compte désactivé' });
+    }
+    if (user.totp_enabled) {
+      const challenge = jwt.sign(
+        { id: user.id, purpose: '2fa', tv: user.token_version || 0 },
+        getJwtSecret(),
+        { expiresIn: '5m' }
+      );
+      logActivity({
+        userId: user.id,
+        username: user.username,
+        ip: req.ip,
+        action: 'POST /api/auth/login',
+        status: 200,
+        details: { twoFactorRequired: true },
+      });
+      return res.json({ twoFactorRequired: true, challenge });
+    }
+
+    db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").run(user.id);
     const token = signUserToken(user);
-    res.json({ token, username: user.username });
+    logActivity({
+      userId: user.id,
+      username: user.username,
+      ip: req.ip,
+      action: 'POST /api/auth/login',
+      status: 200,
+      details: { method: 'password' },
+    });
+    res.json({ token, username: user.username, role: user.role || 'admin' });
   } catch (err) {
     next(err);
   }
@@ -119,7 +166,7 @@ router.post('/password', authMiddleware, async (req, res, next) => {
     db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?')
       .run(await bcrypt.hash(newPassword, 10), user.id);
     const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-    res.json({ token: signUserToken(fresh), username: fresh.username });
+    res.json({ token: signUserToken(fresh), username: fresh.username, role: fresh.role || 'admin' });
   } catch (err) {
     next(err);
   }
@@ -127,7 +174,8 @@ router.post('/password', authMiddleware, async (req, res, next) => {
 
 // ─── GET /api/auth/me ─────────────────────────────────────────
 router.get('/me', authMiddleware, (req, res) => {
-  res.json({ id: req.user.id, username: req.user.username });
+  const row = getDb().prepare('SELECT totp_enabled FROM users WHERE id = ?').get(req.user.id);
+  res.json({ id: req.user.id, username: req.user.username, role: req.user.role, totp_enabled: !!row?.totp_enabled });
 });
 
 module.exports = { router, initSetupToken };
