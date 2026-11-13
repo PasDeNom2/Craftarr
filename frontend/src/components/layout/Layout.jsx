@@ -48,8 +48,9 @@ export default function Layout() {
       qc.setQueryData(['server', serverId], old => old ? { ...old, status, ...extra } : old);
     };
 
-    const onInstallDone = ({ serverId }) => {
-      applyStatus(serverId, 'running');
+    // Le backend envoie le vrai statut (« starting » : Minecraft démarre encore)
+    const onInstallDone = ({ serverId, status }) => {
+      applyStatus(serverId, status || 'starting');
       flushUploads(serverId, tRef.current);
     };
     const onInstallError = ({ serverId }) => {
@@ -59,7 +60,7 @@ export default function Layout() {
         toast.error(tRef.current('deploy.pendingUploadsAborted'));
       }
     };
-    const onUpdateDone     = ({ serverId, version }) => applyStatus(serverId, 'running', { modpack_version: version });
+    const onUpdateDone     = ({ serverId, version, status }) => applyStatus(serverId, status || 'starting', { modpack_version: version });
     const onServerStatus   = ({ serverId, status }) => applyStatus(serverId, status);
     const onPregen = ({ serverId, status, progress, eta, message, worldIndex }) => {
       const patch = { pregen_status: status, pregen_progress: progress, pregen_eta: eta, pregen_message: message, pregen_world_index: worldIndex ?? 0 };

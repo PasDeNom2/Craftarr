@@ -146,3 +146,14 @@ test('coupe-circuit : 3 redémarrages en 10 min = boucle', () => {
   assert.strictEqual(isLooping([{ count: 2, at: now - 300000 }, { count: 5, at: now }], now), true);
   assert.strictEqual(isLooping([{ count: 0, at: now - 900000 }, { count: 9, at: now - 700000 }, { count: 9, at: now }], now), false);
 });
+
+test('serveur arrêté avant la mise à jour : container recréé mais pas démarré', async () => {
+  const srv = reset();
+  db.prepare("UPDATE servers SET status = 'stopped' WHERE id = ?").run(id);
+  installBehavior = 'ok';
+  await updater.applyUpdate({ ...srv, status: 'stopped' }, info);
+  assert.ok(calls.includes('create'));
+  assert.ok(!calls.some(c => c.startsWith('start')), calls.join(','));
+  assert.strictEqual(row().status, 'stopped');
+  assert.strictEqual(row().modpack_version, 'v2');
+});

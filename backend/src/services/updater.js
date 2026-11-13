@@ -88,13 +88,17 @@ function fixOwnership(dir) {
   }
 }
 
-async function recreateAndStart(serverId) {
+/**
+ * Recrée le container ; ne le démarre que si start est vrai (un serveur arrêté avant la mise à
+ * jour reste arrêté — avant, une mise à jour automatique relançait un serveur coupé volontairement).
+ */
+async function recreateAndStart(serverId, { start = true } = {}) {
   const db = getDb();
   const fresh = db.prepare('SELECT * FROM servers WHERE id = ?').get(serverId);
   const { containerId, containerName } = await dockerService.createServerContainer(fresh);
   db.prepare('UPDATE servers SET container_id = ?, container_name = ?, status = ? WHERE id = ?')
-    .run(containerId, containerName, 'starting', serverId);
-  await dockerService.startContainer(containerId, fresh);
+    .run(containerId, containerName, start ? 'starting' : 'stopped', serverId);
+  if (start) await dockerService.startContainer(containerId, fresh);
 }
 
 /**
@@ -129,6 +133,7 @@ async function doApplyUpdate(server, updateInfo) {
     loader_type: server.loader_type,
   };
   let swapped = false;
+  const wasRunning = !!server.container_id && ['running', 'starting'].includes(server.status);
 
   const histId = uuidv4();
   db.prepare(`
@@ -172,7 +177,7 @@ async function doApplyUpdate(server, updateInfo) {
     fixOwnership(serverDir);
 
     // 5. Nouveau container avec les env vars de la nouvelle version
-    await recreateAndStart(server.id);
+    await recreateAndStart(server.id, { start: wasRunning });
     writeUpdateState(baseDir, { histId, previous, phase: 'done' });
     fs.rmSync(oldDir, { recursive: true, force: true });
     clearUpdateState(baseDir);
@@ -186,6 +191,7 @@ async function doApplyUpdate(server, updateInfo) {
       serverId: server.id,
       version: updateInfo.latestVersion,
       changelog: updateInfo.changelog,
+      status: wasRunning ? 'starting' : 'stopped',
     });
 
     console.log(`[Updater] Serveur ${server.id} mis à jour vers ${updateInfo.latestVersion}`);
@@ -206,8 +212,8 @@ async function doApplyUpdate(server, updateInfo) {
       db.prepare('UPDATE servers SET modpack_version_id = ?, modpack_version = ?, mc_version = ?, loader_type = ? WHERE id = ?')
         .run(previous.modpack_version_id, previous.modpack_version, previous.mc_version, previous.loader_type, server.id);
       clearUpdateState(baseDir);
-      await recreateAndStart(server.id);
-      console.log(`[Updater] Rollback effectué — ${server.id} relancé sur ${previous.modpack_version}`);
+      await recreateAndStart(server.id, { start: wasRunning });
+      console.log(`[Updater] Rollback effectué — ${server.id} remis sur ${previous.modpack_version}${wasRunning ? ' et relancé' : ''}`);
     } catch (rollbackErr) {
       db.prepare('UPDATE servers SET status = ? WHERE id = ?').run('error', server.id);
       console.error(`[Updater] Rollback impossible pour ${server.id}:`, rollbackErr.message);
