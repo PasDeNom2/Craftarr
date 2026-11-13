@@ -163,6 +163,7 @@ export const testSource = (id) => api.post(`/sources/${id}/test`).then(r => r.da
 export const exportSources = () => api.get('/sources/export').then(r => r.data);
 export const importSources = (data) => api.post('/sources/import', data).then(r => r.data);
 
+export { api };
 export default api;
 
 // Mods d'un serveur

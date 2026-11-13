@@ -30,6 +30,12 @@ module.exports = [
     },
   },
   {
+    files: ['src/**/__tests__/**/*.{js,jsx}', 'src/test/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.vitest },
+    },
+  },
+  {
     files: ['*.config.js', '*.config.cjs', 'tailwind.config.js', 'postcss.config.js', 'vite.config.js'],
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
   },
