@@ -1,0 +1,129 @@
+{
+  "scheduler": {
+    "tab": "Scheduler",
+    "title": "Scheduled tasks",
+    "subtitle": "{count} task(s) configured on this server",
+    "create": "New task",
+    "edit": "Edit task",
+    "presets": "Presets",
+    "emptyTitle": "No scheduled tasks",
+    "emptyBody": "Automate announced restarts, backups, or RCON commands.",
+    "enable": "Enable task",
+    "disable": "Disable task",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "runNow": "Run now",
+    "running": "Running…",
+    "history": "History",
+    "editAction": "Edit",
+    "deleteAction": "Delete",
+    "confirmDeleteTitle": "Delete task",
+    "confirmDeleteBody": "Permanently delete \"{name}\" and its run history?",
+    "nextRun": "Next run",
+    "lastRun": "Last run",
+    "neverRun": "Never run",
+    "noNextRun": "Event-driven",
+    "paused": "Paused",
+    "stepsCount": "{count} step(s)",
+    "status": {
+      "success": "Success",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    },
+    "trigger": {
+      "label": "Trigger",
+      "cron": "Schedule (cron)",
+      "interval": "Interval",
+      "event": "Event",
+      "cronSummary": "Cron: {expr}",
+      "intervalSummary": "Every {minutes} min",
+      "eventSummary": "Event: {event}"
+    },
+    "cron": {
+      "modeLabel": "Frequency",
+      "daily": "Every day at…",
+      "weekly": "Every week on…",
+      "custom": "Custom",
+      "time": "Time",
+      "day": "Day",
+      "expression": "Cron expression (5 fields)",
+      "hint": "minute hour day-of-month month day-of-week (container local time)",
+      "days": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    },
+    "interval": {
+      "minutes": "Interval (minutes)",
+      "hint": "Between 1 minute and 1 year (525,600 min)"
+    },
+    "events": {
+      "server:started": "Server started",
+      "server:stopped": "Server stopped",
+      "server:crashed": "Crash loop detected",
+      "player:join": "Player joined",
+      "player:leave": "Player left",
+      "server:empty": "Last player left (server empty)"
+    },
+    "condition": {
+      "label": "Player condition",
+      "any": "Always run",
+      "online": "Only if at least 1 player is online",
+      "empty": "Only if the server is empty"
+    },
+    "form": {
+      "name": "Task name",
+      "namePlaceholder": "e.g. Nightly restart",
+      "active": "Task enabled",
+      "steps": "Steps (executed in order)",
+      "addStep": "Add step",
+      "moveUp": "Move step up",
+      "moveDown": "Move step down",
+      "removeStep": "Remove step",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "applyPreset": "Load preset"
+    },
+    "stepTypes": {
+      "command": "RCON command",
+      "say": "Broadcast (say)",
+      "wait": "Wait",
+      "power": "Power",
+      "backup": "Backup"
+    },
+    "stepFields": {
+      "command": "Command",
+      "commandPlaceholder": "save-all",
+      "message": "Announcement message",
+      "messagePlaceholder": "Server restarting in 5 minutes!",
+      "seconds": "Duration (seconds)",
+      "action": "Action",
+      "powerStart": "Start",
+      "powerStop": "Stop",
+      "powerRestart": "Restart",
+      "backupNote": "Creates a scheduled world backup (backupService)."
+    },
+    "runs": {
+      "title": "History: {name}",
+      "empty": "No runs recorded for this task yet.",
+      "duration": "{seconds} s",
+      "close": "Close"
+    },
+    "toast": {
+      "created": "Scheduled task created",
+      "updated": "Task updated",
+      "deleted": "Task deleted",
+      "runStarted": "Run started in the background — see history",
+      "runSuccess": "Task executed successfully",
+      "runFailed": "Run failed: {error}",
+      "runSkipped": "Run skipped: {reason}",
+      "error": "Operation failed"
+    }
+  }
+}

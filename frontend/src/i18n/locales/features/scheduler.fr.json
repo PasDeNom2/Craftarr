@@ -1,0 +1,129 @@
+{
+  "scheduler": {
+    "tab": "Planificateur",
+    "title": "Tâches planifiées",
+    "subtitle": "{count} tâche(s) configurée(s) sur ce serveur",
+    "create": "Nouvelle tâche",
+    "edit": "Modifier la tâche",
+    "presets": "Préréglages",
+    "emptyTitle": "Aucune tâche planifiée",
+    "emptyBody": "Automatisez les redémarrages annoncés, sauvegardes ou commandes RCON.",
+    "enable": "Activer la tâche",
+    "disable": "Désactiver la tâche",
+    "enabled": "Active",
+    "disabled": "Désactivée",
+    "runNow": "Exécuter maintenant",
+    "running": "Exécution…",
+    "history": "Historique",
+    "editAction": "Modifier",
+    "deleteAction": "Supprimer",
+    "confirmDeleteTitle": "Supprimer la tâche",
+    "confirmDeleteBody": "Supprimer définitivement « {name} » et son historique d'exécution ?",
+    "nextRun": "Prochaine exécution",
+    "lastRun": "Dernière exécution",
+    "neverRun": "Jamais exécutée",
+    "noNextRun": "Sur événement",
+    "paused": "En pause",
+    "stepsCount": "{count} étape(s)",
+    "status": {
+      "success": "Réussie",
+      "failed": "Échouée",
+      "skipped": "Ignorée"
+    },
+    "trigger": {
+      "label": "Déclencheur",
+      "cron": "Planification (cron)",
+      "interval": "Intervalle",
+      "event": "Événement",
+      "cronSummary": "Cron : {expr}",
+      "intervalSummary": "Toutes les {minutes} min",
+      "eventSummary": "Événement : {event}"
+    },
+    "cron": {
+      "modeLabel": "Fréquence",
+      "daily": "Tous les jours à…",
+      "weekly": "Chaque semaine le…",
+      "custom": "Personnalisé",
+      "time": "Heure",
+      "day": "Jour",
+      "expression": "Expression cron (5 champs)",
+      "hint": "minute heure jour-du-mois mois jour-semaine (heure locale du conteneur)",
+      "days": {
+        "0": "Dimanche",
+        "1": "Lundi",
+        "2": "Mardi",
+        "3": "Mercredi",
+        "4": "Jeudi",
+        "5": "Vendredi",
+        "6": "Samedi"
+      }
+    },
+    "interval": {
+      "minutes": "Intervalle (minutes)",
+      "hint": "Entre 1 minute et 1 an (525 600 min)"
+    },
+    "events": {
+      "server:started": "Serveur démarré",
+      "server:stopped": "Serveur arrêté",
+      "server:crashed": "Crash en boucle détecté",
+      "player:join": "Connexion d'un joueur",
+      "player:leave": "Déconnexion d'un joueur",
+      "server:empty": "Dernier joueur parti (serveur vide)"
+    },
+    "condition": {
+      "label": "Condition joueurs",
+      "any": "Toujours exécuter",
+      "online": "Seulement si au moins 1 joueur est en ligne",
+      "empty": "Seulement si le serveur est vide"
+    },
+    "form": {
+      "name": "Nom de la tâche",
+      "namePlaceholder": "Ex. Redémarrage nocturne",
+      "active": "Tâche active",
+      "steps": "Étapes (exécutées dans l'ordre)",
+      "addStep": "Ajouter une étape",
+      "moveUp": "Monter l'étape",
+      "moveDown": "Descendre l'étape",
+      "removeStep": "Retirer l'étape",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "applyPreset": "Charger un préréglage"
+    },
+    "stepTypes": {
+      "command": "Commande RCON",
+      "say": "Annonce (say)",
+      "wait": "Attendre",
+      "power": "Alimentation",
+      "backup": "Sauvegarde"
+    },
+    "stepFields": {
+      "command": "Commande",
+      "commandPlaceholder": "save-all",
+      "message": "Message annoncé",
+      "messagePlaceholder": "Redémarrage dans 5 minutes !",
+      "seconds": "Durée (secondes)",
+      "action": "Action",
+      "powerStart": "Démarrer",
+      "powerStop": "Arrêter",
+      "powerRestart": "Redémarrer",
+      "backupNote": "Crée une sauvegarde planifiée du monde (backupService)."
+    },
+    "runs": {
+      "title": "Historique : {name}",
+      "empty": "Aucune exécution enregistrée pour cette tâche.",
+      "duration": "{seconds} s",
+      "close": "Fermer"
+    },
+    "toast": {
+      "created": "Tâche planifiée créée",
+      "updated": "Tâche mise à jour",
+      "deleted": "Tâche supprimée",
+      "runStarted": "Exécution lancée en arrière-plan — voir l'historique",
+      "runSuccess": "Tâche exécutée avec succès",
+      "runFailed": "Exécution échouée : {error}",
+      "runSkipped": "Exécution ignorée : {reason}",
+      "error": "Erreur lors de l'opération"
+    }
+  }
+}
