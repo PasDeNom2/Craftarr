@@ -3,7 +3,21 @@ const path = require('path');
 const fs = require('fs');
 const { isMcVersion, mcVersionFromNeoForge, requiredJava, loaderVersionFromSetupConfig } = require('./mcVersion');
 
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+/** Calcule les options dockerode à partir de DOCKER_HOST (tcp://) ou du socket Unix. */
+function dockerOptions() {
+  const hostEnv = process.env.DOCKER_HOST;
+  if (hostEnv && hostEnv.startsWith('tcp://')) {
+    const url = new URL(hostEnv);
+    return {
+      host: url.hostname,
+      port: Number(url.port) || 2375,
+      protocol: 'http',
+    };
+  }
+  return { socketPath: process.env.DOCKER_SOCKET || '/var/run/docker.sock' };
+}
+
+const docker = new Docker(dockerOptions());
 const DATA_PATH = process.env.DATA_PATH || '/data';
 // HOST_DATA_PATH = chemin hôte correspondant à DATA_PATH, utilisé pour les bind mounts des containers MC
 // (Docker daemon interprète les chemins de bind mounts depuis le point de vue de l'hôte)
@@ -766,5 +780,5 @@ module.exports = {
   pullImage,
   hostRamWarning,
   // Exposé pour les tests uniquement
-  _internals: { buildEnvVars, resolveMinecraftImage, ensureVoiceChatPort, detectPackNeoForgeVersion },
+  _internals: { buildEnvVars, resolveMinecraftImage, ensureVoiceChatPort, detectPackNeoForgeVersion, dockerOptions },
 };

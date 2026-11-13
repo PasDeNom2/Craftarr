@@ -219,15 +219,25 @@ The suite covers installs (downloads, hashes, `.mrpack`, zip-slip), modpack upda
 | Frontend | React 18 + Vite + TailwindCSS |
 | Database | SQLite (better-sqlite3) |
 | Minecraft containers | itzg/minecraft-server |
-| Docker API | dockerode (Docker socket) |
+| Docker API | dockerode (via `docker-socket-proxy`) |
 | Encryption | AES-256-GCM (native Node.js crypto) |
 | Auth | JWT (7 days) + bcrypt |
+
+### Compose services
+
+The `docker-compose.yml` stack runs 3 services:
+
+- **`docker-proxy`** (`tecnativa/docker-socket-proxy`) — mounts `/var/run/docker.sock:ro` on an isolated internal network (`docker-proxy`) shared only with `backend`
+- **`backend`** — Node.js API and WebSocket server running as non-root (`node`, UID 1000), connected to `docker-proxy` over TCP and to Minecraft containers on the `craftarr` bridge network
+- **`frontend`** — Nginx serving the React SPA and proxying `/api` and `/socket.io` to `backend`
 
 ---
 
 ## Security
 
+- **Docker socket proxy** — `/var/run/docker.sock` is mounted read-only on `docker-proxy` on an `internal: true` network shared exclusively with `backend`. Only required endpoints (`CONTAINERS`, `IMAGES`, `NETWORKS`, `INFO`, `POST`) are enabled (`EXEC`, `VOLUMES`, `SWARM`, `BUILD`, etc. are disabled)
+- **Non-root backend** — `backend` drops root privileges at startup via `su-exec node` (UID 1000) after aligning `/data` ownership
+- **CSP & security headers** — Nginx enforces `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, and `X-Frame-Options: DENY` on all responses
 - All secrets are auto-generated on first start and stored in `data/secrets.json` — keep this file private
 - Third-party API keys are stored **AES-256-GCM encrypted** in SQLite
 - Do **not** expose the UI directly to the internet without a reverse proxy + HTTPS
-- The Docker socket (`/var/run/docker.sock`) is mounted read-write — treat the host as trusted

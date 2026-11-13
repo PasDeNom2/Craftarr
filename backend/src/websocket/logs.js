@@ -271,7 +271,14 @@ function startLogStream(io, serverId, attempt = 0) {
         io.emit('server:status', { serverId, status: 'error' });
       }
     },
-    () => {
+    async () => {
+      try {
+        if (await dockerService.getContainerStatus(server.container_id) === 'running') {
+          activeStreams.delete(serverId);
+          setTimeout(() => startLogStream(io, serverId), 1000);
+          return;
+        }
+      } catch {}
       const db = getDb();
       const changed = db.prepare("UPDATE servers SET status = 'stopped' WHERE id = ? AND status = 'running'")
         .run(serverId);

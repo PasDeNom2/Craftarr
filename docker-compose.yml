@@ -1,4 +1,33 @@
 services:
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.1
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CONTAINERS=1
+      - IMAGES=1
+      - NETWORKS=1
+      - INFO=1
+      - POST=1
+      - EVENTS=0
+      - EXEC=0
+      - VOLUMES=0
+      - SERVICES=0
+      - SWARM=0
+      - NODES=0
+      - TASKS=0
+      - SECRETS=0
+      - CONFIGS=0
+      - PLUGINS=0
+      - BUILD=0
+      - COMMIT=0
+      - AUTH=0
+      - SYSTEM=0
+      - DISTRIBUTION=0
+    networks:
+      - docker-proxy
+
   backend:
     build: ./backend
     container_name: craftarr-backend
@@ -7,6 +36,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - DATA_PATH=/data
+      - DOCKER_HOST=tcp://docker-proxy:2375
       # Chemin hôte du dossier data (pour les bind mounts des containers MC)
       - HOST_DATA_PATH=${HOST_DATA_PATH:-${PWD}/data}
       # Réglages optionnels, lus depuis le .env (voir .env.example)
@@ -18,10 +48,12 @@ services:
       - MINECRAFT_IMAGE_VERSION=${MINECRAFT_IMAGE_VERSION:-}
       - NOTIFY_WEBHOOK_URL=${NOTIFY_WEBHOOK_URL:-}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
+    depends_on:
+      - docker-proxy
     networks:
       - craftarr-net
+      - docker-proxy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 15s
@@ -45,3 +77,6 @@ networks:
   craftarr-net:
     name: craftarr
     driver: bridge
+  docker-proxy:
+    driver: bridge
+    internal: true

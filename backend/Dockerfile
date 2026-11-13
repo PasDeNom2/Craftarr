@@ -8,14 +8,17 @@ RUN npm ci --omit=dev --no-audit --no-fund
 
 # ─── Image finale ────────────────────────────────────────────
 FROM node:24-alpine
+RUN apk add --no-cache su-exec
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY src/ ./src/
+COPY docker-entrypoint.sh ./
 
-RUN mkdir -p /data/servers
+RUN chmod +x /app/docker-entrypoint.sh && mkdir -p /data/servers /data/backups
 
 EXPOSE 3000
 
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "src/index.js"]

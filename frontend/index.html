@@ -5,15 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Craftarr</title>
   <meta name="color-scheme" content="dark light" />
-  <script>
-    // Thème appliqué avant le premier rendu (pas de flash clair/sombre)
-    try {
-      var t = localStorage.getItem('craftarr_theme') || 'dark';
-      if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-      if (localStorage.getItem('craftarr_cb') === '1') document.documentElement.setAttribute('data-cb', '1');
-    } catch (e) {}
-  </script>
+  <script src="/theme-init.js"></script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 </head>
 <body>
